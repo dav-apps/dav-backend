@@ -17,7 +17,7 @@ gem 'bootsnap', '>= 1.4.2', require: false
 gem 'rack-cors'
 
 group :development, :test do
-  
+	gem 'dotenv-rails'
 end
 
 group :development do
