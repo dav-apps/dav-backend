@@ -1,5 +1,8 @@
 class UsersController < ApplicationController
-	def signup
+	jwt_expiration_hours_prod = 7000
+	jwt_expiration_hours_dev = 10000000
+
+	define_method :signup do
 		auth = get_authorization_header
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
@@ -94,10 +97,63 @@ class UsersController < ApplicationController
 
 		ValidationService.raise_multiple_validation_errors(validations)
 
-
+		# Create the user
+		user = User.new(
+			email: email,
+			first_name: first_name,
+			password: password,
+			email_confirmation_token: generate_token
+		)
+		ValidationService.raise_unexpected_error(!user.save)
 		
+		# Generate a jwt
+		exp_hours = Rails.env.production? ? jwt_expiration_hours_prod : jwt_expiration_hours_dev
+		exp = Time.now.to_i + exp_hours * 3600
+
+		if app_id
+			# Create a session jwt
+			secret = SecureRandom.urlsafe_base64(30)
+
+			session = Session.new(
+				user: user,
+				app: app,
+				secret: secret,
+				exp: Time.at(exp).utc,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			)
+			ValidationService.raise_unexpected_error(!session.save)
+
+			payload = {user_id: user.id, app_id: app.id, dev_id: dev.id, exp: exp}
+			jwt = "#{JWT.encode(payload, secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
+		else
+			# Create a normal jwt
+			payload = {user_id: user.id, app_id: app.id, dev_id: dev.id, exp: exp}
+			jwt = JWT.encode(payload, ENV['JWT_SECRET'], ENV['JWT_ALGORITHM'])
+		end
+
+		UserNotifier.send_verification_email(user).deliver_later
+
+		result = {
+			id: user.id,
+			email: user.email,
+			first_name: user.first_name,
+			confirmed: user.confirmed,
+			plan: user.plan,
+			total_storage: 0,
+			used_storage: user.used_storage,
+			jwt: jwt
+		}
+
+		render json: result, status: 201
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	private
+	def generate_token
+      SecureRandom.hex(20)
+   end
 end

@@ -1,10 +1,26 @@
 class ValidationService
 	# Variables
-	# ...
+	first_name_min_length = 2
+	first_name_max_length = 20
+	password_min_length = 7
+	password_max_length = 25
+	device_name_min_length = 2
+	device_name_max_length = 30
+	device_type_min_length = 2
+	device_type_max_length = 30
+	device_os_min_length = 2
+	device_os_max_length = 30
 	
 	# Miscellaneous validation methods
+	def self.raise_unexpected_error(raise_error)
+		if raise_error
+			error_code = 1101
+			raise RuntimeError, [get_validation_hash(false, error_code, 500)].to_json
+		end
+	end
+
 	def self.validate_auth(auth)
-		error_code = 1101
+		error_code = 1102
 		return get_validation_hash(false, 2101, 401) if !auth
 
 		api_key, signature = auth.split(',')
@@ -17,7 +33,7 @@ class ValidationService
 	end
 
 	def self.validate_app_belongs_to_dev(app, dev)
-		error_code = 1102
+		error_code = 1103
 		app.dev != dev ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
@@ -130,9 +146,60 @@ class ValidationService
 		!device_os.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	# Methods for length of fields
+	define_singleton_method :validate_first_name_length do |first_name|
+		if first_name.length < first_name_min_length
+			get_validation_hash(false, 2301, 400)
+		elsif first_name.length > first_name_max_length
+			get_validation_hash(false, 2401, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	define_singleton_method :validate_password_length do |password|
+		if password.length < password_min_length
+			get_validation_hash(false, 2302, 400)
+		elsif password.length > password_max_length
+			get_validation_hash(false, 2402, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	define_singleton_method :validate_device_name_length do |device_name|
+		if device_name.length < device_name_min_length
+			get_validation_hash(false, 2303, 400)
+		elsif device_name.length > device_name_max_length
+			get_validation_hash(false, 2403, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	define_singleton_method :validate_device_type_length do |device_type|
+		if device_type.length < device_type_min_length
+			get_validation_hash(false, 2304, 400)
+		elsif device_type.length > device_type_max_length
+			get_validation_hash(false, 2404, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	define_singleton_method :validate_device_os_length do |device_os|
+		if device_os.length < device_os_min_length
+			get_validation_hash(false, 2305, 400)
+		elsif device_os.length > device_os_max_length
+			get_validation_hash(false, 2405, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
-		error_code = 2401
+		error_code = 2501
 		!validate_email(email) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
@@ -250,7 +317,27 @@ class ValidationService
 			"Field has wrong type: device_type"
 		when 2208
 			"Field has wrong type: device_os"
+		when 2301
+			"Field too short: first_name"
+		when 2302
+			"Field too short: password"
+		when 2303
+			"Field too short: device_name"
+		when 2304
+			"Field too short: device_type"
+		when 2305
+			"Field too short: device_os"
 		when 2401
+			"Field too long: first_name"
+		when 2402
+			"Field too long: password"
+		when 2403
+			"Field too long: device_name"
+		when 2404
+			"Field too long: device_type"
+		when 2405
+			"Field too long: device_os"
+		when 2501
 			"Field invalid: email"
 		when 2701
 			"Field already taken: email"
