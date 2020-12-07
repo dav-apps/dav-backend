@@ -8,6 +8,7 @@ class CreateApp < ActiveRecord::Migration[6.0]
 		t.string :web_link
 		t.string :google_play_link
 		t.string :microsoft_store_link
+		t.timestamps
     end
   end
 end

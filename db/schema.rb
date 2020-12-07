@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_07_174916) do
+ActiveRecord::Schema.define(version: 2020_12_07_193455) do
 
-  create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=latin1", force: :cascade do |t|
+  create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.integer "dev_id"
     t.string "name"
     t.string "description"
@@ -20,20 +20,33 @@ ActiveRecord::Schema.define(version: 2020_12_07_174916) do
     t.string "web_link"
     t.string "google_play_link"
     t.string "microsoft_store_link"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "devs", options: "ENGINE=InnoDB DEFAULT CHARSET=latin1", force: :cascade do |t|
+  create_table "devs", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.integer "user_id"
     t.string "api_key"
     t.string "secret_key"
     t.string "uuid"
-    t.datetime "created_at"
+    t.datetime "created_at", null: false
   end
 
-  create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=latin1", force: :cascade do |t|
+  create_table "sessions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "app_id"
+    t.string "secret"
+    t.datetime "exp"
+    t.string "device_name"
+    t.string "device_type"
+    t.string "device_os"
+    t.datetime "created_at", null: false
+  end
+
+  create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.string "email"
     t.string "first_name"
-    t.string "password"
+    t.string "password_digest"
     t.boolean "confirmed", default: false
     t.string "email_confirmation_token"
     t.string "password_confirmation_token"
