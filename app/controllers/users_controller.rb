@@ -53,6 +53,47 @@ class UsersController < ApplicationController
 
 		ValidationService.raise_multiple_validation_errors(validations)
 
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existance(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		if app_id
+			# Get the app
+			app = App.find_by(id: app_id)
+			ValidationService.validate_app_existence(app)
+
+			# Check if the app belongs to the dev with the api key
+			app_dev = Dev.find_by(api_key: dev_api_key)
+			ValidationService.raise_validation_error(ValidationService.validate_dev_existance(app_dev))
+			ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, app_dev))
+		end
+
+		# Validate the email
+		ValidationService.raise_validation_error(ValidationService.validate_email_availability(email))
+		ValidationService.raise_validation_error(ValidationService.validate_email_validity(email))
+
+		# Validate the length of the fields
+		validations = [
+			ValidationService.validate_first_name_length(first_name),
+			ValidationService.validate_password_length(password)
+		]
+
+		if app_id
+			validations.push(
+				ValidationService.validate_device_name_length(device_name),
+				ValidationService.validate_device_type_length(device_type),
+				ValidationService.validate_device_os_length(device_os)
+			)
+		end
+
+		ValidationService.raise_multiple_validation_errors(validations)
+
 
 		
 	rescue RuntimeError => e

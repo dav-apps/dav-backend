@@ -2,7 +2,30 @@ class ValidationService
 	# Variables
 	# ...
 	
-	# Validation methods
+	# Miscellaneous validation methods
+	def self.validate_auth(auth)
+		error_code = 1101
+		return get_validation_hash(false, 2101, 401) if !auth
+
+		api_key, signature = auth.split(',')
+		dev = Dev.find_by(api_key: api_key)
+		return get_validation_hash(false, error_code, 401) if !dev
+
+		# Check the signature
+		sig = Base64.strict_encode64(OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), dev.secret_key, dev.uuid))
+		sig != signature ? get_validation_hash(false, error_code, 401) : get_validation_hash
+	end
+
+	def self.validate_app_belongs_to_dev(app, dev)
+		error_code = 1102
+		app.dev != dev ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
+	def self.validate_dev_is_first_dev(dev)
+		error_code = 1103
+		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_content_type_json(content_type)
 		error_code = 1104
 		if content_type && content_type.include?("application/json")
@@ -12,44 +35,57 @@ class ValidationService
 		end
 	end
 
+	def self.parse_json(json)
+		json && json.length > 0 ? JSON.parse(json) : Hash.new
+	rescue
+		# Raise error for invalid body
+		error_code = 1105
+		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
+	end
+
 	# Methods for presence of fields
 	def self.validate_auth_presence(auth)
 		error_code = 2101
-		!auth || auth.length < 1 ? get_validation_hash(false, error_code, 401) : get_validation_hash
+		!auth ? get_validation_hash(false, error_code, 401) : get_validation_hash
+	end
+
+	def self.validate_jwt_presence(jwt)
+		error_code = 2102
+		!jwt ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_email_presence(email)
-		error_code = 2102
+		error_code = 2103
 		!email ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_first_name_presence(first_name)
-		error_code = 2103
+		error_code = 2104
 		!first_name ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_password_presence(password)
-		error_code = 2104
+		error_code = 2105
 		!password ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_api_key_presence(api_key)
-		error_code = 2105
+		error_code = 2106
 		!api_key ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_device_name_presence(device_name)
-		error_code = 2106
+		error_code = 2107
 		!device_name ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_device_type_presence(device_type)
-		error_code = 2107
+		error_code = 2108
 		!device_type ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_device_os_presence(device_os)
-		error_code = 2108
+		error_code = 2109
 		!device_os ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
@@ -94,14 +130,38 @@ class ValidationService
 		!device_os.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	# Utility methods
-	def self.parse_json(json)
-		json && json.length > 0 ? JSON.parse(json) : Hash.new
-	rescue
-		# Raise error for invalid body
-		error_code = 1105
-		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
+	# Methods for validity of fields
+	def self.validate_email_validity(email)
+		error_code = 2401
+		!validate_email(email) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
+
+	# Methods for availability of fields
+	def self.validate_email_availability(email)
+		error_code = 2701
+		User.exists?(email: email) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	# Methods for existance of fields
+	def self.validate_user_existance(user)
+		error_code = 2801
+		!user ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_dev_existance(dev)
+		error_code = 2802
+		!dev ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_app_existance(app)
+		error_code = 2803
+		!app ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	# Utility methods
+	def self.validate_email(email)
+		/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/.match?(email)
+   end
 
 	# Error methods
 	def self.raise_validation_error(validation)
@@ -159,18 +219,20 @@ class ValidationService
 		when 2101
 			"Missing field: auth"
 		when 2102
-			"Missing field: email"
+			"Missing field: jwt"
 		when 2103
-			"Missing field: first_name"
+			"Missing field: email"
 		when 2104
-			"Missing field: password"
+			"Missing field: first_name"
 		when 2105
-			"Missing field: api_key"
+			"Missing field: password"
 		when 2106
-			"Missing field: device_name"
+			"Missing field: api_key"
 		when 2107
-			"Missing field: device_type"
+			"Missing field: device_name"
 		when 2108
+			"Missing field: device_type"
+		when 2109
 			"Missing field: device_os"
 		when 2201
 			"Field has wrong type: email"
@@ -188,6 +250,16 @@ class ValidationService
 			"Field has wrong type: device_type"
 		when 2208
 			"Field has wrong type: device_os"
+		when 2401
+			"Field invalid: email"
+		when 2701
+			"Field already taken: email"
+		when 2801
+			"Resource does not exist: User"
+		when 2802
+			"Resource does not exist: Dev"
+		when 2803
+			"Resource does not exist: App"
 		end
 	end
 end
