@@ -133,7 +133,7 @@ class UsersController < ApplicationController
 			jwt = JWT.encode(payload, ENV['JWT_SECRET'], ENV['JWT_ALGORITHM'])
 		end
 
-		UserNotifier.send_verification_email(user).deliver_later
+		UserNotifierMailer.email_confirmation(user).deliver_later
 
 		result = {
 			id: user.id,

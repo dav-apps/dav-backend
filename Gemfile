@@ -25,6 +25,10 @@ gem 'bcrypt'
 # JWT
 gem 'jwt'
 
+# Bootstrap emails
+gem 'bootstrap-email'
+gem 'sassc'
+
 group :development, :test do
 	gem 'dotenv-rails'
 end

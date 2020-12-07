@@ -56,12 +56,21 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
       zeitwerk (~> 2.2, >= 2.2.2)
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
     bcrypt (3.1.16)
     bootsnap (1.5.1)
       msgpack (~> 1.0)
+    bootstrap-email (0.3.2)
+      actionmailer (>= 3)
+      nokogiri (~> 1.6)
+      premailer-rails (~> 1.9)
+      rails (>= 3)
     builder (3.2.4)
     concurrent-ruby (1.1.7)
     crass (1.0.6)
+    css_parser (1.7.1)
+      addressable
     dotenv (2.7.6)
     dotenv-rails (2.7.6)
       dotenv (= 2.7.6)
@@ -70,6 +79,7 @@ GEM
     ffi (1.13.1)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
+    htmlentities (4.3.4)
     i18n (1.8.5)
       concurrent-ruby (~> 1.0)
     jwt (2.2.2)
@@ -94,6 +104,14 @@ GEM
     nokogiri (1.10.10)
       mini_portile2 (~> 2.4.0)
     pg (1.2.3)
+    premailer (1.14.2)
+      addressable
+      css_parser (>= 1.6.0)
+      htmlentities (>= 4.0.0)
+    premailer-rails (1.11.1)
+      actionmailer (>= 3)
+      premailer (~> 1.7, >= 1.7.9)
+    public_suffix (4.0.6)
     puma (4.3.7)
       nio4r (~> 2.0)
     rack (2.2.3)
@@ -131,6 +149,8 @@ GEM
     rb-fsevent (0.10.4)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
+    sassc (2.4.0)
+      ffi (~> 1.9)
     spring (2.1.1)
     spring-watcher-listen (2.0.1)
       listen (>= 2.7, < 4.0)
@@ -157,6 +177,7 @@ PLATFORMS
 DEPENDENCIES
   bcrypt
   bootsnap (>= 1.4.2)
+  bootstrap-email
   dotenv-rails
   jwt
   listen (~> 3.2)
@@ -165,6 +186,7 @@ DEPENDENCIES
   puma (~> 4.1)
   rack-cors
   rails (~> 6.0.3, >= 6.0.3.4)
+  sassc
   spring
   spring-watcher-listen (~> 2.0.0)
   tzinfo-data
