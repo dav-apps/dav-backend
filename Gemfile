@@ -19,6 +19,9 @@ gem 'bootsnap', '>= 1.4.2', require: false
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem 'rack-cors'
 
+# Password encryption
+gem 'bcrypt'
+
 group :development, :test do
 	gem 'dotenv-rails'
 end
