@@ -85,24 +85,14 @@ class ValidationService
 		!password ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_api_key_presence(api_key)
+	def self.validate_app_id_presence(app_id)
 		error_code = 2106
-		!api_key ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		!app_id ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_device_name_presence(device_name)
+	def self.validate_api_key_presence(api_key)
 		error_code = 2107
-		!device_name ? get_validation_hash(false, error_code, 400) : get_validation_hash
-	end
-
-	def self.validate_device_type_presence(device_type)
-		error_code = 2108
-		!device_type ? get_validation_hash(false, error_code, 400) : get_validation_hash
-	end
-
-	def self.validate_device_os_presence(device_os)
-		error_code = 2109
-		!device_os ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		!api_key ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -294,13 +284,9 @@ class ValidationService
 		when 2105
 			"Missing field: password"
 		when 2106
-			"Missing field: api_key"
+			"Missing field: app_id"
 		when 2107
-			"Missing field: device_name"
-		when 2108
-			"Missing field: device_type"
-		when 2109
-			"Missing field: device_os"
+			"Missing field: api_key"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
