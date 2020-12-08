@@ -59,6 +59,11 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
 	end
 
+	def self.authenticate_user(user, password)
+		error_code = 1201
+		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for presence of fields
 	def self.validate_auth_presence(auth)
 		error_code = 2101
@@ -273,6 +278,8 @@ class ValidationService
 			"Content-Type not supported"
 		when 1105
 			"Invalid body"
+		when 1201
+			"Password is incorrect"
 		when 2101
 			"Missing field: auth"
 		when 2102
