@@ -1,0 +1,17 @@
+website:
+  name: Website
+  description: The app for the dav website
+  published: false
+  dev: sherlock
+
+cards:
+  name: Cards
+  description: This is a vocabulary app
+  published: true
+  dev: sherlock
+
+davApp:
+  name: davApp
+  description: dav Test app
+  published: false
+  dev: dav

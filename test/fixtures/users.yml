@@ -1,0 +1,9 @@
+dav:
+  first_name: dav
+  confirmed: true
+  email: dav@dav-apps.tech
+
+sherlock:
+  first_name: Sherlock
+  confirmed: true
+  email: sherlock@dav-apps.tech

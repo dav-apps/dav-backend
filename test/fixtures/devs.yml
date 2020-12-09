@@ -1,0 +1,11 @@
+dav:
+  user: dav
+  api_key: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ"
+  secret_key: "XO1MUi8YFPJL2FDqsJdElSW4QBGCZBTACMmebmD1ksCCVOFrzEzFcQ"
+  uuid: "c46ffce6-62eb-4560-b27d-af108f66f5f2"
+
+sherlock:
+  user: sherlock
+  api_key: "N5QTu9U6uiKJb1d4ZryqW6k86eXtaGzaFcUWfVqG"
+  secret_key: "CoTQf26E48gEeL-n_sDfqyHACPXxZD0qB9F99LJQ8DyQiiJe8n-aWA"
+  uuid: "10032e4b-c1a7-41e2-98b1-0137e14ed3ea"

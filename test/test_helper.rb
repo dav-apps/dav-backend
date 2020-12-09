@@ -7,15 +7,19 @@ require "minitest/rails"
 # ENV["MT_NO_EXPECTATIONS"] = true
 
 class ActiveSupport::TestCase
-  # Run tests in parallel with specified workers
-  parallelize(workers: :number_of_processors)
+	# Run tests in parallel with specified workers
+	parallelize(workers: :number_of_processors)
 
-  # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
-  fixtures :all
+	# Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
+	fixtures :all
 
-  # Add more helper methods to be used by all tests here...
+	# Helper methods
 	def post_request(url, headers = {}, body = {})
 		post url, headers: headers, params: body.to_json
 		JSON.parse(response.body)
+	end
+
+	def generate_auth(dev)
+		dev.api_key + "," + Base64.strict_encode64(OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), dev.secret_key, dev.uuid))
 	end
 end
