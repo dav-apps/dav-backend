@@ -37,6 +37,11 @@ class ValidationService
 		app.dev != dev ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_session_belongs_to_user(session, user)
+		error_code = 1103
+		session.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_dev_is_first_dev(dev)
 		error_code = 1103
 		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -62,6 +67,22 @@ class ValidationService
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_jwt(jwt, session_id)
+		session = Session.find_by(id: session_id)
+		return get_validation_hash(false, 2814, 404) if !session
+
+		# Try to decode the jwt
+		begin
+			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })
+		rescue JWT::ExpiredSignature
+			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
+		rescue JWT::DecodeError
+			raise RuntimeError, [get_validation_hash(false, 1302, 401)].to_json
+		rescue Exception
+			raise RuntimeError, [get_validation_hash(false, 1303, 401)].to_json
+		end
 	end
 
 	# Methods for presence of fields
@@ -205,19 +226,24 @@ class ValidationService
 	end
 
 	# Methods for existance of fields
-	def self.validate_user_existance(user)
+	def self.validate_user_existence(user)
 		error_code = 2801
 		!user ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_dev_existance(dev)
+	def self.validate_dev_existence(dev)
 		error_code = 2802
 		!dev ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_app_existance(app)
+	def self.validate_app_existence(app)
 		error_code = 2803
 		!app ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_session_existence(session)
+		error_code = 2804
+		!session ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Utility methods

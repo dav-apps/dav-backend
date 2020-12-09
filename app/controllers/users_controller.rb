@@ -3,7 +3,7 @@ class UsersController < ApplicationController
 	jwt_expiration_hours_dev = 10000000
 
 	define_method :signup do
-		auth = get_authorization_header
+		auth = get_auth
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
@@ -61,7 +61,7 @@ class UsersController < ApplicationController
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existance(dev))
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
 		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
@@ -75,7 +75,7 @@ class UsersController < ApplicationController
 
 		# Check if the app belongs to the dev with the api key
 		app_dev = Dev.find_by(api_key: dev_api_key)
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existance(app_dev))
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(app_dev))
 		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, app_dev))
 
 		# Create the user
