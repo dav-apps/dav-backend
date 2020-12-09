@@ -115,13 +115,13 @@ class UsersController < ApplicationController
 				first_name: user.first_name,
 				confirmed: user.confirmed,
 				plan: user.plan,
-				total_storage: 0,
+				total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
 				used_storage: user.used_storage
 			},
 			jwt: jwt
 		}
 
-		if app_id != ENV["DAV_APPS_APP_ID"]
+		if app_id != ENV["DAV_APPS_APP_ID"].to_i
 			# If the session is for another app than the website, create another session for the website
 			website_secret = SecureRandom.urlsafe_base64(30)
 

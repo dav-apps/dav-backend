@@ -228,22 +228,22 @@ class ValidationService
 	# Methods for existance of fields
 	def self.validate_user_existence(user)
 		error_code = 2801
-		!user ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		user.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
 	def self.validate_dev_existence(dev)
 		error_code = 2802
-		!dev ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		dev.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
 	def self.validate_app_existence(app)
 		error_code = 2803
-		!app ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		app.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
 	def self.validate_session_existence(session)
 		error_code = 2804
-		!session ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		session.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
 	# Utility methods
