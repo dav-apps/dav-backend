@@ -88,37 +88,37 @@ class ValidationService
 	# Methods for presence of fields
 	def self.validate_auth_presence(auth)
 		error_code = 2101
-		!auth ? get_validation_hash(false, error_code, 401) : get_validation_hash
+		auth.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
 	def self.validate_jwt_presence(jwt)
 		error_code = 2102
-		!jwt ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		jwt.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_email_presence(email)
 		error_code = 2103
-		!email ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		email.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_first_name_presence(first_name)
 		error_code = 2104
-		!first_name ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		first_name.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_password_presence(password)
 		error_code = 2105
-		!password ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		password.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_app_id_presence(app_id)
 		error_code = 2106
-		!app_id ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		app_id.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_api_key_presence(api_key)
 		error_code = 2107
-		!api_key ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		api_key.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields

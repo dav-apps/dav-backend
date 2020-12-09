@@ -14,4 +14,8 @@ class ActiveSupport::TestCase
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+	def post_request(url, headers = {}, body = {})
+		post url, headers: headers, params: body.to_json
+		JSON.parse(response.body)
+	end
 end
