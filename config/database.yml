@@ -12,3 +12,11 @@ test:
   pool: 5
   database: <%= ENV['TEST_DATABASE_NAME'] %>
   username: <%= ENV['TEST_DATABASE_USER'] %>
+production:
+  adapter: postgresql
+  encoding: utf8
+  reconnect: false
+  pool: 5
+  database: <%= ENV['PRODUCTION_DATABASE_NAME'] %>
+  username: <%= ENV['PRODUCTION_DATABASE_USER'] %>
+  password: <%= ENV['PRODUCTION_DATABASE_PASSWORD'] %>
