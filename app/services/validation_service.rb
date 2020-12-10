@@ -71,11 +71,11 @@ class ValidationService
 
 	def self.validate_jwt(jwt, session_id)
 		session = Session.find_by(id: session_id)
-		return get_validation_hash(false, 2814, 404) if !session
+		raise RuntimeError, [get_validation_hash(false, 2804, 404)].to_json if session.nil?
 
 		# Try to decode the jwt
 		begin
-			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })
+			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })[0]
 		rescue JWT::ExpiredSignature
 			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
 		rescue JWT::DecodeError
@@ -93,7 +93,7 @@ class ValidationService
 
 	def self.validate_jwt_presence(jwt)
 		error_code = 2102
-		jwt.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		jwt.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
 	def self.validate_email_presence(email)
@@ -366,6 +366,8 @@ class ValidationService
 			"Resource does not exist: Dev"
 		when 2803
 			"Resource does not exist: App"
+		when 2804
+			"Resource does not exist: Session"
 		end
 	end
 end

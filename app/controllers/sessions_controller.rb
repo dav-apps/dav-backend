@@ -105,7 +105,7 @@ class SessionsController < ApplicationController
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
 
-		payload = validate_jwt(jwt, session_id)
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the user and dev
 		user = User.find_by(id: payload["user_id"])
@@ -117,13 +117,11 @@ class SessionsController < ApplicationController
 		# Get the session
 		session = Session.find_by(id: session_id)
 		ValidationService.raise_validation_error(ValidationService.validate_session_existence(session))
-		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_user(session, user))
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(session.app, dev))
 
 		# Delete the session
 		session.destroy!
 
-		render status 204
+		head 204, content_type: "application/json"
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
