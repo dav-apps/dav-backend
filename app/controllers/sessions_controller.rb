@@ -1,4 +1,7 @@
 class SessionsController < ApplicationController
+	jwt_expiration_hours_prod = 7000
+	jwt_expiration_hours_dev = 10000000
+
 	define_method :create_session do
 		auth = get_auth
 
