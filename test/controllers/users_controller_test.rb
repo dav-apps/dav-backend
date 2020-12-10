@@ -322,7 +322,7 @@ describe UsersController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should signup from website and return the user and jwt" do
+	it "should signup from website" do
 		email = "test@example.com"
 		first_name = "Testuser"
 		app = apps(:website)
@@ -368,11 +368,14 @@ describe UsersController do
 		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
+		assert_nil(session.device_name)
+		assert_nil(session.device_type)
+		assert_nil(session.device_os)
 		
 		assert_nil(res["website_jwt"])
 	end
 
-	it "should signup from app and return the user, jwt and website jwt" do
+	it "should signup from app" do
 		email = "test@example.com"
 		first_name = "Testuser"
 		app = apps(:cards)
@@ -418,6 +421,9 @@ describe UsersController do
 		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
+		assert_nil(session.device_name)
+		assert_nil(session.device_type)
+		assert_nil(session.device_os)
 
 		# Check the website session
 		website_session_id = res["website_jwt"].split('.').last.to_i
@@ -427,9 +433,12 @@ describe UsersController do
 		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
+		assert_nil(website_session.device_name)
+		assert_nil(website_session.device_type)
+		assert_nil(website_session.device_os)
 	end
 
-	it "should signup from app of another dev and return the user, jwt and website jwt" do
+	it "should signup from app of another dev" do
 		email = "test@example.com"
 		first_name = "Testuser"
 		app = apps(:testApp)
@@ -475,6 +484,9 @@ describe UsersController do
 		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
+		assert_nil(session.device_name)
+		assert_nil(session.device_type)
+		assert_nil(session.device_os)
 
 		# Check the website session
 		website_session_id = res["website_jwt"].split('.').last.to_i
@@ -484,5 +496,205 @@ describe UsersController do
 		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
+		assert_nil(website_session.device_name)
+		assert_nil(website_session.device_type)
+		assert_nil(website_session.device_os)
+	end
+
+	it "should signup from website with device info" do
+		email = "test@example.com"
+		first_name = "Testuser"
+		app = apps(:website)
+		device_name = "Surface Phone"
+		device_type = "Dual-Screen"
+		device_os = "Andromeda"
+
+		res = post_request(
+			"/v1/signup",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: email,
+				first_name: first_name,
+				password: "123123123",
+				app_id: app.id,
+				api_key: devs(:sherlock).api_key,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			}
+		)
+
+		assert_response 201
+
+		# Check the response
+		assert_not_nil(res["user"]["id"])
+		assert_equal(email, res["user"]["email"])
+		assert_equal(first_name, res["user"]["first_name"])
+		assert(!res["user"]["confirmed"])
+		assert_equal(0, res["user"]["plan"])
+		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
+		assert_equal(0, res["user"]["used_storage"])
+
+		# Check the user
+		user = User.find_by(id: res["user"]["id"])
+		assert_not_nil(user)
+		assert_equal(res["user"]["id"], user.id)
+		assert_equal(res["user"]["email"], user.email)
+		assert_equal(res["user"]["first_name"], user.first_name)
+		assert(!user.confirmed)
+		assert_equal(0, user.plan)
+		assert_equal(0, user.used_storage)
+
+		# Check the session
+		session_id = res["jwt"].split('.').last.to_i
+		assert_not_equal(0, session_id)
+		session = Session.find_by(id: session_id)
+		assert_not_nil(session)
+		assert_equal(session_id, session.id)
+		assert_equal(user, session.user)
+		assert_equal(app, session.app)
+		assert_equal(device_name, session.device_name)
+		assert_equal(device_type, session.device_type)
+		assert_equal(device_os, session.device_os)
+		
+		assert_nil(res["website_jwt"])
+	end
+
+	it "should signup from app with device info" do
+		email = "test@example.com"
+		first_name = "Testuser"
+		app = apps(:cards)
+		device_name = "Surface Phone"
+		device_type = "Dual-Screen"
+		device_os = "Andromeda"
+
+		res = post_request(
+			"/v1/signup",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: email,
+				first_name: first_name,
+				password: "123123123",
+				app_id: app.id,
+				api_key: devs(:sherlock).api_key,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			}
+		)
+
+		assert_response 201
+
+		# Check the response
+		assert_not_nil(res["user"]["id"])
+		assert_equal(email, res["user"]["email"])
+		assert_equal(first_name, res["user"]["first_name"])
+		assert(!res["user"]["confirmed"])
+		assert_equal(0, res["user"]["plan"])
+		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
+		assert_equal(0, res["user"]["used_storage"])
+
+		# Check the user
+		user = User.find_by(id: res["user"]["id"])
+		assert_not_nil(user)
+		assert_equal(res["user"]["id"], user.id)
+		assert_equal(res["user"]["email"], user.email)
+		assert_equal(res["user"]["first_name"], user.first_name)
+		assert(!user.confirmed)
+		assert_equal(0, user.plan)
+		assert_equal(0, user.used_storage)
+
+		# Check the session
+		session_id = res["jwt"].split('.').last.to_i
+		assert_not_equal(0, session_id)
+		session = Session.find_by(id: session_id)
+		assert_not_nil(session)
+		assert_equal(session_id, session.id)
+		assert_equal(user, session.user)
+		assert_equal(app, session.app)
+		assert_equal(device_name, session.device_name)
+		assert_equal(device_type, session.device_type)
+		assert_equal(device_os, session.device_os)
+
+		# Check the website session
+		website_session_id = res["website_jwt"].split('.').last.to_i
+		assert_not_equal(0, website_session_id)
+		website_session = Session.find_by(id: website_session_id)
+		assert_not_nil(website_session)
+		assert_equal(website_session_id, website_session.id)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_equal(device_name, website_session.device_name)
+		assert_equal(device_type, website_session.device_type)
+		assert_equal(device_os, website_session.device_os)
+	end
+
+	it "should signup from app of another dev with device info" do
+		email = "test@example.com"
+		first_name = "Testuser"
+		app = apps(:testApp)
+		device_name = "Surface Phone"
+		device_type = "Dual-Screen"
+		device_os = "Andromeda"
+
+		res = post_request(
+			"/v1/signup",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: email,
+				first_name: first_name,
+				password: "123123123",
+				app_id: app.id,
+				api_key: devs(:dav).api_key,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			}
+		)
+
+		assert_response 201
+
+		# Check the response
+		assert_not_nil(res["user"]["id"])
+		assert_equal(email, res["user"]["email"])
+		assert_equal(first_name, res["user"]["first_name"])
+		assert(!res["user"]["confirmed"])
+		assert_equal(0, res["user"]["plan"])
+		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
+		assert_equal(0, res["user"]["used_storage"])
+
+		# Check the user
+		user = User.find_by(id: res["user"]["id"])
+		assert_not_nil(user)
+		assert_equal(res["user"]["id"], user.id)
+		assert_equal(res["user"]["email"], user.email)
+		assert_equal(res["user"]["first_name"], user.first_name)
+		assert(!user.confirmed)
+		assert_equal(0, user.plan)
+		assert_equal(0, user.used_storage)
+
+		# Check the session
+		session_id = res["jwt"].split('.').last.to_i
+		assert_not_equal(0, session_id)
+		session = Session.find_by(id: session_id)
+		assert_not_nil(session)
+		assert_equal(session_id, session.id)
+		assert_equal(user, session.user)
+		assert_equal(app, session.app)
+		assert_equal(device_name, session.device_name)
+		assert_equal(device_type, session.device_type)
+		assert_equal(device_os, session.device_os)
+
+		# Check the website session
+		website_session_id = res["website_jwt"].split('.').last.to_i
+		assert_not_equal(0, website_session_id)
+		website_session = Session.find_by(id: website_session_id)
+		assert_not_nil(website_session)
+		assert_equal(website_session_id, website_session.id)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_equal(device_name, website_session.device_name)
+		assert_equal(device_type, website_session.device_type)
+		assert_equal(device_os, website_session.device_os)
 	end
 end
