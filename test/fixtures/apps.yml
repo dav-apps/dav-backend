@@ -10,8 +10,8 @@ cards:
   published: true
   dev: sherlock
 
-davApp:
-  name: davApp
+testApp:
+  name: testApp
   description: dav Test app
   published: false
   dev: dav

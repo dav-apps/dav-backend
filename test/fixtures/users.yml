@@ -1,9 +1,18 @@
 dav:
   first_name: dav
-  confirmed: true
   email: dav@dav-apps.tech
+  password_digest: "$2a$12$tCcaD13rUulWLo9iz/62beyZVF47LphGLiFB4aTZxRAH6BTXN4Xva"   # raspberry
+  confirmed: true
 
 sherlock:
   first_name: Sherlock
-  confirmed: true
   email: sherlock@dav-apps.tech
+  password_digest: "$2a$12$RV/d/6khxwa3cxO7QE2s9eGIdJOcyjyMgmQVKoOf5QZTpV.exmHlm"   # sherlocked
+  confirmed: true
+
+matt:
+  first_name: matt
+  email: matt@dav-apps.tech
+  password_digest: "$2a$12$8tInIjFM.lT2HmxviVgsOO0rA1N7RYy7hR2TMBeaqv5wPfE/wpXPa"   # schachmatt
+  confirmed: true
+  stripe_customer_id: cus_Gzi9UDeVX0BkwH

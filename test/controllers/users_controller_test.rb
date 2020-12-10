@@ -2,7 +2,7 @@ require "test_helper"
 
 describe UsersController do
 	setup do
-		ENV["DAV_APPS_APP_ID"] = apps(:website).id.to_s
+		setup
 	end
 
 	# signup
@@ -11,7 +11,7 @@ describe UsersController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::AUTH_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not signup without Content-Type json" do
@@ -22,7 +22,7 @@ describe UsersController do
 
 		assert_response 415
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
 	it "should not signup without required properties" do
@@ -33,11 +33,11 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(5, res["errors"].length)
-		assert_equal(ErrorCode::EMAIL_MISSING, res["errors"][0]["code"])
-		assert_equal(ErrorCode::FIRST_NAME_MISSING, res["errors"][1]["code"])
-		assert_equal(ErrorCode::PASSWORD_MISSING, res["errors"][2]["code"])
-		assert_equal(ErrorCode::APP_ID_MISSING, res["errors"][3]["code"])
-		assert_equal(ErrorCode::API_KEY_MISSING, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::EMAIL_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_MISSING, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::PASSWORD_MISSING, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::APP_ID_MISSING, res["errors"][3]["code"])
+		assert_equal(ErrorCodes::API_KEY_MISSING, res["errors"][4]["code"])
 	end
 
 	it "should not signup with properties with wrong types" do
@@ -55,11 +55,11 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(5, res["errors"].length)
-		assert_equal(ErrorCode::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
-		assert_equal(ErrorCode::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
-		assert_equal(ErrorCode::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
-		assert_equal(ErrorCode::APP_ID_WRONG_TYPE, res["errors"][3]["code"])
-		assert_equal(ErrorCode::API_KEY_WRONG_TYPE, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][3]["code"])
+		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][4]["code"])
 	end
 
 	it "should not signup with optional properties with wrong types" do
@@ -80,14 +80,14 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(8, res["errors"].length)
-		assert_equal(ErrorCode::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
-		assert_equal(ErrorCode::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
-		assert_equal(ErrorCode::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
-		assert_equal(ErrorCode::APP_ID_WRONG_TYPE, res["errors"][3]["code"])
-		assert_equal(ErrorCode::API_KEY_WRONG_TYPE, res["errors"][4]["code"])
-		assert_equal(ErrorCode::DEVICE_NAME_WRONG_TYPE, res["errors"][5]["code"])
-		assert_equal(ErrorCode::DEVICE_TYPE_WRONG_TYPE, res["errors"][6]["code"])
-		assert_equal(ErrorCode::DEVICE_OS_WRONG_TYPE, res["errors"][7]["code"])
+		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][3]["code"])
+		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][5]["code"])
+		assert_equal(ErrorCodes::DEVICE_TYPE_WRONG_TYPE, res["errors"][6]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][7]["code"])
 	end
 
 	it "should not signup with too short properties" do
@@ -105,8 +105,8 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(2, res["errors"].length)
-		assert_equal(ErrorCode::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
-		assert_equal(ErrorCode::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
 	end
 
 	it "should not signup with too short optional properties" do
@@ -127,11 +127,11 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(5, res["errors"].length)
-		assert_equal(ErrorCode::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
-		assert_equal(ErrorCode::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
-		assert_equal(ErrorCode::DEVICE_NAME_TOO_SHORT, res["errors"][2]["code"])
-		assert_equal(ErrorCode::DEVICE_TYPE_TOO_SHORT, res["errors"][3]["code"])
-		assert_equal(ErrorCode::DEVICE_OS_TOO_SHORT, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::DEVICE_NAME_TOO_SHORT, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_SHORT, res["errors"][3]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_TOO_SHORT, res["errors"][4]["code"])
 	end
 
 	it "should not signup with too long properties" do
@@ -149,8 +149,8 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(2, res["errors"].length)
-		assert_equal(ErrorCode::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
-		assert_equal(ErrorCode::PASSWORD_TOO_LONG, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_LONG, res["errors"][1]["code"])
 	end
 
 	it "should not signup with too long optional properties" do
@@ -171,11 +171,11 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(5, res["errors"].length)
-		assert_equal(ErrorCode::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
-		assert_equal(ErrorCode::PASSWORD_TOO_LONG, res["errors"][1]["code"])
-		assert_equal(ErrorCode::DEVICE_NAME_TOO_LONG, res["errors"][2]["code"])
-		assert_equal(ErrorCode::DEVICE_TYPE_TOO_LONG, res["errors"][3]["code"])
-		assert_equal(ErrorCode::DEVICE_OS_TOO_LONG, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_LONG, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::DEVICE_NAME_TOO_LONG, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_LONG, res["errors"][3]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][4]["code"])
 	end
 
 	it "should not signup with email that is already in use" do
@@ -193,7 +193,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
 	end
 
 	it "should not signup with invalid email" do
@@ -211,7 +211,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::EMAIL_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::EMAIL_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not signup with dev that does not exist" do
@@ -229,7 +229,7 @@ describe UsersController do
 
 		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not signup with invalid auth" do
@@ -247,7 +247,7 @@ describe UsersController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
 	end
 
 	it "should not signup with another dev than the first one" do
@@ -265,7 +265,7 @@ describe UsersController do
 
 		assert_response 403
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
 	it "should not signup for app that does not exist" do
@@ -283,7 +283,7 @@ describe UsersController do
 
 		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::APP_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::APP_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not signup with api key for dev that does not exist" do
@@ -301,7 +301,7 @@ describe UsersController do
 
 		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not signup for app that does not belong to the dev" do
@@ -319,7 +319,7 @@ describe UsersController do
 
 		assert_response 403
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCode::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
 	it "should signup from website and return the user and jwt" do
@@ -432,7 +432,7 @@ describe UsersController do
 	it "should signup from app of another dev and return the user, jwt and website jwt" do
 		email = "test@example.com"
 		first_name = "Testuser"
-		app = apps(:davApp)
+		app = apps(:testApp)
 
 		res = post_request(
 			"/v1/signup",
