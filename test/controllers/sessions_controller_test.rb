@@ -400,4 +400,49 @@ describe SessionsController do
 		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 	end
+
+	# delete_session
+	it "should not delete session without jwt" do
+		res = delete_request("/v1/session")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not delete session with invalid jwt" do
+		res = delete_request(
+			"/v1/session",
+			{Authorization: "asdas.asdasd.asdasd.3232"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not delete session that does not exist" do
+		jwt = generate_jwt(sessions(:mattTestAppSession))
+		sessions(:mattTestAppSession).destroy!
+		
+		res = delete_request(
+			"/v1/session",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should delete session" do
+		jwt = generate_jwt(sessions(:mattTestAppSession))
+
+		delete_request(
+			"/v1/session",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+	end
 end

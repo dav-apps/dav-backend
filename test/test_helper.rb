@@ -21,8 +21,18 @@ class ActiveSupport::TestCase
 		JSON.parse(response.body)
 	end
 
+	def delete_request(url, headers = {})
+		delete url, headers: headers
+		response.body.length < 2 ? nil : JSON.parse(response.body)
+	end
+
 	def generate_auth(dev)
 		dev.api_key + "," + Base64.strict_encode64(OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), dev.secret_key, dev.uuid))
+	end
+
+	def generate_jwt(session)
+		payload = {user_id: session.user.id, app_id: session.app.id, dev_id: session.app.dev.id, exp: session.exp.to_i}
+		"#{JWT.encode(payload, session.secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
 	end
 end
 

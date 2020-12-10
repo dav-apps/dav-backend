@@ -1,0 +1,8 @@
+mattTestAppSession:
+  user: matt
+  app: testApp
+  secret: "P6sTlAh5wQ3B9iyftmXE7TJKqRB6JR2NCEB1z4qJ"
+  exp: <%= DateTime.new(2060, 10, 02).to_s(:db) %>
+  device_name: Fairphone
+  device_type: Smartphone
+  device_os: Android
