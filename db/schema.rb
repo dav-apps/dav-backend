@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_232857) do
+ActiveRecord::Schema.define(version: 2020_12_11_233817) do
 
   create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "app_id"
@@ -66,12 +66,19 @@ ActiveRecord::Schema.define(version: 2020_12_11_232857) do
     t.datetime "created_at", precision: 6, null: false
   end
 
+  create_table "notification_properties", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "notification_id"
+    t.string "name"
+    t.text "value"
+  end
+
   create_table "notifications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "uuid"
     t.datetime "time"
     t.integer "interval"
+    t.datetime "created_at", precision: 6, null: false
     t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
 
