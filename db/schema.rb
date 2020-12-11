@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_214415) do
+ActiveRecord::Schema.define(version: 2020_12_11_221024) do
 
   create_table "app_users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
@@ -54,6 +54,12 @@ ActiveRecord::Schema.define(version: 2020_12_11_214415) do
     t.string "device_name"
     t.string "device_type"
     t.string "device_os"
+    t.datetime "created_at", precision: 6, null: false
+  end
+
+  create_table "table_object_collections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_object_id"
+    t.bigint "collection_id"
     t.datetime "created_at", precision: 6, null: false
   end
 
