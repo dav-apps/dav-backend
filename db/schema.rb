@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_213057) do
+ActiveRecord::Schema.define(version: 2020_12_11_214415) do
 
   create_table "app_users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
@@ -31,12 +31,19 @@ ActiveRecord::Schema.define(version: 2020_12_11_213057) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  create_table "collections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_id"
+    t.string "name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "devs", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "api_key"
     t.string "secret_key"
     t.string "uuid"
-    t.datetime "created_at", null: false
+    t.datetime "created_at", precision: 6, null: false
   end
 
   create_table "sessions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
@@ -47,7 +54,7 @@ ActiveRecord::Schema.define(version: 2020_12_11_213057) do
     t.string "device_name"
     t.string "device_type"
     t.string "device_os"
-    t.datetime "created_at", null: false
+    t.datetime "created_at", precision: 6, null: false
   end
 
   create_table "table_object_properties", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|

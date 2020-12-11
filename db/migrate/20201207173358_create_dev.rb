@@ -5,7 +5,7 @@ class CreateDev < ActiveRecord::Migration[6.0]
 		t.string :api_key
 		t.string :secret_key
 		t.string :uuid
-		t.datetime :created_at, null: false
+		t.datetime :created_at, precision: 6, null: false
     end
   end
 end

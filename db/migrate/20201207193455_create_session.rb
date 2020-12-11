@@ -8,7 +8,7 @@ class CreateSession < ActiveRecord::Migration[6.0]
 		t.string :device_name
 		t.string :device_type
 		t.string :device_os
-		t.datetime :created_at, null: false
+		t.datetime :created_at, precision: 6, null: false
     end
   end
 end
