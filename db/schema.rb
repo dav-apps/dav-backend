@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_230926) do
+ActiveRecord::Schema.define(version: 2020_12_11_231921) do
 
   create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "app_id"
@@ -151,6 +151,14 @@ ActiveRecord::Schema.define(version: 2020_12_11_230926) do
     t.timestamp "period_end"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "web_push_subscriptions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "uuid"
+    t.string "endpoint"
+    t.string "p256dh"
+    t.string "auth"
   end
 
 end
