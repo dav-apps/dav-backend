@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_230207) do
+ActiveRecord::Schema.define(version: 2020_12_11_230926) do
 
   create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "app_id"
@@ -51,6 +51,18 @@ ActiveRecord::Schema.define(version: 2020_12_11_230207) do
     t.string "api_key"
     t.string "secret_key"
     t.string "uuid"
+    t.datetime "created_at", precision: 6, null: false
+  end
+
+  create_table "exception_events", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "app_id"
+    t.string "name"
+    t.string "message"
+    t.text "stack_trace"
+    t.string "app_version"
+    t.string "os_version"
+    t.string "device_family"
+    t.string "locale"
     t.datetime "created_at", precision: 6, null: false
   end
 
