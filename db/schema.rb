@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_205727) do
+ActiveRecord::Schema.define(version: 2020_12_11_211931) do
 
   create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "dev_id"
@@ -57,6 +57,12 @@ ActiveRecord::Schema.define(version: 2020_12_11_205727) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
+  end
+
+  create_table "table_property_types", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_id"
+    t.string "name"
+    t.integer "data_type", default: 0
   end
 
   create_table "tables", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
