@@ -1,7 +1,7 @@
 class CreateApp < ActiveRecord::Migration[6.0]
   def change
 	 create_table :apps do |t|
-		t.integer :dev_id
+		t.bigint :dev_id
 		t.string :name
 		t.string :description
 		t.boolean :published, default: false

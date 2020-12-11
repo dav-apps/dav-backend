@@ -1,8 +1,8 @@
 class CreateSession < ActiveRecord::Migration[6.0]
   def change
 	 create_table :sessions do |t|
-		t.integer :user_id
-		t.integer :app_id
+		t.bigint :user_id
+		t.bigint :app_id
 		t.string :secret
 		t.datetime :exp
 		t.string :device_name

@@ -10,10 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_203158) do
+ActiveRecord::Schema.define(version: 2020_12_11_204230) do
 
   create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.integer "dev_id"
+    t.bigint "dev_id"
     t.string "name"
     t.string "description"
     t.boolean "published", default: false
@@ -25,7 +25,7 @@ ActiveRecord::Schema.define(version: 2020_12_11_203158) do
   end
 
   create_table "devs", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.integer "user_id"
+    t.bigint "user_id"
     t.string "api_key"
     t.string "secret_key"
     t.string "uuid"
@@ -33,8 +33,8 @@ ActiveRecord::Schema.define(version: 2020_12_11_203158) do
   end
 
   create_table "sessions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.integer "user_id"
-    t.integer "app_id"
+    t.bigint "user_id"
+    t.bigint "app_id"
     t.string "secret"
     t.datetime "exp"
     t.string "device_name"
@@ -43,8 +43,18 @@ ActiveRecord::Schema.define(version: 2020_12_11_203158) do
     t.datetime "created_at", null: false
   end
 
+  create_table "table_objects", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_id"
+    t.bigint "user_id"
+    t.string "uuid"
+    t.boolean "file", default: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
+  end
+
   create_table "tables", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.integer "app_id"
+    t.bigint "app_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
