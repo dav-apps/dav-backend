@@ -3,6 +3,7 @@ class CreateWebPushSubscription < ActiveRecord::Migration[6.0]
 	 create_table :web_push_subscriptions do |t|
 		t.bigint :user_id
 		t.string :uuid
+		t.index :uuid, unique: true
 		t.string :endpoint
 		t.string :p256dh
 		t.string :auth

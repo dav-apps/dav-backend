@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_231921) do
+ActiveRecord::Schema.define(version: 2020_12_11_232857) do
 
   create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "app_id"
@@ -64,6 +64,15 @@ ActiveRecord::Schema.define(version: 2020_12_11_231921) do
     t.string "device_family"
     t.string "locale"
     t.datetime "created_at", precision: 6, null: false
+  end
+
+  create_table "notifications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "user_id"
+    t.bigint "app_id"
+    t.string "uuid"
+    t.datetime "time"
+    t.integer "interval"
+    t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
 
   create_table "providers", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
@@ -159,6 +168,7 @@ ActiveRecord::Schema.define(version: 2020_12_11_231921) do
     t.string "endpoint"
     t.string "p256dh"
     t.string "auth"
+    t.index ["uuid"], name: "index_web_push_subscriptions_on_uuid", unique: true
   end
 
 end
