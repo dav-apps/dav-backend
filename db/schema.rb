@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_225641) do
+ActiveRecord::Schema.define(version: 2020_12_11_230207) do
+
+  create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "app_id"
+    t.datetime "time"
+    t.integer "count_daily", default: 0
+    t.integer "count_monthly", default: 0
+    t.integer "count_yearly", default: 0
+  end
 
   create_table "app_users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
