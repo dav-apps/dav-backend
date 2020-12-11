@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_11_204230) do
+ActiveRecord::Schema.define(version: 2020_12_11_205727) do
 
   create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "dev_id"
@@ -43,9 +43,15 @@ ActiveRecord::Schema.define(version: 2020_12_11_204230) do
     t.datetime "created_at", null: false
   end
 
+  create_table "table_object_properties", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_object_id"
+    t.string "name"
+    t.text "value"
+  end
+
   create_table "table_objects", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "table_id"
     t.bigint "user_id"
+    t.bigint "table_id"
     t.string "uuid"
     t.boolean "file", default: false
     t.datetime "created_at", precision: 6, null: false
