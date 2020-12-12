@@ -6,4 +6,5 @@ class App < ApplicationRecord
 	has_many :app_user_activities, dependent: :destroy
 	has_many :exception_events, dependent: :destroy
 	has_many :notifications, dependent: :destroy
+	has_many :apis, dependent: :destroy
 end
