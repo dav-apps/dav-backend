@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_12_000802) do
+ActiveRecord::Schema.define(version: 2020_12_12_001313) do
 
   create_table "api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_id"
@@ -20,6 +20,12 @@ ActiveRecord::Schema.define(version: 2020_12_12_000802) do
     t.boolean "caching", default: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "api_errors", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "api_id"
+    t.integer "code"
+    t.string "message"
   end
 
   create_table "api_functions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
