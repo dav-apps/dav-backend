@@ -10,7 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_12_003340) do
+ActiveRecord::Schema.define(version: 2020_12_12_004030) do
+
+  create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "api_endpoint_request_cache_id"
+    t.string "name"
+    t.string "value"
+  end
 
   create_table "api_endpoint_request_caches", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_id"
