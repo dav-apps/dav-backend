@@ -7,6 +7,7 @@ class CreateWebPushSubscription < ActiveRecord::Migration[6.0]
 		t.string :endpoint
 		t.string :p256dh
 		t.string :auth
+		t.datetime :created_at, precision: 6, null: false
     end
   end
 end
