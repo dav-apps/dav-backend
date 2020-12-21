@@ -108,10 +108,10 @@ class SessionsController < ApplicationController
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the user and dev
-		user = User.find_by(id: payload["user_id"])
+		user = User.find_by(id: payload[:user_id])
 		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
 
-		dev = Dev.find_by(id: payload["dev_id"])
+		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
 		# Get the session

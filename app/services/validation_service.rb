@@ -10,6 +10,8 @@ class ValidationService
 	device_type_max_length = 30
 	device_os_min_length = 2
 	device_os_max_length = 30
+	name_min_length = 2
+	name_max_length = 20
 	
 	# Miscellaneous validation methods
 	def self.raise_unexpected_error(raise_error)
@@ -34,7 +36,12 @@ class ValidationService
 
 	def self.validate_app_belongs_to_dev(app, dev)
 		error_code = 1103
-		app.dev != dev ? get_validation_hash(false, error_code, 403) : get_validation_hash
+		(app.nil? || dev.nil? || app.dev != dev) ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
+	def self.validate_app_is_dav_app(app_id)
+		error_code = 1103
+		app_id.to_i != ENV["DAV_APPS_APP_ID"].to_i ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
 	def self.validate_session_belongs_to_user(session, user)
@@ -58,7 +65,7 @@ class ValidationService
 
 	def self.parse_json(json)
 		json && json.length > 0 ? JSON.parse(json) : Hash.new
-	rescue
+	rescue JSON::ParserError => e
 		# Raise error for invalid body
 		error_code = 1105
 		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
@@ -75,7 +82,7 @@ class ValidationService
 
 		# Try to decode the jwt
 		begin
-			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })[0]
+			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })[0].transform_keys(&:to_sym)
 		rescue JWT::ExpiredSignature
 			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
 		rescue JWT::DecodeError
@@ -121,6 +128,11 @@ class ValidationService
 		api_key.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_name_presence(name)
+		error_code = 2108
+		name.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -160,6 +172,11 @@ class ValidationService
 	def self.validate_device_os_type(device_os)
 		error_code = 2208
 		!device_os.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_name_type(name)
+		error_code = 2209
+		!name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -213,10 +230,25 @@ class ValidationService
 		end
 	end
 
+	define_singleton_method :validate_name_length do |name|
+		if name.length < name_min_length
+			get_validation_hash(false, 2306, 400)
+		elsif name.length > name_max_length
+			get_validation_hash(false, 2406, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
 		!validate_email(email) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_name_validity(name)
+		error_code = 2502
+		!validate_name(name) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for availability of fields
@@ -249,7 +281,11 @@ class ValidationService
 	# Utility methods
 	def self.validate_email(email)
 		/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/.match?(email)
-   end
+	end
+
+	def self.validate_name(name)
+		/^([A-Z]|[a-z])+$/.match?(name)
+	end
 
 	# Error methods
 	def self.raise_validation_error(validation)
@@ -320,6 +356,8 @@ class ValidationService
 			"Missing field: app_id"
 		when 2107
 			"Missing field: api_key"
+		when 2108
+			"Missing field: name"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -336,6 +374,8 @@ class ValidationService
 			"Field has wrong type: device_type"
 		when 2208
 			"Field has wrong type: device_os"
+		when 2209
+			"Field has wrong type: name"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -346,6 +386,8 @@ class ValidationService
 			"Field too short: device_type"
 		when 2305
 			"Field too short: device_os"
+		when 2306
+			"Field too short: name"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -356,8 +398,12 @@ class ValidationService
 			"Field too long: device_type"
 		when 2405
 			"Field too long: device_os"
+		when 2406
+			"Field too long: name"
 		when 2501
 			"Field invalid: email"
+		when 2502
+			"Field invalid: name"
 		when 2701
 			"Field already taken: email"
 		when 2801
