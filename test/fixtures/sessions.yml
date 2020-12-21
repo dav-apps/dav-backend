@@ -6,3 +6,12 @@ mattTestAppSession:
   device_name: Fairphone
   device_type: Smartphone
   device_os: Android
+
+davWebsiteSession:
+  user: dav
+  app: website
+  secret: "axDt-XyEufRB7dRBWz_uYZJ9RVnh4D3VSsuXfJ5e"
+  exp: <%= DateTime.new(2061, 02, 13).to_s(:db) %>
+  device_name: Desktop
+  device_type: PC
+  device_os: Windows 10
