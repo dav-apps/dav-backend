@@ -1,18 +1,4 @@
 class ValidationService
-	# Variables
-	first_name_min_length = 2
-	first_name_max_length = 20
-	password_min_length = 7
-	password_max_length = 25
-	device_name_min_length = 2
-	device_name_max_length = 30
-	device_type_min_length = 2
-	device_type_max_length = 30
-	device_os_min_length = 2
-	device_os_max_length = 30
-	name_min_length = 2
-	name_max_length = 20
-	
 	# Miscellaneous validation methods
 	def self.raise_unexpected_error(raise_error)
 		if raise_error
@@ -180,60 +166,60 @@ class ValidationService
 	end
 
 	# Methods for length of fields
-	define_singleton_method :validate_first_name_length do |first_name|
-		if first_name.length < first_name_min_length
+	def self.validate_first_name_length(first_name)
+		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
 			get_validation_hash(false, 2301, 400)
-		elsif first_name.length > first_name_max_length
+		elsif first_name.length > Constants::FIRST_NAME_MAX_LENGTH
 			get_validation_hash(false, 2401, 400)
 		else
 			get_validation_hash
 		end
 	end
 
-	define_singleton_method :validate_password_length do |password|
-		if password.length < password_min_length
+	def self.validate_password_length(password)
+		if password.length < Constants::PASSWORD_MIN_LENGTH
 			get_validation_hash(false, 2302, 400)
-		elsif password.length > password_max_length
+		elsif password.length > Constants::PASSWORD_MAX_LENGTH
 			get_validation_hash(false, 2402, 400)
 		else
 			get_validation_hash
 		end
 	end
 
-	define_singleton_method :validate_device_name_length do |device_name|
-		if device_name.length < device_name_min_length
+	def self.validate_device_name_length(device_name)
+		if device_name.length < Constants::DEVICE_NAME_MIN_LENGTH
 			get_validation_hash(false, 2303, 400)
-		elsif device_name.length > device_name_max_length
+		elsif device_name.length > Constants::DEVICE_NAME_MAX_LENGTH
 			get_validation_hash(false, 2403, 400)
 		else
 			get_validation_hash
 		end
 	end
 
-	define_singleton_method :validate_device_type_length do |device_type|
-		if device_type.length < device_type_min_length
+	def self.validate_device_type_length(device_type)
+		if device_type.length < Constants::DEVICE_TYPE_MIN_LENGTH
 			get_validation_hash(false, 2304, 400)
-		elsif device_type.length > device_type_max_length
+		elsif device_type.length > Constants::DEVICE_TYPE_MAX_LENGTH
 			get_validation_hash(false, 2404, 400)
 		else
 			get_validation_hash
 		end
 	end
 
-	define_singleton_method :validate_device_os_length do |device_os|
-		if device_os.length < device_os_min_length
+	def self.validate_device_os_length(device_os)
+		if device_os.length < Constants::DEVICE_OS_MIN_LENGTH
 			get_validation_hash(false, 2305, 400)
-		elsif device_os.length > device_os_max_length
+		elsif device_os.length > Constants::DEVICE_OS_MAX_LENGTH
 			get_validation_hash(false, 2405, 400)
 		else
 			get_validation_hash
 		end
 	end
 
-	define_singleton_method :validate_name_length do |name|
-		if name.length < name_min_length
+	def self.validate_name_length(name)
+		if name.length < Constants::NAME_MIN_LENGTH
 			get_validation_hash(false, 2306, 400)
-		elsif name.length > name_max_length
+		elsif name.length > Constants::NAME_MAX_LENGTH
 			get_validation_hash(false, 2406, 400)
 		else
 			get_validation_hash

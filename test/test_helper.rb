@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require_relative "./error_codes"
+require_relative "../app/modules/constants"
 require "rails/test_help"
 require "minitest/rails"
 
@@ -34,8 +35,4 @@ class ActiveSupport::TestCase
 		payload = {user_id: session.user.id, app_id: session.app.id, dev_id: session.app.dev.id, exp: session.exp.to_i}
 		"#{JWT.encode(payload, session.secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
 	end
-end
-
-module Constants
-	MATT_PASSWORD = "schachmatt"
 end

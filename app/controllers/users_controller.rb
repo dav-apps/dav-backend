@@ -1,8 +1,5 @@
 class UsersController < ApplicationController
-	jwt_expiration_hours_prod = 7000
-	jwt_expiration_hours_dev = 10000000
-
-	define_method :signup do
+	def signup
 		auth = get_auth
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
@@ -88,7 +85,7 @@ class UsersController < ApplicationController
 		ValidationService.raise_unexpected_error(!user.save)
 		
 		# Create a session and generate the session jwt
-		exp_hours = Rails.env.production? ? jwt_expiration_hours_prod : jwt_expiration_hours_dev
+		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
 		exp = Time.now.to_i + exp_hours * 3600
 		secret = SecureRandom.urlsafe_base64(30)
 

@@ -1,8 +1,5 @@
 class SessionsController < ApplicationController
-	jwt_expiration_hours_prod = 7000
-	jwt_expiration_hours_dev = 10000000
-
-	define_method :create_session do
+	def create_session
 		auth = get_auth
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
@@ -74,7 +71,7 @@ class SessionsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.authenticate_user(user, password))
 
 		# Create a session and generate the session jwt
-		exp_hours = Rails.env.production? ? jwt_expiration_hours_prod : jwt_expiration_hours_dev
+		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
 		exp = Time.now.to_i + exp_hours * 3600
 		secret = SecureRandom.urlsafe_base64(30)
 
@@ -101,7 +98,7 @@ class SessionsController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
-	define_method :delete_session do
+	def delete_session
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
 
