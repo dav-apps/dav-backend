@@ -15,4 +15,15 @@ class UtilsService
 			return storage_on_free_plan
 		end
 	end
+
+	def self.generate_table_object_etag(table_object)
+		# uuid,property1Name:property1Value,property2Name:property2Value,...
+		etag_string = table_object.uuid
+
+		table_object.table_object_properties.each do |property|
+			etag_string += ",#{property.name}:#{property.value}"
+		end
+
+		Digest::MD5.hexdigest(etag_string)
+	end
 end

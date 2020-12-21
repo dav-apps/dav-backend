@@ -5,5 +5,5 @@ class TableObject < ApplicationRecord
 	has_many :table_object_collections, dependent: :destroy
 	has_many :table_object_user_access, dependent: :destroy
 
-	validates :uuid, presence: true, uniqueness: true
+	validates :uuid, presence: true, uniqueness: { case_sensitive: false }
 end

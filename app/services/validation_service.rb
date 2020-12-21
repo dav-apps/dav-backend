@@ -35,6 +35,11 @@ class ValidationService
 		session.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_session_belongs_to_app(session, app)
+		error_code = 1103
+		session.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_dev_is_first_dev(dev)
 		error_code = 1103
 		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -64,7 +69,7 @@ class ValidationService
 
 	def self.validate_jwt(jwt, session_id)
 		session = Session.find_by(id: session_id)
-		raise RuntimeError, [get_validation_hash(false, 2804, 404)].to_json if session.nil?
+		raise RuntimeError, [get_validation_hash(false, 2805, 404)].to_json if session.nil?
 
 		# Try to decode the jwt
 		begin
@@ -259,8 +264,13 @@ class ValidationService
 		app.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
-	def self.validate_session_existence(session)
+	def self.validate_table_existence(table)
 		error_code = 2804
+		table.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
+	def self.validate_session_existence(session)
+		error_code = 2805
 		session.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
@@ -399,6 +409,8 @@ class ValidationService
 		when 2803
 			"Resource does not exist: App"
 		when 2804
+			"Resource does not exist: Table"
+		when 2805
 			"Resource does not exist: Session"
 		end
 	end
