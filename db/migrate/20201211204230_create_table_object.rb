@@ -6,6 +6,7 @@ class CreateTableObject < ActiveRecord::Migration[6.0]
 		t.string :uuid
 		t.index :uuid, unique: true
 		t.boolean :file, default: false
+		t.string :etag
 		t.timestamps
     end
   end

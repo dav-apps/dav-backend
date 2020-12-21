@@ -194,6 +194,7 @@ ActiveRecord::Schema.define(version: 2020_12_15_210915) do
     t.bigint "table_id"
     t.string "uuid"
     t.boolean "file", default: false
+    t.string "etag"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
