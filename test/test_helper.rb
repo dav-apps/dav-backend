@@ -15,10 +15,19 @@ class ActiveSupport::TestCase
 	# Helper methods
 	def setup
 		ENV["DAV_APPS_APP_ID"] = apps(:website).id.to_s
+
+		# Set the table_alias of the TableObjectUserAccesses
+		table_object_user_accesses(:mattAccessDavFirstCard).update_column(:table_alias, tables(:card).id)
+		table_object_user_accesses(:mattAccessDavSecondCard).update_column(:table_alias, tables(:card).id)
 	end
 
 	def post_request(url, headers = {}, body = {})
 		post url, headers: headers, params: body.to_json
+		JSON.parse(response.body)
+	end
+
+	def get_request(url, headers = {})
+		get url, headers: headers
 		JSON.parse(response.body)
 	end
 
@@ -34,5 +43,16 @@ class ActiveSupport::TestCase
 	def generate_jwt(session)
 		payload = {user_id: session.user.id, app_id: session.app.id, dev_id: session.app.dev.id, exp: session.exp.to_i}
 		"#{JWT.encode(payload, session.secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
+	end
+
+	def generate_table_object_etag(table_object)
+		# uuid,property1Name:property1Value,property2Name:property2Value,...
+		etag_string = table_object.uuid
+
+		table_object.table_object_properties.each do |property|
+			etag_string += ",#{property.name}:#{property.value}"
+		end
+
+		Digest::MD5.hexdigest(etag_string)
 	end
 end

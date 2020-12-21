@@ -7,6 +7,15 @@ mattTestAppSession:
   device_type: Smartphone
   device_os: Android
 
+mattCardsSession:
+  user: matt
+  app: cards
+  secret: "LiXGYUkZNwmIlPGhUndQbtNZCsYkFS-ntK4Z1MeK"
+  exp: <%= DateTime.new(2060, 05, 16).to_s(:db) %>
+  device_name: Surface Duo
+  device_type: Dual-Screen
+  device_os: Android
+
 davWebsiteSession:
   user: dav
   app: website

@@ -1,0 +1,59 @@
+mattFirstCardPage1:
+  table_object: mattFirstCard
+  name: page1
+  value: Hallo Welt
+
+mattFirstCardPage2:
+  table_object: mattFirstCard
+  name: page2
+  value: Hello World
+
+mattSecondCardPage1:
+  table_object: mattSecondCard
+  name: page1
+  value: Guten Tag
+
+mattSecondCardPage2:
+  table_object: mattSecondCard
+  name: page2
+  value: Good day
+
+mattThirdCardPage1:
+  table_object: mattThirdCard
+  name: page1
+  value: Sonne
+
+mattThirdCardPage2:
+  table_object: mattThirdCard
+  name: page2
+  value: sun
+
+mattFourthCardPage1:
+  table_object: mattFourthCard
+  name: page1
+  value: Mond
+
+mattFourthCardPage2:
+  table_object: mattFourthCard
+  name: page2
+  value: moon
+
+davFirstCardPage1:
+  table_object: davFirstCard
+  name: page1
+  value: Buch
+
+davFirstCardPage2:
+  table_object: davFirstCard
+  name: page2
+  value: book
+
+davSecondCardPage1:
+  table_object: davSecondCard
+  name: page1
+  value: Tisch
+
+davSecondCardPage2:
+  table_object: davSecondCard
+  name: page2
+  value: table

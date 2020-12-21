@@ -1,0 +1,11 @@
+card:
+  app: cards
+  name: Card
+
+storeBook:
+  app: PocketLib
+  name: StoreBook
+
+testTable:
+  app: testApp
+  name: TestTable

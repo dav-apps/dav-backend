@@ -1,0 +1,7 @@
+mattAccessDavFirstCard:
+  user: matt
+  table_object: davFirstCard
+
+mattAccessDavSecondCard:
+  user: matt
+  table_object: davSecondCard

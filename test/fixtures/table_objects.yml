@@ -1,0 +1,29 @@
+mattFirstCard:
+  user: matt
+  table: card
+  uuid: d3c28fab-1921-4f95-97c9-e38e7f7f9421
+
+mattSecondCard:
+  user: matt
+  table: card
+  uuid: 14e88cc9-7675-4f8a-a07e-e7b4c1e645c0
+
+mattThirdCard:
+  user: matt
+  table: card
+  uuid: 51bb4f94-0608-4694-9e60-d3ca3ff8611c
+
+mattFourthCard:
+  user: matt
+  table: card
+  uuid: 1b6e065c-9ab2-48b2-bc8a-de9538eb7903
+
+davFirstCard:
+  user: dav
+  table: card
+  uuid: df8c77d5-c7e0-4170-8f8e-1f2406fbca9f
+
+davSecondCard:
+  user: dav
+  table: card
+  uuid: 62e70580-9e9c-464e-8b12-7bca6bea469f
