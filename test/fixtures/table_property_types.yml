@@ -1,0 +1,19 @@
+testTableTest1Type:
+  table: testTable
+  name: test1
+  data_type: 0    # string
+
+testTableTest2Type:
+  table: testTable
+  name: test2
+  data_type: 1    # boolean
+
+testTableTest3Type:
+  table: testTable
+  name: test3
+  data_type: 2    # int
+
+testTableTest4Type:
+  table: testTable
+  name: test4
+  data_type: 3    # float

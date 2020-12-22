@@ -57,3 +57,23 @@ davSecondCardPage2:
   table_object: davSecondCard
   name: page2
   value: table
+
+sherlockTestDataTest1:
+  table_object: sherlockTestData
+  name: test1
+  value: "Hello World"
+
+sherlockTestDataTest2:
+  table_object: sherlockTestData
+  name: test2
+  value: "true"
+
+sherlockTestDataTest3:
+  table_object: sherlockTestData
+  name: test3
+  value: "42"
+
+sherlockTestDataTest4:
+  table_object: sherlockTestData
+  name: test4
+  value: "24.12"

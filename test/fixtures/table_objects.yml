@@ -27,3 +27,8 @@ davSecondCard:
   user: dav
   table: card
   uuid: 62e70580-9e9c-464e-8b12-7bca6bea469f
+
+sherlockTestData:
+  user: sherlock
+  table: testTable
+  uuid: 50b721e6-6483-498d-824d-8481c9880442

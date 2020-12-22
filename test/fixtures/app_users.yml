@@ -1,3 +1,7 @@
 mattCards:
   user: matt
   app: cards
+
+sherlockTestApp:
+  user: sherlock
+  app: testApp
