@@ -124,6 +124,11 @@ class ValidationService
 		name.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_table_id_presence(table_id)
+		error_code = 2109
+		table_id.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -168,6 +173,42 @@ class ValidationService
 	def self.validate_name_type(name)
 		error_code = 2209
 		!name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_uuid_type(uuid)
+		error_code = 2210
+		!uuid.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_table_id_type(table_id)
+		error_code = 2211
+		!table_id.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_file_type(file)
+		error_code = 2212
+		(!file.is_a?(TrueClass) && !file.is_a?(FalseClass)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_properties_type(properties)
+		error_code = 2213
+		!properties.is_a?(Hash) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_property_name_type(name)
+		error_code = 2214
+		!name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_property_value_type(value)
+		error_code = 2215
+		return get_validation_hash if value.is_a?(NilClass)
+		return get_validation_hash if value.is_a?(TrueClass)
+		return get_validation_hash if value.is_a?(FalseClass)
+		return get_validation_hash if value.is_a?(String)
+		return get_validation_hash if value.is_a?(Integer)
+		return get_validation_hash if value.is_a?(Float)
+		get_validation_hash(false, error_code, 400)
 	end
 
 	# Methods for length of fields
@@ -231,6 +272,28 @@ class ValidationService
 		end
 	end
 
+	def self.validate_property_name_length(name)
+		if name.length < Constants::PROPERTY_NAME_MIN_LENGTH
+			get_validation_hash(false, 2307, 400)
+		elsif name.length > Constants::PROPERTY_NAME_MAX_LENGTH
+			get_validation_hash(false, 2407, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_property_value_length(value)
+		return get_validation_hash if !value.is_a?(String)
+
+		if value.length < Constants::PROPERTY_VALUE_MIN_LENGTH
+			get_validation_hash(false, 2308, 400)
+		elsif value.length > Constants::PROPERTY_VALUE_MAX_LENGTH
+			get_validation_hash(false, 2408, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -245,7 +308,12 @@ class ValidationService
 	# Methods for availability of fields
 	def self.validate_email_availability(email)
 		error_code = 2701
-		User.exists?(email: email) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		User.exists?(email: email) ? get_validation_hash(false, error_code, 409) : get_validation_hash
+	end
+
+	def self.validate_uuid_availability(uuid)
+		error_code = 2702
+		TableObject.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
 	# Methods for existance of fields
@@ -354,6 +422,8 @@ class ValidationService
 			"Missing field: api_key"
 		when 2108
 			"Missing field: name"
+		when 2109
+			"Missing field: table_id"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -372,6 +442,18 @@ class ValidationService
 			"Field has wrong type: device_os"
 		when 2209
 			"Field has wrong type: name"
+		when 2210
+			"Field has wrong type: uuid"
+		when 2211
+			"Field has wrong type: table_id"
+		when 2212
+			"Field has wrong type: file"
+		when 2213
+			"Field has wrong type: properties"
+		when 2214
+			"Field has wrong type: name (for TableObjectProperty)"
+		when 2215
+			"Field has wrong type: value (for TableObjectProperty)"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -384,6 +466,10 @@ class ValidationService
 			"Field too short: device_os"
 		when 2306
 			"Field too short: name"
+		when 2307
+			"Field too short: name (for TableObjectProperty)"
+		when 2308
+			"Field too short: value (for TableObjectProperty)"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -396,12 +482,18 @@ class ValidationService
 			"Field too long: device_os"
 		when 2406
 			"Field too long: name"
+		when 2407
+			"Field too long: name (for TableObjectProperty)"
+		when 2408
+			"Field too long: value (for TableObjectProperty)"
 		when 2501
 			"Field invalid: email"
 		when 2502
 			"Field invalid: name"
 		when 2701
 			"Field already taken: email"
+		when 2702
+			"Field already taken: uuid"
 		when 2801
 			"Resource does not exist: User"
 		when 2802

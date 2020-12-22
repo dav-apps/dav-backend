@@ -9,4 +9,7 @@ Rails.application.routes.draw do
 	# TablesController
 	match '/v1/table', to: 'tables#create_table', via: :post
 	match '/v1/table/:id', to: 'tables#get_table', via: :get
+
+	# TablesObjectsController
+	match '/v1/table_object', to: 'table_objects#create_table_object', via: :post
 end

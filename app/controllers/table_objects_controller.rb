@@ -1,0 +1,132 @@
+class TableObjectsController < ApplicationController
+	def create_table_object
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
+
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		uuid = body["uuid"]
+		table_id = body["table_id"]
+		file = body["file"]
+		properties = body["properties"]
+
+		# Validate missing fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_table_id_presence(table_id)
+		])
+
+		# Validate the types of the fields
+		validations = Array.new
+		validations.push(ValidationService.validate_uuid_type(uuid)) if !uuid.nil?
+		validations.push(ValidationService.validate_table_id_type(table_id))
+		validations.push(ValidationService.validate_file_type(file)) if !file.nil?
+		validations.push(ValidationService.validate_properties_type(properties)) if !properties.nil?
+		ValidationService.raise_multiple_validation_errors(validations)
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Get the table
+		table = Table.find_by(id: table_id)
+		ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
+
+		# Check if the user can create a table object for the table with this session
+		session = Session.find_by(id: session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table.app))
+
+		# Create the table object
+		table_object = TableObject.new(
+			user: user,
+			table: table,
+			file: file.nil? ? false : file
+		)
+
+		if uuid.nil?
+			table_object.uuid = SecureRandom.uuid
+		else
+			# Check if the uuid is already taken
+			ValidationService.raise_validation_error(ValidationService.validate_uuid_availability(uuid))
+			table_object.uuid = uuid
+		end
+
+		# Get the properties
+		props = Hash.new
+		if !properties.nil? && !table_object.file
+			# Validate the properties
+			properties.each do |key, value|
+				ValidationService.raise_multiple_validation_errors([
+					ValidationService.validate_property_name_type(key),
+					ValidationService.validate_property_value_type(value)
+				])
+			end
+
+			properties.each do |key, value|
+				ValidationService.raise_multiple_validation_errors([
+					ValidationService.validate_property_name_length(key),
+					ValidationService.validate_property_value_length(value)
+				])
+			end
+
+			properties.each do |key, value|
+				next if value.nil?
+				UtilsService.create_property_type(table, key, value)
+
+				prop = TableObjectProperty.new(
+					table_object: table_object,
+					name: key,
+					value: value.to_s
+				)
+				ValidationService.raise_unexpected_error(!prop.save)
+
+				props[key] = value
+			end
+		end
+
+		# Calculate the etag of the table object
+		table_object.etag = UtilsService.generate_table_object_etag(table_object)
+
+		# Save the table object
+		ValidationService.raise_unexpected_error(!table_object.save)
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		# Save that the user uses the app
+		app_user = AppUser.find_by(user: user, app: table.app)
+		if app_user.nil?
+			AppUser.create(
+				user: user,
+				app: table.app,
+				last_active: Time.now
+			)
+		else
+			app_user.update_column(:last_active, Time.now)
+		end
+
+		# Notify connected clients of the new table object
+		# TODO
+
+		# Return the data
+		result = {
+			id: table_object.id,
+			user_id: table_object.user_id,
+			table_id: table_object.table_id,
+			uuid: table_object.uuid,
+			file: table_object.file,
+			etag: table_object.etag,
+			properties: props
+		}
+
+		render json: result, status: 201
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+end

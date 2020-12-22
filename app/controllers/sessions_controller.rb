@@ -31,18 +31,18 @@ class SessionsController < ApplicationController
 			ValidationService.validate_api_key_type(dev_api_key)
 		]
 
-		validations.push(ValidationService.validate_device_name_type(device_name)) if device_name != nil
-		validations.push(ValidationService.validate_device_type_type(device_type)) if device_type != nil
-		validations.push(ValidationService.validate_device_os_type(device_os)) if device_os != nil
+		validations.push(ValidationService.validate_device_name_type(device_name)) if !device_name.nil?
+		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
+		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
 
 		ValidationService.raise_multiple_validation_errors(validations)
 
 		# Validate the length of the fields
 		validations = []
 
-		validations.push(ValidationService.validate_device_name_length(device_name)) if device_name != nil
-		validations.push(ValidationService.validate_device_type_length(device_type)) if device_type != nil
-		validations.push(ValidationService.validate_device_os_length(device_os)) if device_os != nil
+		validations.push(ValidationService.validate_device_name_length(device_name)) if !device_name.nil?
+		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
+		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
 
 		ValidationService.raise_multiple_validation_errors(validations)
 

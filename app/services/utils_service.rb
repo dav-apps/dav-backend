@@ -26,4 +26,23 @@ class UtilsService
 
 		Digest::MD5.hexdigest(etag_string)
 	end
+
+	def self.create_property_type(table, name, value)
+		# Check if a property type with the name already exists
+		return if TablePropertyType.find_by(table_id: table.id, name: name)
+
+		# Get the data type of the property value
+		data_type = get_data_type_of_value(value)
+
+		# Create the property type
+		property_type = TablePropertyType.new(table_id: table.id, name: name, data_type: data_type)
+		ValidationService.raise_unexpected_error(!property_type.save)
+	end
+
+	def self.get_data_type_of_value(value)
+		return 1 if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+		return 2 if value.is_a?(Integer)
+		return 3 if value.is_a?(Float)
+		return 0
+	end
 end
