@@ -191,7 +191,7 @@ describe UsersController do
 			}
 		)
 
-		assert_response 400
+		assert_response 409
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
 	end
