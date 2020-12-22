@@ -45,4 +45,18 @@ class UtilsService
 		return 3 if value.is_a?(Float)
 		return 0
 	end
+
+	def self.convert_value_to_data_type(value, data_type)
+		# Try to convert the value from string to the specified type
+		# Return the original value if the parsing throws an exception
+		return value == "true" if data_type == 1
+		return Integer value rescue value if data_type == 2
+		return Float value rescue value if data_type == 3
+		return value
+	end
+
+	def self.find_data_type(property_types, name)
+		property_type = property_types.find { |type| type.name == name }
+		return property_type ? property_type.data_type : 0
+	end
 end

@@ -40,6 +40,11 @@ class ValidationService
 		session.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_table_object_belongs_to_user(table_object, user)
+		error_code = 1103
+		table_object.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_dev_is_first_dev(dev)
 		error_code = 1103
 		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -69,7 +74,7 @@ class ValidationService
 
 	def self.validate_jwt(jwt, session_id)
 		session = Session.find_by(id: session_id)
-		raise RuntimeError, [get_validation_hash(false, 2805, 404)].to_json if session.nil?
+		raise RuntimeError, [get_validation_hash(false, 2806, 404)].to_json if session.nil?
 
 		# Try to decode the jwt
 		begin
@@ -337,8 +342,13 @@ class ValidationService
 		table.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
-	def self.validate_session_existence(session)
+	def self.validate_table_object_existence(table_object)
 		error_code = 2805
+		table_object.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
+	def self.validate_session_existence(session)
+		error_code = 2806
 		session.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
@@ -503,6 +513,8 @@ class ValidationService
 		when 2804
 			"Resource does not exist: Table"
 		when 2805
+			"Resource does not exist: TableObject"
+		when 2806
 			"Resource does not exist: Session"
 		end
 	end

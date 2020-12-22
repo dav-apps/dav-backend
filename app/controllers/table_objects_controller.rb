@@ -129,4 +129,75 @@ class TableObjectsController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def get_table_object
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		id = params["id"]
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Get the table object
+		if id.include?('-')
+			table_object = TableObject.find_by(uuid: id)
+		else
+			table_object = TableObject.find_by(id: id)
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+
+		# Check if the user can access the table object
+		user_access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		table_id = table_object.table_id
+
+		if user_access.nil?
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
+
+			# Check if the user can access the table object with this session
+			session = Session.find_by(id: session_id)
+			ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table_object.table.app))
+		else
+			table_id = user_access.table_alias
+		end
+
+		# Generate the etag if the table object has none
+		if table_object.etag.nil?
+			table_object.etag = UtilsService.generate_table_object_etag(table_object)
+			table_object.save
+		end
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user.update_column(:last_active, Time.now) if !app_user.nil?
+
+		# Return the data
+		result = {
+			id: table_object.id,
+			user_id: table_object.user_id,
+			table_id: table_id,
+			uuid: table_object.uuid,
+			file: table_object.file,
+			etag: table_object.etag,
+			properties: Hash.new
+		}
+
+		property_types = table_object.table.table_property_types
+		table_object.table_object_properties.each do |property|
+			result[:properties][property.name] = UtilsService.convert_value_to_data_type(property.value, UtilsService.find_data_type(property_types, property.name))
+		end
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end

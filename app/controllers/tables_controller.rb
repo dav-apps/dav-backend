@@ -97,7 +97,7 @@ class TablesController < ApplicationController
 		# Save that the user was active
 		user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user_id: user.id, app_id: app.id)
+		app_user = AppUser.find_by(user: user, app: app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Get the table objects of the user
