@@ -1266,4 +1266,107 @@ describe TableObjectsController do
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
 	end
+
+	# delete_table_object
+	it "should not delete table object without jwt" do
+		res = delete_request(
+			"/v1/table_object/1"
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not delete table object with invalid jwt" do
+		res = delete_request(
+			"/v1/table_object/1",
+			{Authorization: "asdasdasd.asdasd.sda"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not delete table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = delete_request(
+			"/v1/table_object/-413",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should delete table object" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattSecondCard)
+		first_property = table_object_properties(:mattSecondCardPage1)
+		second_property = table_object_properties(:mattSecondCardPage2)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		obj = TableObject.find_by(id: table_object.id)
+		assert_nil(obj)
+
+		prop1 = TableObjectProperty.find_by(id: first_property.id)
+		assert_nil(prop1)
+		
+		prop2 = TableObjectProperty.find_by(id: second_property.id)
+		assert_nil(prop2)
+	end
+
+	it "should delete table object with uuid" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattSecondCard)
+		first_property = table_object_properties(:mattSecondCardPage1)
+		second_property = table_object_properties(:mattSecondCardPage2)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.uuid}",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		obj = TableObject.find_by(id: table_object.id)
+		assert_nil(obj)
+
+		prop1 = TableObjectProperty.find_by(id: first_property.id)
+		assert_nil(prop1)
+		
+		prop2 = TableObjectProperty.find_by(id: second_property.id)
+		assert_nil(prop2)
+	end
+
+	it "should delete table object and update last_active fields" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattSecondCard)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		user = users(:matt)
+		assert(Time.now.to_i - user.last_active.to_i < 10)
+
+		app_user = app_users(:mattCards)
+		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+	end
+
+	it "should delete table object with file" do
+		# TODO
+	end
 end

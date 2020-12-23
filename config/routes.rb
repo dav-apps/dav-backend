@@ -14,4 +14,5 @@ Rails.application.routes.draw do
 	match '/v1/table_object', to: 'table_objects#create_table_object', via: :post
 	match '/v1/table_object/:id', to: 'table_objects#get_table_object', via: :get
 	match '/v1/table_object/:id', to: 'table_objects#update_table_object', via: :put
+	match '/v1/table_object/:id', to: 'table_objects#delete_table_object', via: :delete
 end

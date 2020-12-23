@@ -291,6 +291,9 @@ class TableObjectsController < ApplicationController
 		app_user = AppUser.find_by(user: user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
+		# Notify connected clients of the updated table object
+		# TODO
+
 		result = {
 			id: table_object.id,
 			user_id: table_object.user_id,
@@ -308,6 +311,61 @@ class TableObjectsController < ApplicationController
 		end
 
 		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def delete_table_object
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		id = params["id"]
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Get the table object
+		if id.include?('-')
+			table_object = TableObject.find_by(uuid: id)
+		else
+			table_object = TableObject.find_by(id: id)
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
+
+		# Check if the user can access the table object with this session
+		session = Session.find_by(id: session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table_object.table.app))
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user.update_column(:last_active, Time.now) if !app_user.nil?
+
+		# Delete the file if there is one
+		if table_object.file
+			BlobOperationsService.delete_blob(table_object.table.app.id, table_object.id)
+
+			# Update the used storage
+			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+			UtilsService.update_used_storage(user, table_object.table.app, -size_property.value.to_i) if !size_property.nil?
+		end
+
+		# Delete the table object
+		table_object.destroy!
+
+		# Notify connected clients of the deleted table object
+		# TODO
+
+		head 204, content_type: "application/json"
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]

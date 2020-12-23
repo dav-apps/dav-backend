@@ -5,6 +5,8 @@ module Constants
 	DEFAULT_TABLE_COUNT = 100
 	DEFAULT_TABLE_PAGE = 1
 
+	SIZE_PROPERTY_NAME = "size"
+
 	# Constants for field lengths
 	FIRST_NAME_MIN_LENGTH = 2
 	FIRST_NAME_MAX_LENGTH = 20

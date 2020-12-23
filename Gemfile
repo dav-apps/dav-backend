@@ -32,6 +32,9 @@ gem 'jwt'
 gem 'bootstrap-email'
 gem 'sassc'
 
+# Azure Blob Storage
+gem 'azure-storage-blob'
+
 group :development, :test do
 	gem 'dotenv-rails'
 end

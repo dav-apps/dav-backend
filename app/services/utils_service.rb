@@ -16,6 +16,23 @@ class UtilsService
 		end
 	end
 
+	def self.update_used_storage(user, app, storage_change)
+		return if user.nil?
+
+		# Update the used_storage of the user
+		user.used_storage += storage_change
+		user.save
+
+		return if app.nil?
+
+		app_user = AppUser.find_by(user: user, app: app)
+		return if app_user.nil?
+
+		# Update the used_storage of the app_user
+		app_user.used_storage += storage_change
+		app_user.save
+	end
+
 	def self.generate_table_object_etag(table_object)
 		# uuid,property1Name:property1Value,property2Name:property2Value,...
 		etag_string = table_object.uuid
