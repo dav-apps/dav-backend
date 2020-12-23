@@ -802,4 +802,468 @@ describe TableObjectsController do
 		app_user = app_users(:sherlockTestApp)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
 	end
+
+	# update_table_object
+	it "should not update table object without jwt" do
+		res = put_request(
+			"/v1/table_object/1"
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not update table object without Content-Type json" do
+		res = put_request(
+			"/v1/table_object/1",
+			{Authorization: "asdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with invalid jwt" do
+		res = put_request(
+			"/v1/table_object/1",
+			{Authorization: "asdasdasds", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not update table object without properties" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/-413",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTIES_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with properties with wrong type" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/-413",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: "hello"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTIES_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not update table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/-413",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {}
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not update table object that belongs to another user" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:davSecondCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {}
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with session that does not belong to the app" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {}
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not update table object that is a file" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					test1: "Hello World"
+				}
+			}
+		)
+
+		assert_response 422
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_IS_FILE, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with too short property name" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					test1: "Test",
+					"": "Test 2"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTY_NAME_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with too long property name" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					test1: "Test",
+					"#{'a' * 220}": "Test 2"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTY_NAME_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with too short property value" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					test1: "Test",
+					test2: ""
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not update table object with too long property value" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					test1: "Test",
+					test2: "#{'a' * 65200}"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should update table object" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table = tables(:card)
+		table_object = table_objects(:mattSecondCard)
+		first_property_name = table_object_properties(:mattSecondCardPage1).name
+		first_property_value = table_object_properties(:mattSecondCardPage1).value
+		second_property_name = "page2"
+		second_property_value = "Updated value"
+		third_property_name = "page3"
+		third_property_value = "New value"
+		fourth_property_name = "page4"
+		fourth_property_value = 123
+		fifth_property_name = "page5"
+		fifth_property_value = false
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					"#{second_property_name}": second_property_value,
+					"#{third_property_name}": third_property_value,
+					"#{fourth_property_name}": fourth_property_value,
+					"#{fifth_property_name}": fifth_property_value
+				}
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(5, res["properties"].length)
+
+		# First property
+		assert_equal(res["properties"][first_property_name], first_property_value)
+
+		first_property = TableObjectProperty.find_by(table_object: table_object, name: first_property_name)
+		assert_not_nil(first_property)
+		assert_equal(first_property_value, first_property.value)
+
+		first_property_type = TablePropertyType.find_by(table: table, name: first_property_name)
+		assert_not_nil(first_property_type)
+		assert_equal(0, first_property_type.data_type)
+
+		# Second property
+		assert_equal(res["properties"][second_property_name], second_property_value)
+
+		second_property = TableObjectProperty.find_by(table_object: table_object, name: second_property_name)
+		assert_not_nil(second_property)
+		assert_equal(second_property_value, second_property.value)
+
+		second_property_type = TablePropertyType.find_by(table: table, name: second_property_name)
+		assert_not_nil(second_property_type)
+		assert_equal(0, second_property_type.data_type)
+
+		# Third property
+		assert_equal(res["properties"][third_property_name], third_property_value)
+
+		third_property = TableObjectProperty.find_by(table_object: table_object, name: third_property_name)
+		assert_not_nil(third_property)
+		assert_equal(third_property_value, third_property.value)
+
+		third_property_type = TablePropertyType.find_by(table: table, name: third_property_name)
+		assert_not_nil(third_property_type)
+		assert_equal(0, third_property_type.data_type)
+
+		# Fourth property
+		assert_equal(res["properties"][fourth_property_name], fourth_property_value)
+		
+		fourth_property = TableObjectProperty.find_by(table_object: table_object, name: fourth_property_name)
+		assert_not_nil(fourth_property)
+		assert_equal(fourth_property_value.to_s, fourth_property.value)
+
+		fourth_property_type = TablePropertyType.find_by(table: table, name: fourth_property_name)
+		assert_not_nil(fourth_property_type)
+		assert_equal(2, fourth_property_type.data_type)
+
+		# Fifth_property
+		assert_equal(res["properties"][fifth_property_name], fifth_property_value)
+
+		fifth_property = TableObjectProperty.find_by(table_object: table_object, name: fifth_property_name)
+		assert_not_nil(fifth_property)
+		assert_equal(fifth_property_value.to_s, fifth_property.value)
+
+		fifth_property_type = TablePropertyType.find_by(table: table, name: fifth_property_name)
+		assert_not_nil(fifth_property_type)
+		assert_equal(1, fifth_property_type.data_type)
+	end
+
+	it "should update table object with uuid" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table = tables(:card)
+		table_object = table_objects(:mattSecondCard)
+		first_property_name = table_object_properties(:mattSecondCardPage1).name
+		first_property_value = table_object_properties(:mattSecondCardPage1).value
+		second_property_name = "page2"
+		second_property_value = "Updated value"
+		third_property_name = "page3"
+		third_property_value = "New value"
+		fourth_property_name = "page4"
+		fourth_property_value = 123
+		fifth_property_name = "page5"
+		fifth_property_value = false
+
+		res = put_request(
+			"/v1/table_object/#{table_object.uuid}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					"#{second_property_name}": second_property_value,
+					"#{third_property_name}": third_property_value,
+					"#{fourth_property_name}": fourth_property_value,
+					"#{fifth_property_name}": fifth_property_value
+				}
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(5, res["properties"].length)
+
+		# First property
+		assert_equal(res["properties"][first_property_name], first_property_value)
+
+		first_property = TableObjectProperty.find_by(table_object: table_object, name: first_property_name)
+		assert_not_nil(first_property)
+		assert_equal(first_property_value, first_property.value)
+
+		first_property_type = TablePropertyType.find_by(table: table, name: first_property_name)
+		assert_not_nil(first_property_type)
+		assert_equal(0, first_property_type.data_type)
+
+		# Second property
+		assert_equal(res["properties"][second_property_name], second_property_value)
+
+		second_property = TableObjectProperty.find_by(table_object: table_object, name: second_property_name)
+		assert_not_nil(second_property)
+		assert_equal(second_property_value, second_property.value)
+
+		second_property_type = TablePropertyType.find_by(table: table, name: second_property_name)
+		assert_not_nil(second_property_type)
+		assert_equal(0, second_property_type.data_type)
+
+		# Third property
+		assert_equal(res["properties"][third_property_name], third_property_value)
+
+		third_property = TableObjectProperty.find_by(table_object: table_object, name: third_property_name)
+		assert_not_nil(third_property)
+		assert_equal(third_property_value, third_property.value)
+
+		third_property_type = TablePropertyType.find_by(table: table, name: third_property_name)
+		assert_not_nil(third_property_type)
+		assert_equal(0, third_property_type.data_type)
+
+		# Fourth property
+		assert_equal(res["properties"][fourth_property_name], fourth_property_value)
+		
+		fourth_property = TableObjectProperty.find_by(table_object: table_object, name: fourth_property_name)
+		assert_not_nil(fourth_property)
+		assert_equal(fourth_property_value.to_s, fourth_property.value)
+
+		fourth_property_type = TablePropertyType.find_by(table: table, name: fourth_property_name)
+		assert_not_nil(fourth_property_type)
+		assert_equal(2, fourth_property_type.data_type)
+
+		# Fifth_property
+		assert_equal(res["properties"][fifth_property_name], fifth_property_value)
+
+		fifth_property = TableObjectProperty.find_by(table_object: table_object, name: fifth_property_name)
+		assert_not_nil(fifth_property)
+		assert_equal(fifth_property_value.to_s, fifth_property.value)
+
+		fifth_property_type = TablePropertyType.find_by(table: table, name: fifth_property_name)
+		assert_not_nil(fifth_property_type)
+		assert_equal(1, fifth_property_type.data_type)
+	end
+
+	it "should update table object and remove properties using nil" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattSecondCard)
+		first_property_name = table_object_properties(:mattSecondCardPage1).name
+		second_property_name = table_object_properties(:mattSecondCardPage2).name
+		second_property_value = table_object_properties(:mattSecondCardPage2).value
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					"#{first_property_name}": nil
+				}
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(1, res["properties"].length)
+
+		# First property
+		first_property = TableObjectProperty.find_by(table_object: table_object, name: first_property_name)
+		assert_nil(first_property)
+
+		# Second property
+		assert_equal(res["properties"][second_property_name], second_property_value)
+
+		second_property = TableObjectProperty.find_by(table_object: table_object, name: second_property_name)
+		assert_not_nil(second_property)
+		assert_equal(second_property_value, second_property.value)
+
+		second_property_type = TablePropertyType.find_by(table: table_object.table, name: second_property_name)
+		assert_not_nil(second_property_type)
+		assert_equal(0, second_property_type.data_type)
+	end
+
+	it "should update table object and update last_active fields" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattSecondCard)
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {}
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(2, res["properties"].length)
+
+		user = users(:matt)
+		assert(Time.now.to_i - user.last_active.to_i < 10)
+
+		app_user = app_users(:mattCards)
+		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+	end
 end

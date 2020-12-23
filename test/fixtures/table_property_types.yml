@@ -1,3 +1,13 @@
+cardPage1Type:
+  table: card
+  name: page1
+  data_type: 0    # string
+
+cardPage2Type:
+  table: card
+  name: page2
+  data_type: 0    # string
+
 testTableTest1Type:
   table: testTable
   name: test1

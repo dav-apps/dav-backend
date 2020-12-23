@@ -32,3 +32,9 @@ sherlockTestData:
   user: sherlock
   table: testTable
   uuid: 50b721e6-6483-498d-824d-8481c9880442
+
+sherlockTestFile:
+  user: sherlock
+  table: testTable
+  uuid: 451d2d58-d5fd-4474-b40b-ce68548bc1aa
+  file: true

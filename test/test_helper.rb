@@ -31,6 +31,11 @@ class ActiveSupport::TestCase
 		JSON.parse(response.body)
 	end
 
+	def put_request(url, headers = {}, body = {})
+		put url, headers: headers, params: body.to_json
+		JSON.parse(response.body)
+	end
+
 	def delete_request(url, headers = {})
 		delete url, headers: headers
 		response.body.length < 2 ? nil : JSON.parse(response.body)
