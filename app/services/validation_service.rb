@@ -67,6 +67,11 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
 	end
 
+	def self.validate_table_object_is_file(table_object)
+		error_code = 1106
+		table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -132,6 +137,11 @@ class ValidationService
 	def self.validate_table_id_presence(table_id)
 		error_code = 2109
 		table_id.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_properties_presence(properties)
+		error_code = 2110
+		properties.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -414,8 +424,16 @@ class ValidationService
 			"Content-Type not supported"
 		when 1105
 			"Invalid body"
+		when 1106
+			"Can't update the properties of a table object with file"
 		when 1201
 			"Password is incorrect"
+		when 1301
+			"JWT expired"
+		when 1302
+			"JWT not valid"
+		when 1303
+			"JWT unknown error"
 		when 2101
 			"Missing field: auth"
 		when 2102
@@ -434,6 +452,8 @@ class ValidationService
 			"Missing field: name"
 		when 2109
 			"Missing field: table_id"
+		when 2110
+			"Missing field: properties"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
