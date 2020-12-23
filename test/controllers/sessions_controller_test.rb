@@ -413,12 +413,12 @@ describe SessionsController do
 	it "should not delete session with invalid jwt" do
 		res = delete_request(
 			"/v1/session",
-			{Authorization: "asdas.asdasd.asdasd.3232"}
+			{Authorization: "asdas.asdasd.asdas"}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not delete session that does not exist" do

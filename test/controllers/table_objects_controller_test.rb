@@ -31,9 +31,9 @@ describe TableObjectsController do
 			{Authorization: "asdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not create table object without required properties" do
@@ -613,9 +613,9 @@ describe TableObjectsController do
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not get table object that does not exist" do
@@ -831,9 +831,9 @@ describe TableObjectsController do
 			{Authorization: "asdasdasds", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not update table object without properties" do
@@ -1284,9 +1284,9 @@ describe TableObjectsController do
 			{Authorization: "asdasdasd.asdasd.sda"}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not delete table object that does not exist" do

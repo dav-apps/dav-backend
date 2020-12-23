@@ -31,9 +31,9 @@ describe TablesController do
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not create table with jwt for app that is not the website" do
@@ -209,9 +209,9 @@ describe TablesController do
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 404
+		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not get table that does not exist" do

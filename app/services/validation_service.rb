@@ -78,17 +78,19 @@ class ValidationService
 	end
 
 	def self.validate_jwt(jwt, session_id)
+		raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json if session_id == 0
+
 		session = Session.find_by(id: session_id)
 		raise RuntimeError, [get_validation_hash(false, 2806, 404)].to_json if session.nil?
 
 		# Try to decode the jwt
 		begin
 			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })[0].transform_keys(&:to_sym)
-		rescue JWT::ExpiredSignature
-			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
 		rescue JWT::DecodeError
+			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
+		rescue JWT::ExpiredSignature
 			raise RuntimeError, [get_validation_hash(false, 1302, 401)].to_json
-		rescue Exception
+		rescue
 			raise RuntimeError, [get_validation_hash(false, 1303, 401)].to_json
 		end
 	end
@@ -429,11 +431,11 @@ class ValidationService
 		when 1201
 			"Password is incorrect"
 		when 1301
-			"JWT expired"
+			"JWT invalid"
 		when 1302
-			"JWT not valid"
+			"JWT expired"
 		when 1303
-			"JWT unknown error"
+			"JWT unexpected error"
 		when 2101
 			"Missing field: auth"
 		when 2102
