@@ -32,13 +32,15 @@ class TableObjectsController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Get the table
 		table = Table.find_by(id: table_id)
 		ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
 
-		# Check if the user can create a table object for the table with this session
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table.app))
+		# Check if the table belongs to the app
+		ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(table, app))
 
 		# Create the table object
 		table_object = TableObject.new(
@@ -98,11 +100,11 @@ class TableObjectsController < ApplicationController
 		user.update_column(:last_active, Time.now)
 
 		# Save that the user uses the app
-		app_user = AppUser.find_by(user: user, app: table.app)
+		app_user = AppUser.find_by(user: user, app: app)
 		if app_user.nil?
 			AppUser.create(
 				user: user,
-				app: table.app,
+				app: app,
 				last_active: Time.now
 			)
 		else
@@ -110,7 +112,12 @@ class TableObjectsController < ApplicationController
 		end
 
 		# Notify connected clients of the new table object
-		# TODO
+		TableObjectUpdateChannel.broadcast_to(
+			"#{user.id},#{app.id}",
+			uuid: table_object.uuid,
+			session_id: session_id,
+			change: 0
+		)
 
 		# Return the data
 		result = {
@@ -143,6 +150,9 @@ class TableObjectsController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Get the table object
 		if id.include?('-')
 			table_object = TableObject.find_by(uuid: id)
@@ -158,10 +168,7 @@ class TableObjectsController < ApplicationController
 
 		if user_access.nil?
 			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-
-			# Check if the user can access the table object with this session
-			session = Session.find_by(id: session_id)
-			ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table_object.table.app))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
 		else
 			table_id = user_access.table_alias
 		end
@@ -175,7 +182,7 @@ class TableObjectsController < ApplicationController
 		# Save that the user was active
 		user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user = AppUser.find_by(user: user, app: app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Return the data
@@ -225,6 +232,9 @@ class TableObjectsController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Get the table object
 		if id.include?('-')
 			table_object = TableObject.find_by(uuid: id)
@@ -234,10 +244,7 @@ class TableObjectsController < ApplicationController
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-
-		# Check if the user can access the table object with this session
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table_object.table.app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
 
 		# Check if the table object is a file
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
@@ -292,7 +299,12 @@ class TableObjectsController < ApplicationController
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Notify connected clients of the updated table object
-		# TODO
+		TableObjectUpdateChannel.broadcast_to(
+			"#{user.id},#{app.id}",
+			uuid: table_object.uuid,
+			session_id: session_id,
+			change: 1
+		)
 
 		result = {
 			id: table_object.id,
@@ -330,6 +342,9 @@ class TableObjectsController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Get the table object
 		if id.include?('-')
 			table_object = TableObject.find_by(uuid: id)
@@ -339,10 +354,7 @@ class TableObjectsController < ApplicationController
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-
-		# Check if the user can access the table object with this session
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, table_object.table.app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
 
 		# Save that the user was active
 		user.update_column(:last_active, Time.now)
@@ -363,7 +375,12 @@ class TableObjectsController < ApplicationController
 		table_object.destroy!
 
 		# Notify connected clients of the deleted table object
-		# TODO
+		TableObjectUpdateChannel.broadcast_to(
+			"#{user.id},#{app.id}",
+			uuid: table_object.uuid,
+			session_id: session_id,
+			change: 2
+		)
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e

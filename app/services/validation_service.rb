@@ -30,19 +30,19 @@ class ValidationService
 		app_id.to_i != ENV["DAV_APPS_APP_ID"].to_i ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
-	def self.validate_session_belongs_to_user(session, user)
+	def self.validate_table_belongs_to_app(table, app)
 		error_code = 1103
-		session.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
-	end
-
-	def self.validate_session_belongs_to_app(session, app)
-		error_code = 1103
-		session.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
+		table.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
 	def self.validate_table_object_belongs_to_user(table_object, user)
 		error_code = 1103
 		table_object.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
+	def self.validate_table_object_belongs_to_app(table_object, app)
+		error_code = 1103
+		table_object.table.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
 	def self.validate_dev_is_first_dev(dev)

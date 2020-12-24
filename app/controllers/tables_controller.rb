@@ -83,16 +83,15 @@ class TablesController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Get the table
 		table = Table.find_by(id: id)
 		ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
 
-		app = App.find_by(id: table.app_id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
-		# Check if the user can access the table with this session
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_belongs_to_app(session, app))
+		# Check if the table belongs to the app
+		ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(table, app))
 
 		# Save that the user was active
 		user.update_column(:last_active, Time.now)
