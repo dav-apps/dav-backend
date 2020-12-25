@@ -15,4 +15,10 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:id', to: 'table_objects#get_table_object', via: :get
 	match '/v1/table_object/:id', to: 'table_objects#update_table_object', via: :put
 	match '/v1/table_object/:id', to: 'table_objects#delete_table_object', via: :delete
+
+	# WebsocketConnectionsController
+	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
+
+	# Websocket connections
+	mount ActionCable.server => '/v1/cable'
 end
