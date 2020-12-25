@@ -16,6 +16,9 @@ gem 'mysql2'
 # postgresql for production database
 gem 'pg'
 
+# redis as the data store for Sidekiq workers and Websocket connections
+gem 'redis'
+
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
 
