@@ -697,4 +697,81 @@ describe UsersController do
 		assert_equal(device_type, website_session.device_type)
 		assert_equal(device_os, website_session.device_os)
 	end
+
+	# get_user
+	it "should not get user without jwt" do
+		res = get_request("/v1/user")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get user with invalid jwt" do
+		res = get_request(
+			"/v1/user",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should return user" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = get_request(
+			"/v1/user",
+			{Authorization: jwt}
+		)
+
+		assert_response 200
+
+		matt = users(:matt)
+		assert_equal(matt.id, res["id"])
+		assert_equal(matt.email, res["email"])
+		assert_equal(matt.first_name, res["first_name"])
+		assert_equal(matt.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(matt.plan, matt.confirmed), res["total_storage"])
+		assert_equal(matt.used_storage, res["used_storage"])
+		assert_equal(matt.plan, res["plan"])
+		assert(!res["dev"])
+		assert(!res["provider"])
+	end
+
+	it "should return user with additional information with website session" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = get_request(
+			"/v1/user",
+			{Authorization: jwt}
+		)
+
+		assert_response 200
+
+		dav = users(:dav)
+		assert_equal(dav.id, res["id"])
+		assert_equal(dav.email, res["email"])
+		assert_equal(dav.first_name, res["first_name"])
+		assert_equal(dav.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(dav.plan, dav.confirmed), res["total_storage"])
+		assert_equal(dav.used_storage, res["used_storage"])
+		assert_nil(res["stripe_customer_id"])
+		assert_equal(dav.plan, res["plan"])
+		assert_equal(dav.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(res["dev"])
+		assert(!res["provider"])
+
+		cards = apps(:cards)
+		assert_equal(1, res["apps"].length)
+		assert_equal(cards.id, res["apps"][0]["id"])
+		assert_equal(cards.name, res["apps"][0]["name"])
+		assert_equal(cards.description, res["apps"][0]["description"])
+		assert_equal(cards.published, res["apps"][0]["published"])
+		assert_equal(cards.web_link, res["apps"][0]["web_link"])
+		assert_nil(cards.google_play_link, res["apps"][0]["google_play_link"])
+		assert_nil(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
+	end
 end

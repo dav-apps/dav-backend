@@ -5,3 +5,7 @@ mattCards:
 sherlockTestApp:
   user: sherlock
   app: testApp
+
+davCards:
+  user: dav
+  app: cards

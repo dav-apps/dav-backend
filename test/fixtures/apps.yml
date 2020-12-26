@@ -1,23 +1,24 @@
 website:
+  dev: sherlock
   name: Website
   description: The app for the dav website
   published: false
-  dev: sherlock
 
 cards:
+  dev: sherlock
   name: Cards
   description: This is a vocabulary app
   published: true
-  dev: sherlock
+  web_link: "https://cards.dav-apps.tech"
 
 testApp:
+  dev: dav
   name: testApp
   description: dav Test app
   published: false
-  dev: dav
 
 pocketlib:
+  dev: dav
   name: PocketLib
   description: The library in your pocket
   published: false
-  dev: dav
