@@ -143,6 +143,62 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def get_user
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		is_website = payload[:app_id] == ENV["DAV_APPS_APP_ID"].to_i
+
+		# Return the data
+		result = {
+			id: user.id,
+			email: user.email,
+			first_name: user.first_name,
+			confirmed: user.confirmed,
+			total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
+			used_storage: user.used_storage
+		}
+
+		result[:stripe_customer_id] = user.stripe_customer_id if is_website
+		result[:plan] = user.plan
+		result[:subscription_status] = user.subscription_status if is_website
+		result[:period_end] = user.period_end if is_website
+		result[:dev] = !Dev.find_by(user: user).nil?
+		result[:provider] = !Provider.find_by(user: user).nil?
+
+		if is_website
+			result[:apps] = Array.new
+
+			# Get the apps of the user
+			user.app_users.each do |app_user|
+				app = app_user.app
+
+				result[:apps].push({
+					id: app.id,
+					name: app.name,
+					description: app.description,
+					published: app.published,
+					web_link: app.web_link,
+					google_play_link: app.google_play_link,
+					microsoft_store_link: app.microsoft_store_link
+				})
+			end
+		end
+		
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	private
 	def generate_token
       SecureRandom.hex(20)

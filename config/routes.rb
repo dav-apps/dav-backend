@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
 	# UsersController
 	match '/v1/signup', to: 'users#signup', via: :post
+	match '/v1/user', to: 'users#get_user', via: :get
 	
 	# SessionsController
 	match '/v1/session', to: 'sessions#create_session', via: :post
