@@ -364,7 +364,7 @@ class TableObjectsController < ApplicationController
 
 		# Delete the file if there is one
 		if table_object.file
-			BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+			BlobOperationsService.delete_blob(table_object)
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
@@ -433,7 +433,7 @@ class TableObjectsController < ApplicationController
 
 		# Upload the file
 		begin
-			blob = BlobOperationsService.upload_blob(table_object.id, app.id, request.body)
+			blob = BlobOperationsService.upload_blob(table_object, request.body)
 		rescue => e
 			ValidationService.raise_unexpected_error
 		end
@@ -556,7 +556,7 @@ class TableObjectsController < ApplicationController
 
 		# Get the file
 		begin
-			blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+			blob, content = BlobOperationsService.download_blob(table_object)
 		rescue => e
 			ValidationService.raise_table_object_has_no_file
 		end

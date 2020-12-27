@@ -1498,7 +1498,7 @@ describe TableObjectsController do
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob
-		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		blob, content = BlobOperationsService.download_blob(table_object)
 		assert_equal(content, file_content)
 
 		# Size property
@@ -1520,7 +1520,7 @@ describe TableObjectsController do
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should set table object file with uuid" do
@@ -1548,7 +1548,7 @@ describe TableObjectsController do
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob
-		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		blob, content = BlobOperationsService.download_blob(table_object)
 		assert_equal(content, file_content)
 
 		# Size property
@@ -1570,7 +1570,7 @@ describe TableObjectsController do
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should set table object file with binary data" do
@@ -1598,7 +1598,7 @@ describe TableObjectsController do
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob
-		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		blob, content = BlobOperationsService.download_blob(table_object)
 		assert_equal(content, file_content)
 
 		# Size property
@@ -1620,7 +1620,7 @@ describe TableObjectsController do
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should set table object file with binary data with uuid" do
@@ -1648,7 +1648,7 @@ describe TableObjectsController do
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob
-		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		blob, content = BlobOperationsService.download_blob(table_object)
 		assert_equal(content, file_content)
 
 		# Size property
@@ -1670,7 +1670,7 @@ describe TableObjectsController do
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should set table object file and update last_active fields" do
@@ -1695,7 +1695,7 @@ describe TableObjectsController do
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	# get_table_object_file
@@ -1816,7 +1816,7 @@ describe TableObjectsController do
 		assert_equal(file_content, res)
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should get table object file with uuid" do
@@ -1849,7 +1849,7 @@ describe TableObjectsController do
 		assert_equal(file_content, res)
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should get table object file with binary data" do
@@ -1882,7 +1882,7 @@ describe TableObjectsController do
 		assert_equal(file_content, res)
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 
 	it "should get table object file with binary data and uuid" do
@@ -1915,6 +1915,6 @@ describe TableObjectsController do
 		assert_equal(file_content, res)
 
 		# Delete the blob
-		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+		BlobOperationsService.delete_blob(table_object)
 	end
 end

@@ -1,5 +1,5 @@
 class BlobOperationsService
-	def self.upload_blob(table_object_id, app_id, blob)
+	def self.upload_blob(table_object, blob)
 		client = Azure::Storage::Blob::BlobService.create(
 			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
@@ -10,12 +10,12 @@ class BlobOperationsService
 
 		client.create_block_blob(
 			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{app_id}/#{table_object_id}",
+			"#{table_object.table.app.id}/#{table_object.id}",
 			contents
 		)
 	end
 
-	def self.download_blob(table_object_id, app_id)
+	def self.download_blob(table_object)
 		client = Azure::Storage::Blob::BlobService.create(
 			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
@@ -23,11 +23,11 @@ class BlobOperationsService
 
 		client.get_blob(
 			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{app_id}/#{table_object_id}"
+			"#{table_object.table.app.id}/#{table_object.id}"
 		)
 	end
 
-	def self.delete_blob(table_object_id, app_id)
+	def self.delete_blob(table_object)
 		client = Azure::Storage::Blob::BlobService.create(
 			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
@@ -35,7 +35,7 @@ class BlobOperationsService
 
 		client.delete_blob(
 			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{app_id}/#{table_object_id}"
+			"#{table_object.table.app.id}/#{table_object.id}"
 		)
 	end
 end
