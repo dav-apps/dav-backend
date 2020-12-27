@@ -8,6 +8,7 @@ module Constants
 	SIZE_PROPERTY_NAME = "size"
 	TYPE_PROPERTY_NAME = "type"
 	ETAG_PROPERTY_NAME = "etag"
+	EXT_PROPERTY_NAME = "ext"
 
 	# Constants for field lengths
 	FIRST_NAME_MIN_LENGTH = 2

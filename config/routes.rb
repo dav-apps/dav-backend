@@ -17,6 +17,7 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:id', to: 'table_objects#update_table_object', via: :put
 	match '/v1/table_object/:id', to: 'table_objects#delete_table_object', via: :delete
 	match '/v1/table_object/:id/file', to: 'table_objects#set_table_object_file', via: :put
+	match '/v1/table_object/:id/file', to: 'table_objects#get_table_object_file', via: :get
 
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post

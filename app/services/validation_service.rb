@@ -1,6 +1,6 @@
 class ValidationService
 	# Miscellaneous validation methods
-	def self.raise_unexpected_error(raise_error)
+	def self.raise_unexpected_error(raise_error = true)
 		if raise_error
 			error_code = 1101
 			raise RuntimeError, [get_validation_hash(false, error_code, 500)].to_json
@@ -80,6 +80,11 @@ class ValidationService
 	def self.validate_table_object_is_file(table_object)
 		error_code = 1107
 		!table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.raise_table_object_has_no_file
+		error_code = 1108
+		raise RuntimeError, [get_validation_hash(false, error_code, 404)].to_json
 	end
 
 	def self.validate_sufficient_storage(free_storage, file_size)

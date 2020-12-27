@@ -364,7 +364,7 @@ class TableObjectsController < ApplicationController
 
 		# Delete the file if there is one
 		if table_object.file
-			BlobOperationsService.delete_blob(table_object.table.app.id, table_object.id)
+			BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
@@ -397,7 +397,7 @@ class TableObjectsController < ApplicationController
 
 		id = params["id"]
 
-		# Validate the user and dev
+		# Validate the payload data
 		user = User.find_by(id: payload[:user_id])
 		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
 
@@ -434,11 +434,12 @@ class TableObjectsController < ApplicationController
 		# Upload the file
 		begin
 			blob = BlobOperationsService.upload_blob(table_object.id, app.id, request.body)
-			etag = blob.properties[:etag]
-			etag = etag[1...etag.size - 1]
 		rescue => e
-			ValidationService.raise_unexpected_error(true)
+			ValidationService.raise_unexpected_error
 		end
+
+		etag = blob.properties[:etag]
+		etag = etag[1...etag.size - 1]
 
 		# Set the size property
 		if size_prop.nil?
@@ -511,6 +512,74 @@ class TableObjectsController < ApplicationController
 		end
 
 		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def get_table_object_file
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		id = params["id"]
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Get the table object
+		if id.include?('-')
+			table_object = TableObject.find_by(uuid: id)
+		else
+			table_object = TableObject.find_by(id: id)
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+
+		# Check if the user can access the table object
+		user_access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+
+		if user_access.nil?
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		end
+
+		# Check if the table object is a file
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
+
+		# Get the file
+		begin
+			blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		rescue => e
+			ValidationService.raise_table_object_has_no_file
+		end
+
+		# Get the ext and type properties
+		ext_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
+		ext = ext_prop.nil? ? nil : ext_prop.value
+
+		type_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		type = type_prop.nil? ? "application/octet-stream" : type_prop.value
+
+		filename = table_object.id.to_s
+		filename += ".#{ext}" if !ext.nil?
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user.update_column(:last_active, Time.now) if !app_user.nil?
+
+		# Return the data
+		response.headers["Content-Length"] = content.nil? ? 0 : content.size.to_s
+		send_data(content, status: 200, type: type, filename: filename)
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
