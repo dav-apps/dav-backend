@@ -248,6 +248,11 @@ class ValidationService
 		get_validation_hash(false, error_code, 400)
 	end
 
+	def self.validate_ext_type(ext)
+		error_code = 2216
+		!ext.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for length of fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -326,6 +331,16 @@ class ValidationService
 			get_validation_hash(false, 2308, 400)
 		elsif value.length > Constants::PROPERTY_VALUE_MAX_LENGTH
 			get_validation_hash(false, 2408, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_ext_length(ext)
+		if ext.length < Constants::EXT_MIN_LENGTH
+			get_validation_hash(false, 2309, 400)
+		elsif ext.length > Constants::EXT_MAX_LENGTH
+			get_validation_hash(false, 2409, 400)
 		else
 			get_validation_hash
 		end
@@ -512,6 +527,8 @@ class ValidationService
 			"Field has wrong type: name (for TableObjectProperty)"
 		when 2215
 			"Field has wrong type: value (for TableObjectProperty)"
+		when 2216
+			"Field has wrong type: ext"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -528,6 +545,8 @@ class ValidationService
 			"Field too short: name (for TableObjectProperty)"
 		when 2308
 			"Field too short: value (for TableObjectProperty)"
+		when 2309
+			"Field too short: ext"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -544,6 +563,8 @@ class ValidationService
 			"Field too long: name (for TableObjectProperty)"
 		when 2408
 			"Field too long: value (for TableObjectProperty)"
+		when 2409
+			"Field too long: ext"
 		when 2501
 			"Field invalid: email"
 		when 2502

@@ -88,6 +88,26 @@ class TableObjectsController < ApplicationController
 
 				props[key] = value
 			end
+		elsif !properties.nil? && table_object.file
+			# Take the ext property
+			ext = properties["ext"]
+
+			if !ext.nil?
+				# Validate the type
+				ValidationService.raise_validation_error(ValidationService.validate_ext_type(ext))
+
+				# Validate the length
+				ValidationService.raise_validation_error(ValidationService.validate_ext_length(ext))
+
+				ext_prop = TableObjectProperty.new(
+					table_object: table_object,
+					name: Constants::EXT_PROPERTY_NAME,
+					value: ext
+				)
+				ValidationService.raise_unexpected_error(!ext_prop.save)
+				
+				props[Constants::EXT_PROPERTY_NAME] = ext
+			end
 		end
 
 		# Calculate the etag of the table object

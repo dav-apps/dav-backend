@@ -49,7 +49,6 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::TABLE_ID_MISSING, res["errors"][0]["code"])
 	end
 
-	
 	it "should not create table object with properties with wrong types" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
 
@@ -153,6 +152,26 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::UUID_ALREADY_TAKEN, res["errors"][0]["code"])
 	end
 
+	it "should not create table object as file with ext with wrong type" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_id: tables(:card).id,
+				file: true,
+				properties: {
+					ext: 123
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EXT_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
 	it "should not create table object with too short property name" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
 
@@ -231,6 +250,46 @@ describe TableObjectsController do
 		assert_response 400
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should not create table object as file with too short ext" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_id: tables(:card).id,
+				file: true,
+				properties: {
+					ext: ""
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EXT_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not create table object as file with too long ext" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_id: tables(:card).id,
+				file: true,
+				properties: {
+					ext: "asdasdasd"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EXT_TOO_LONG, res["errors"][0]["code"])
 	end
 
 	it "should create table object" do
