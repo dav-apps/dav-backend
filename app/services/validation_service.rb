@@ -59,6 +59,11 @@ class ValidationService
 		end
 	end
 
+	def self.validate_content_type_supported(content_type)
+		error_code = 1104
+		content_type.nil? || content_type.include?("application/x-www-form-urlencoded") ? get_validation_hash(false, error_code, 415) : get_validation_hash
+	end
+
 	def self.parse_json(json)
 		json && json.length > 0 ? JSON.parse(json) : Hash.new
 	rescue JSON::ParserError => e
@@ -67,9 +72,19 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
 	end
 
-	def self.validate_table_object_is_file(table_object)
+	def self.validate_table_object_is_not_file(table_object)
 		error_code = 1106
 		table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.validate_table_object_is_file(table_object)
+		error_code = 1107
+		!table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.validate_sufficient_storage(free_storage, file_size)
+		error_code = 1109
+		free_storage < file_size ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.authenticate_user(user, password)
@@ -428,6 +443,12 @@ class ValidationService
 			"Invalid body"
 		when 1106
 			"Can't update the properties of a table object with file"
+		when 1107
+			"The table object is not a file"
+		when 1108
+			"The table object has no file"
+		when 1109
+			"Not sufficient storage available"
 		when 1201
 			"Password is incorrect"
 		when 1301

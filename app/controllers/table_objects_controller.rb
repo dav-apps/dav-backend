@@ -2,7 +2,7 @@ class TableObjectsController < ApplicationController
 	def create_table_object
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Get the params from the body
@@ -210,7 +210,7 @@ class TableObjectsController < ApplicationController
 	def update_table_object
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		id = params["id"]
@@ -247,7 +247,7 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
 
 		# Check if the table object is a file
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_not_file(table_object))
 
 		# Validate the properties
 		properties.each do |key, value|
@@ -383,6 +383,134 @@ class TableObjectsController < ApplicationController
 		)
 
 		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def set_table_object_file
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		content_type = get_content_type
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_supported(content_type))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		id = params["id"]
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Get the table object
+		if id.include?('-')
+			table_object = TableObject.find_by(uuid: id)
+		else
+			table_object = TableObject.find_by(id: id)
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+
+		# Check if the table object is a file
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
+
+		# Get the size property
+		size_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+		old_file_size = size_prop.nil? ? 0 : size_prop.value.to_i
+
+		# Check if the user has enough free storage
+		file_size = UtilsService.get_file_size(request.body)
+		free_storage = UtilsService.get_total_storage(user.plan, user.confirmed) - user.used_storage
+		file_size_diff = file_size - old_file_size
+		ValidationService.raise_validation_error(ValidationService.validate_sufficient_storage(free_storage, file_size_diff))
+
+		# Upload the file
+		begin
+			blob = BlobOperationsService.upload_blob(table_object.id, app.id, request.body)
+			etag = blob.properties[:etag]
+			etag = etag[1...etag.size - 1]
+		rescue => e
+			ValidationService.raise_unexpected_error(true)
+		end
+
+		# Set the size property
+		if size_prop.nil?
+			# Create the property
+			size_prop = TableObjectProperty.new(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME, value: file_size)
+		else
+			# Update the property
+			size_prop.value = file_size
+		end
+		ValidationService.raise_unexpected_error(!size_prop.save)
+
+		# Set the type property
+		type_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		if type_prop.nil?
+			# Create the property
+			type_prop = TableObjectProperty.new(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME, value: content_type)
+		else
+			# Update the property
+			type_prop.value = content_type
+		end
+		ValidationService.raise_unexpected_error(!type_prop.save)
+
+		# Set the etag property
+		etag_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
+		if etag_prop.nil?
+			# Create the property
+			etag_prop = TableObjectProperty.new(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME, value: etag)
+		else
+			# Update the property
+			etag_prop.value = etag
+		end
+		ValidationService.raise_unexpected_error(!etag_prop.save)
+
+		# Save the new used storage
+		UtilsService.update_used_storage(user, app, file_size_diff)
+
+		# Update the etag of the table object
+		table_object.etag = UtilsService.generate_table_object_etag(table_object)
+		ValidationService.raise_unexpected_error(!table_object.save)
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user.update_column(:last_active, Time.now) if !app_user.nil?
+
+		# Notify connected clients of the updated table object
+		TableObjectUpdateChannel.broadcast_to(
+			"#{user.id},#{app.id}",
+			uuid: table_object.uuid,
+			session_id: session_id,
+			change: 1
+		)
+
+		# Return the data
+		result = {
+			id: table_object.id,
+			user_id: table_object.user_id,
+			table_id: table_object.table_id,
+			uuid: table_object.uuid,
+			file: table_object.file,
+			etag: table_object.etag,
+			properties: Hash.new
+		}
+
+		# Get all properties of the table object
+		property_types = table_object.table.table_property_types
+		table_object.table_object_properties.each do |property|
+			result[:properties][property.name] = UtilsService.convert_value_to_data_type(property.value, UtilsService.find_data_type(property_types, property.name))
+		end
+
+		render json: result, status: 200
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]

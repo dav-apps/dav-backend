@@ -6,6 +6,8 @@ module Constants
 	DEFAULT_TABLE_PAGE = 1
 
 	SIZE_PROPERTY_NAME = "size"
+	TYPE_PROPERTY_NAME = "type"
+	ETAG_PROPERTY_NAME = "etag"
 
 	# Constants for field lengths
 	FIRST_NAME_MIN_LENGTH = 2

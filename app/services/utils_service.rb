@@ -76,4 +76,8 @@ class UtilsService
 		property_type = property_types.find { |type| type.name == name }
 		return property_type ? property_type.data_type : 0
 	end
+
+	def self.get_file_size(file)
+		file.class == StringIO ? file.size : File.size(file)
+   end
 end
