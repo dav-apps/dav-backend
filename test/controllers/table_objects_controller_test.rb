@@ -1369,4 +1369,317 @@ describe TableObjectsController do
 	it "should delete table object with file" do
 		# TODO
 	end
+
+	# set_table_object_file
+	it "should not set table object file without jwt" do
+		res = put_request(
+			"/v1/table_object/1/file"
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file with not supported content type" do
+		res = put_request(
+			"/v1/table_object/1/file",
+			{Authorization: "ssdasdsasafsgd", 'Content-Type': "application/x-www-form-urlencoded"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file with invalid jwt" do
+		res = put_request(
+			"/v1/table_object/1/file",
+			{Authorization: "ssdasdsasafsgd", 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file for table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/-123/file",
+			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file for table object that is not a file" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:mattThirdCard)
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 422
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_IS_NOT_FILE, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file for table object that belongs to another user" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:davSecondCard).id}/file",
+			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file with session that does not belong to the app" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}/file",
+			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object file if the user has not enough free storage" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		sherlock = users(:sherlock)
+		sherlock.used_storage = 50000000000
+		sherlock.save
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::NO_SUFFICIENT_STORAGE_AVAILABLE, res["errors"][0]["code"])
+	end
+
+	it "should set table object file" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = "<h1>Hello World</h1>"
+		content_type = "text/html"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_not_nil(table_object)
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert(res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(3, res["properties"].length)
+
+		# Get the blob
+		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		assert_equal(content, file_content)
+
+		# Size property
+		size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+		assert_not_nil(size_property)
+		assert_equal(file_content.length.to_s, size_property.value)
+		assert_equal(size_property.value, res["properties"]["size"])
+
+		# Type property
+		type_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		assert_not_nil(type_property)
+		assert_equal(content_type, type_property.value)
+		assert_equal(type_property.value, res["properties"]["type"])
+
+		# Etag property
+		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
+		assert_not_nil(etag_property)
+		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(etag_property.value, res["properties"]["etag"])
+	end
+
+	it "should set table object file with uuid" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = "<h1>Hello World</h1>"
+		content_type = "text/html"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_not_nil(table_object)
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert(res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(3, res["properties"].length)
+
+		# Get the blob
+		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		assert_equal(content, file_content)
+
+		# Size property
+		size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+		assert_not_nil(size_property)
+		assert_equal(file_content.length.to_s, size_property.value)
+		assert_equal(size_property.value, res["properties"]["size"])
+
+		# Type property
+		type_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		assert_not_nil(type_property)
+		assert_equal(content_type, type_property.value)
+		assert_equal(type_property.value, res["properties"]["type"])
+
+		# Etag property
+		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
+		assert_not_nil(etag_property)
+		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(etag_property.value, res["properties"]["etag"])
+	end
+
+	it "should set table object file with binary data" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+		content_type = "image/png"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_not_nil(table_object)
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert(res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(3, res["properties"].length)
+
+		# Get the blob
+		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		assert_equal(content, file_content)
+
+		# Size property
+		size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+		assert_not_nil(size_property)
+		assert_equal(file_content.length.to_s, size_property.value)
+		assert_equal(size_property.value, res["properties"]["size"])
+
+		# Type property
+		type_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		assert_not_nil(type_property)
+		assert_equal(content_type, type_property.value)
+		assert_equal(type_property.value, res["properties"]["type"])
+
+		# Etag property
+		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
+		assert_not_nil(etag_property)
+		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(etag_property.value, res["properties"]["etag"])
+	end
+
+	it "should set table object file with binary data with uuid" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+		content_type = "image/png"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_not_nil(table_object)
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert(res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(3, res["properties"].length)
+
+		# Get the blob
+		blob, content = BlobOperationsService.download_blob(table_object.id, table_object.table.app.id)
+		assert_equal(content, file_content)
+
+		# Size property
+		size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
+		assert_not_nil(size_property)
+		assert_equal(file_content.length.to_s, size_property.value)
+		assert_equal(size_property.value, res["properties"]["size"])
+
+		# Type property
+		type_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::TYPE_PROPERTY_NAME)
+		assert_not_nil(type_property)
+		assert_equal(content_type, type_property.value)
+		assert_equal(type_property.value, res["properties"]["type"])
+
+		# Etag property
+		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
+		assert_not_nil(etag_property)
+		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(etag_property.value, res["properties"]["etag"])
+	end
+
+	it "should set table object file and update last_active fields" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = "<h1>Hello World</h1>"
+		content_type = "text/html"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		user = users(:sherlock)
+		assert(Time.now.to_i - user.last_active.to_i < 10)
+
+		app_user = app_users(:sherlockTestApp)
+		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+	end
 end

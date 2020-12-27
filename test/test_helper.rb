@@ -31,8 +31,8 @@ class ActiveSupport::TestCase
 		JSON.parse(response.body)
 	end
 
-	def put_request(url, headers = {}, body = {})
-		put url, headers: headers, params: body.to_json
+	def put_request(url, headers = {}, body = {}, json = true)
+		put url, headers: headers, params: json ? body.to_json : body
 		JSON.parse(response.body)
 	end
 
