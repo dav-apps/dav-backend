@@ -42,3 +42,12 @@ sherlockTestAppSession:
   device_name: iPhone X
   device_type: Smartphone
   device_os: iOS
+
+davTestAppSession:
+  user: dav
+  app: testApp
+  secret: "sZjCEFWUiE2RZvmzCnjgZZbHeYzo7fnxXV5MPjPg"
+  exp: <%= DateTime.new(2060, 02, 14).to_s(:db) %>
+  device_name: Samsung Galaxy A20
+  device_type: Smartphone
+  device_os: Android

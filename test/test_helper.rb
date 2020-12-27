@@ -6,9 +6,6 @@ require "rails/test_help"
 require "minitest/rails"
 
 class ActiveSupport::TestCase
-	# Run tests in parallel with specified workers
-	parallelize(workers: :number_of_processors)
-
 	# Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
 	fixtures :all
 
@@ -26,9 +23,9 @@ class ActiveSupport::TestCase
 		JSON.parse(response.body)
 	end
 
-	def get_request(url, headers = {})
+	def get_request(url, headers = {}, json_response = true)
 		get url, headers: headers
-		JSON.parse(response.body)
+		json_response ? JSON.parse(response.body) : response.body
 	end
 
 	def put_request(url, headers = {}, body = {}, json = true)

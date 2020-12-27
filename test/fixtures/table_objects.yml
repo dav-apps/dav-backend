@@ -38,3 +38,9 @@ sherlockTestFile:
   table: testTable
   uuid: 451d2d58-d5fd-4474-b40b-ce68548bc1aa
   file: true
+
+davTestFile:
+  user: dav
+  table: testTable
+  uuid: d27cbe01-9a28-4619-bb3a-1cf3ffdee172
+  file: true

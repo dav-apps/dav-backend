@@ -1518,6 +1518,9 @@ describe TableObjectsController do
 		assert_not_nil(etag_property)
 		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 	end
 
 	it "should set table object file with uuid" do
@@ -1565,6 +1568,9 @@ describe TableObjectsController do
 		assert_not_nil(etag_property)
 		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 	end
 
 	it "should set table object file with binary data" do
@@ -1612,6 +1618,9 @@ describe TableObjectsController do
 		assert_not_nil(etag_property)
 		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 	end
 
 	it "should set table object file with binary data with uuid" do
@@ -1659,6 +1668,9 @@ describe TableObjectsController do
 		assert_not_nil(etag_property)
 		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 	end
 
 	it "should set table object file and update last_active fields" do
@@ -1681,5 +1693,228 @@ describe TableObjectsController do
 
 		app_user = app_users(:sherlockTestApp)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+	end
+
+	# get_table_object_file
+	it "should not get table object file without jwt" do
+		res = get_request(
+			"/v1/table_object/1/file"
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file with invalid jwt" do
+		res = get_request(
+			"/v1/table_object/1/file",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file of table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = get_request(
+			"/v1/table_object/-123/file",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file of table object that belongs to another user" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = get_request(
+			"/v1/table_object/#{table_objects(:davTestFile).id}/file",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file with session that does not belong to the app" do
+		jwt = generate_jwt(sessions(:davCardsSession))
+
+		res = get_request(
+			"/v1/table_object/#{table_objects(:davTestFile).id}/file",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file of table object that is not a file" do
+		jwt = generate_jwt(sessions(:davCardsSession))
+
+		res = get_request(
+			"/v1/table_object/#{table_objects(:davSecondCard).id}/file",
+			{Authorization: jwt}
+		)
+
+		assert_response 422
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_IS_NOT_FILE, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file of table object that has no file" do
+		jwt = generate_jwt(sessions(:davTestAppSession))
+		table_object = table_objects(:davTestFile)
+
+		res = get_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_HAS_NO_FILE, res["errors"][0]["code"])
+	end
+
+	it "should get table object file" do
+		# Set the file
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = "<h1>Hello World</h1>"
+		content_type = "text/html"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		# Get the file
+		res = get_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt},
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(content_type, response.headers["Content-Type"])
+		assert_equal(file_content.length, response.headers["Content-Length"].to_i)
+		assert_equal(file_content, res)
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+	end
+
+	it "should get table object file with uuid" do
+		# Set the file
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = "<h1>Hello World</h1>"
+		content_type = "text/html"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		# Get the file
+		res = get_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt},
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(content_type, response.headers["Content-Type"])
+		assert_equal(file_content.length, response.headers["Content-Length"].to_i)
+		assert_equal(file_content, res)
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+	end
+
+	it "should get table object file with binary data" do
+		# Set the file
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+		content_type = "image/png"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		# Get the file
+		res = get_request(
+			"/v1/table_object/#{table_object.id}/file",
+			{Authorization: jwt},
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(content_type, response.headers["Content-Type"])
+		assert_equal(file_content.length, response.headers["Content-Length"].to_i)
+		assert_equal(file_content, res)
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
+	end
+
+	it "should get table object file with binary data and uuid" do
+		# Set the file
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+		content_type = "image/png"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt, 'Content-Type': content_type},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		# Get the file
+		res = get_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: jwt},
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(content_type, response.headers["Content-Type"])
+		assert_equal(file_content.length, response.headers["Content-Length"].to_i)
+		assert_equal(file_content, res)
+
+		# Delete the blob
+		BlobOperationsService.delete_blob(table_object.id, table_object.table.app.id)
 	end
 end
