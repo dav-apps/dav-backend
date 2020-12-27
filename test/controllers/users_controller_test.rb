@@ -738,6 +738,11 @@ describe UsersController do
 		assert_equal(matt.plan, res["plan"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+
+		assert_nil(res["stripe_customer_id"])
+		assert_nil(res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert_nil(res["apps"])
 	end
 
 	it "should return user with additional information with website session" do
@@ -773,5 +778,6 @@ describe UsersController do
 		assert_equal(cards.web_link, res["apps"][0]["web_link"])
 		assert_nil(cards.google_play_link, res["apps"][0]["google_play_link"])
 		assert_nil(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
+		assert_equal(0, res["apps"][0]["used_storage"])
 	end
 end

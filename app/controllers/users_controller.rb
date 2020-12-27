@@ -3,7 +3,7 @@ class UsersController < ApplicationController
 		auth = get_auth
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -188,7 +188,8 @@ class UsersController < ApplicationController
 					published: app.published,
 					web_link: app.web_link,
 					google_play_link: app.google_play_link,
-					microsoft_store_link: app.microsoft_store_link
+					microsoft_store_link: app.microsoft_store_link,
+					used_storage: app_user.used_storage
 				})
 			end
 		end

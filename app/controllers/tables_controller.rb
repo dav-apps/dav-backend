@@ -2,7 +2,7 @@ class TablesController < ApplicationController
 	def create_table
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(request.headers["Content-Type"]))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
