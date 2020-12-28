@@ -128,7 +128,6 @@ class TablesController < ApplicationController
 			end
 
 			result[:table_objects].push({
-				id: obj.id,
 				uuid: obj.uuid,
 				etag: obj.etag
 			})

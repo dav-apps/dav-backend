@@ -270,33 +270,27 @@ describe TablesController do
 		assert_equal(1, res["pages"])
 		assert_equal(6, res["table_objects"].count)
 
-		first_table_object = TableObject.find_by(id: res["table_objects"][0]["id"])
-		assert_equal(first_table_object.id, res["table_objects"][0]["id"])
+		first_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
 		assert_equal(first_table_object.uuid, res["table_objects"][0]["uuid"])
 		assert_equal(generate_table_object_etag(first_table_object), res["table_objects"][0]["etag"])
 
-		second_table_object = TableObject.find_by(id: res["table_objects"][1]["id"])
-		assert_equal(second_table_object.id, res["table_objects"][1]["id"])
+		second_table_object = TableObject.find_by(uuid: res["table_objects"][1]["uuid"])
 		assert_equal(second_table_object.uuid, res["table_objects"][1]["uuid"])
 		assert_equal(generate_table_object_etag(second_table_object), res["table_objects"][1]["etag"])
 
-		third_table_object = TableObject.find_by(id: res["table_objects"][2]["id"])
-		assert_equal(third_table_object.id, res["table_objects"][2]["id"])
+		third_table_object = TableObject.find_by(uuid: res["table_objects"][2]["uuid"])
 		assert_equal(third_table_object.uuid, res["table_objects"][2]["uuid"])
 		assert_equal(generate_table_object_etag(third_table_object), res["table_objects"][2]["etag"])
 
-		fourth_table_object = TableObject.find_by(id: res["table_objects"][3]["id"])
-		assert_equal(fourth_table_object.id, res["table_objects"][3]["id"])
+		fourth_table_object = TableObject.find_by(uuid: res["table_objects"][3]["uuid"])
 		assert_equal(fourth_table_object.uuid, res["table_objects"][3]["uuid"])
 		assert_equal(generate_table_object_etag(fourth_table_object), res["table_objects"][3]["etag"])
 
-		fifth_table_object = TableObject.find_by(id: res["table_objects"][4]["id"])
-		assert_equal(fifth_table_object.id, res["table_objects"][4]["id"])
+		fifth_table_object = TableObject.find_by(uuid: res["table_objects"][4]["uuid"])
 		assert_equal(fifth_table_object.uuid, res["table_objects"][4]["uuid"])
 		assert_equal(generate_table_object_etag(fifth_table_object), res["table_objects"][4]["etag"])
 
-		sixth_table_object = TableObject.find_by(id: res["table_objects"][5]["id"])
-		assert_equal(sixth_table_object.id, res["table_objects"][5]["id"])
+		sixth_table_object = TableObject.find_by(uuid: res["table_objects"][5]["uuid"])
 		assert_equal(sixth_table_object.uuid, res["table_objects"][5]["uuid"])
 		assert_equal(generate_table_object_etag(sixth_table_object), res["table_objects"][5]["etag"])
 	end
@@ -318,13 +312,11 @@ describe TablesController do
 		assert_equal(3, res["pages"])
 		assert_equal(2, res["table_objects"].count)
 
-		first_table_object = TableObject.find_by(id: res["table_objects"][0]["id"])
-		assert_equal(first_table_object.id, res["table_objects"][0]["id"])
+		first_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
 		assert_equal(first_table_object.uuid, res["table_objects"][0]["uuid"])
 		assert_equal(generate_table_object_etag(first_table_object), res["table_objects"][0]["etag"])
 
-		second_table_object = TableObject.find_by(id: res["table_objects"][1]["id"])
-		assert_equal(second_table_object.id, res["table_objects"][1]["id"])
+		second_table_object = TableObject.find_by(uuid: res["table_objects"][1]["uuid"])
 		assert_equal(second_table_object.uuid, res["table_objects"][1]["uuid"])
 		assert_equal(generate_table_object_etag(second_table_object), res["table_objects"][1]["etag"])
 
@@ -341,13 +333,11 @@ describe TablesController do
 		assert_equal(3, res["pages"])
 		assert_equal(2, res["table_objects"].count)
 
-		third_table_object = TableObject.find_by(id: res["table_objects"][0]["id"])
-		assert_equal(third_table_object.id, res["table_objects"][0]["id"])
+		third_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
 		assert_equal(third_table_object.uuid, res["table_objects"][0]["uuid"])
 		assert_equal(generate_table_object_etag(third_table_object), res["table_objects"][0]["etag"])
 
-		fourth_table_object = TableObject.find_by(id: res["table_objects"][1]["id"])
-		assert_equal(fourth_table_object.id, res["table_objects"][1]["id"])
+		fourth_table_object = TableObject.find_by(uuid: res["table_objects"][1]["uuid"])
 		assert_equal(fourth_table_object.uuid, res["table_objects"][1]["uuid"])
 		assert_equal(generate_table_object_etag(fourth_table_object), res["table_objects"][1]["etag"])
 
@@ -364,13 +354,11 @@ describe TablesController do
 		assert_equal(3, res["pages"])
 		assert_equal(2, res["table_objects"].count)
 
-		fifth_table_object = TableObject.find_by(id: res["table_objects"][0]["id"])
-		assert_equal(fifth_table_object.id, res["table_objects"][0]["id"])
+		fifth_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
 		assert_equal(fifth_table_object.uuid, res["table_objects"][0]["uuid"])
 		assert_equal(generate_table_object_etag(fifth_table_object), res["table_objects"][0]["etag"])
 
-		sixth_table_object = TableObject.find_by(id: res["table_objects"][1]["id"])
-		assert_equal(sixth_table_object.id, res["table_objects"][1]["id"])
+		sixth_table_object = TableObject.find_by(uuid: res["table_objects"][1]["uuid"])
 		assert_equal(sixth_table_object.uuid, res["table_objects"][1]["uuid"])
 		assert_equal(generate_table_object_etag(sixth_table_object), res["table_objects"][1]["etag"])
 	end
