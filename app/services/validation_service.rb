@@ -72,23 +72,18 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(false, error_code, 400)].to_json
 	end
 
-	def self.validate_table_object_is_not_file(table_object)
-		error_code = 1106
-		table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
-	end
-
 	def self.validate_table_object_is_file(table_object)
-		error_code = 1107
+		error_code = 1106
 		!table_object.file ? get_validation_hash(false, error_code, 422) : get_validation_hash
 	end
 
 	def self.raise_table_object_has_no_file
-		error_code = 1108
+		error_code = 1107
 		raise RuntimeError, [get_validation_hash(false, error_code, 404)].to_json
 	end
 
 	def self.validate_sufficient_storage(free_storage, file_size)
-		error_code = 1109
+		error_code = 1108
 		free_storage < file_size ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
@@ -462,12 +457,10 @@ class ValidationService
 		when 1105
 			"Invalid body"
 		when 1106
-			"Can't update the properties of a table object with file"
-		when 1107
 			"The table object is not a file"
-		when 1108
+		when 1107
 			"The table object has no file"
-		when 1109
+		when 1108
 			"Not sufficient storage available"
 		when 1201
 			"Password is incorrect"

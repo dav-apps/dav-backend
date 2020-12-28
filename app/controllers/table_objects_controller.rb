@@ -267,44 +267,71 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
 
 		# Check if the table object is a file
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_not_file(table_object))
+		if table_object.file
+			# Take the ext property
+			ext = properties["ext"]
 
-		# Validate the properties
-		properties.each do |key, value|
-			ValidationService.raise_multiple_validation_errors([
-				ValidationService.validate_property_name_type(key),
-				ValidationService.validate_property_value_type(value)
-			])
-		end
+			if !ext.nil?
+				# Validate the type
+				ValidationService.raise_validation_error(ValidationService.validate_ext_type(ext))
 
-		properties.each do |key, value|
-			ValidationService.raise_multiple_validation_errors([
-				ValidationService.validate_property_name_length(key),
-				ValidationService.validate_property_value_length(value)
-			])
-		end
+				# Validate the length
+				ValidationService.raise_validation_error(ValidationService.validate_ext_length(ext))
 
-		properties.each do |key, value|
-			# Try to find the property
-			prop = TableObjectProperty.find_by(table_object: table_object, name: key)
+				ext_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
 
-			if prop.nil? && !value.nil?
-				# Create a new property
-				UtilsService.create_property_type(table_object.table, key, value)
+				if ext_prop.nil?
+					# Create the property
+					ext_prop = TableObjectProperty.new(
+						table_object: table_object,
+						name: Constants::EXT_PROPERTY_NAME,
+						value: ext
+					)
+				else
+					# Update the property
+					ext_prop.value = ext
+				end
 
-				prop = TableObjectProperty.new(
-					table_object: table_object,
-					name: key,
-					value: value.to_s
-				)
-				ValidationService.raise_unexpected_error(!prop.save)
-			elsif !prop.nil? && value.nil?
-				# Delete the property
-				prop.destroy!
-			elsif !prop.nil? && !value.nil?
-				# Update the property
-				prop.value = value
-				ValidationService.raise_unexpected_error(!prop.save)
+				ValidationService.raise_unexpected_error(!ext_prop.save)
+			end
+		else
+			# Validate the properties
+			properties.each do |key, value|
+				ValidationService.raise_multiple_validation_errors([
+					ValidationService.validate_property_name_type(key),
+					ValidationService.validate_property_value_type(value)
+				])
+			end
+
+			properties.each do |key, value|
+				ValidationService.raise_multiple_validation_errors([
+					ValidationService.validate_property_name_length(key),
+					ValidationService.validate_property_value_length(value)
+				])
+			end
+
+			properties.each do |key, value|
+				# Try to find the property
+				prop = TableObjectProperty.find_by(table_object: table_object, name: key)
+
+				if prop.nil? && !value.nil?
+					# Create a new property
+					UtilsService.create_property_type(table_object.table, key, value)
+
+					prop = TableObjectProperty.new(
+						table_object: table_object,
+						name: key,
+						value: value.to_s
+					)
+					ValidationService.raise_unexpected_error(!prop.save)
+				elsif !prop.nil? && value.nil?
+					# Delete the property
+					prop.destroy!
+				elsif !prop.nil? && !value.nil?
+					# Update the property
+					prop.value = value
+					ValidationService.raise_unexpected_error(!prop.save)
+				end
 			end
 		end
 

@@ -630,6 +630,47 @@ describe TableObjectsController do
 		assert_equal(0, properties.length)
 	end
 
+	it "should create table object as file with ext" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table = tables(:testTable)
+		ext = "mp4"
+
+		res = post_request(
+			"/v1/table_object",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_id: table.id,
+				file: true,
+				properties: {
+					ext: ext
+				}
+			}
+		)
+
+		assert_response 201
+
+		table_object = TableObject.find_by(id: res["id"])
+		assert_not_nil(table_object)
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(table_object.etag, res["etag"])
+		assert_equal(table_object.table_object_properties.length, res["properties"].length)
+
+		assert_equal(users(:sherlock).id, res["user_id"])
+		assert_equal(table.id, res["table_id"])
+		assert_not_nil(res["uuid"])
+		assert(res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(1, res["properties"].length)
+
+		ext_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
+		assert_not_nil(ext_property)
+		assert_equal(ext, ext_property.value)
+	end
+
 	it "should create table object and update last_active fields" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
@@ -972,7 +1013,7 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should not update table object that is a file" do
+	it "should not update file table object with ext with wrong type" do
 		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 
 		res = put_request(
@@ -980,14 +1021,14 @@ describe TableObjectsController do
 			{Authorization: jwt, 'Content-Type': 'application/json'},
 			{
 				properties: {
-					test1: "Hello World"
+					ext: false
 				}
 			}
 		)
 
-		assert_response 422
+		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::TABLE_OBJECT_IS_FILE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::EXT_WRONG_TYPE, res["errors"][0]["code"])
 	end
 
 	it "should not update table object with too short property name" do
@@ -1064,6 +1105,42 @@ describe TableObjectsController do
 		assert_response 400
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should not update file table object with too short ext" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					ext: ""
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EXT_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not update file table object with too long ext" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = put_request(
+			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					ext: "asdasdasdasd"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EXT_TOO_LONG, res["errors"][0]["code"])
 	end
 
 	it "should update table object" do
@@ -1295,6 +1372,37 @@ describe TableObjectsController do
 		second_property_type = TablePropertyType.find_by(table: table_object.table, name: second_property_name)
 		assert_not_nil(second_property_type)
 		assert_equal(0, second_property_type.data_type)
+	end
+
+	it "should update file table object with ext" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+		table_object = table_objects(:sherlockTestFile)
+		ext = "mp3"
+
+		res = put_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				properties: {
+					ext: ext
+				}
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(1, res["properties"].length)
+
+		# Ext property
+		ext_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
+		assert_not_nil(ext)
+		assert_equal(ext, ext_property.value)
 	end
 
 	it "should update table object and update last_active fields" do
