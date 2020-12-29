@@ -721,4 +721,50 @@ class TableObjectsController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def remove_table_object
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+		
+		id = params["id"]
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Get the table object
+		if id.include?('-')
+			table_object = TableObject.find_by(uuid: id)
+		else
+			table_object = TableObject.find_by(id: id)
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+
+		# Check if the table object user access exists
+		access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_user_access_existence(access))
+
+		# Save that the user was active
+		user.update_column(:last_active, Time.now)
+
+		app_user = AppUser.find_by(user: user, app: app)
+		app_user.update_column(:last_active, Time.now) if !app_user.nil?
+
+		# Delete the table object user access
+		access.destroy!
+		
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end

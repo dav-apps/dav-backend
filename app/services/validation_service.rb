@@ -399,6 +399,11 @@ class ValidationService
 		session.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_table_object_user_access_existence(access)
+		error_code = 2807
+		access.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -591,6 +596,8 @@ class ValidationService
 			"Resource does not exist: TableObject"
 		when 2806
 			"Resource does not exist: Session"
+		when 2807
+			"Resource does not exist: TableObjectUserAccess"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		end
