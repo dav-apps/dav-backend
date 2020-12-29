@@ -2341,4 +2341,111 @@ describe TableObjectsController do
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
 	end
+
+	# remove_table_object
+	it "should not remove table object without jwt" do
+		res = delete_request("/v1/table_object/12/access")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not remove table object with invalid jwt" do
+		res = delete_request(
+			"/v1/table_object/12/access",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not remove table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = delete_request(
+			"/v1/table_object/-123/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not remove table object that belongs to another app" do
+		jwt = generate_jwt(sessions(:mattTestAppSession))
+
+		res = delete_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not remove table object that was not added" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = delete_request(
+			"/v1/table_object/#{table_objects(:davThirdCard).id}/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_USER_ACCESS_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should remove table object" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davFirstCard)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.id}/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		access = TableObjectUserAccess.find_by(user: users(:matt), table_object: table_object)
+		assert_nil(access)
+	end
+
+	it "should remove table object with uuid" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davFirstCard)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		access = TableObjectUserAccess.find_by(user: users(:matt), table_object: table_object)
+		assert_nil(access)
+	end
+
+	it "should remove table object and update last_active fields" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davFirstCard)
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		user = users(:matt)
+		assert(Time.now.to_i - user.last_active.to_i < 10)
+
+		app_user = app_users(:mattCards)
+		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+	end
 end
