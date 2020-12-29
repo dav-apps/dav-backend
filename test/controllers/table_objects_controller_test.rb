@@ -2084,4 +2084,261 @@ describe TableObjectsController do
 		# Delete the blob
 		BlobOperationsService.delete_blob(table_object)
 	end
+
+	# add_table_object
+	it "should not add table object without jwt" do
+		res = post_request("/v1/table_object/1/access")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not add table object without Content-Type json" do
+		res = post_request(
+			"/v1/table_object/1/access",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with invalid jwt" do
+		res = post_request(
+			"/v1/table_object/1/access",
+			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with optional properties with wrong types" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_alias: "Hello World"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_ALIAS_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not add table object that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object/-123/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object that belongs to another app" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object/#{table_objects(:sherlockTestData).id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with alias table that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_alias: -413
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with alias table that belongs to another app" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = post_request(
+			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_alias: tables(:note).id
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object that was already added" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davFirstCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 409
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_USER_ACCESS_ALREADY_EXISTS, res["errors"][0]["code"])
+	end
+
+	it "should add table object" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davThirdCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(2, res["properties"].length)
+
+		# First property
+		first_property = table_object_properties(:davThirdCardPage1)
+		assert_equal(first_property.value, res["properties"][first_property.name])
+
+		# Second property
+		second_property = table_object_properties(:davThirdCardPage2)
+		assert_equal(second_property.value, res["properties"][second_property.name])
+	end
+
+	it "should add table object with uuid" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davThirdCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(2, res["properties"].length)
+
+		# First property
+		first_property = table_object_properties(:davThirdCardPage1)
+		assert_equal(first_property.value, res["properties"][first_property.name])
+
+		# Second property
+		second_property = table_object_properties(:davThirdCardPage2)
+		assert_equal(second_property.value, res["properties"][second_property.name])
+	end
+
+	it "should add table object with table alias" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davThirdCard)
+		alias_table = tables(:imageCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_alias: alias_table.id
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(alias_table.id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(2, res["properties"].length)
+
+		# First property
+		first_property = table_object_properties(:davThirdCardPage1)
+		assert_equal(first_property.value, res["properties"][first_property.name])
+
+		# Second property
+		second_property = table_object_properties(:davThirdCardPage2)
+		assert_equal(second_property.value, res["properties"][second_property.name])
+	end
+
+	it "should add table object with table alias and uuid" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davThirdCard)
+		alias_table = tables(:imageCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				table_alias: alias_table.id
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(alias_table.id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert_equal(2, res["properties"].length)
+
+		# First property
+		first_property = table_object_properties(:davThirdCardPage1)
+		assert_equal(first_property.value, res["properties"][first_property.name])
+
+		# Second property
+		second_property = table_object_properties(:davThirdCardPage2)
+		assert_equal(second_property.value, res["properties"][second_property.name])
+	end
+
+	it "should add table object and update last_active fields" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		table_object = table_objects(:davThirdCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.id}/access",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 200
+
+		user = users(:matt)
+		assert(Time.now.to_i - user.last_active.to_i < 10)
+
+		app_user = app_users(:mattCards)
+		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+	end
 end

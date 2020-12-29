@@ -11,6 +11,12 @@ cards:
   published: true
   web_link: "https://cards.dav-apps.tech"
 
+notes:
+  dev: sherlock
+  name: Notes
+  description: This is a note taking app
+  published: true
+
 testApp:
   dev: dav
   name: testApp

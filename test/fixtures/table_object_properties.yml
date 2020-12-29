@@ -58,6 +58,16 @@ davSecondCardPage2:
   name: page2
   value: table
 
+davThirdCardPage1:
+  table_object: davThirdCard
+  name: page1
+  value: Bildschirm
+
+davThirdCardPage2:
+  table_object: davThirdCard
+  name: page2
+  value: screen
+
 sherlockTestDataTest1:
   table_object: sherlockTestData
   name: test1

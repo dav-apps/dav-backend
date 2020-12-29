@@ -2,6 +2,14 @@ card:
   app: cards
   name: Card
 
+imageCard:
+  app: cards
+  name: ImageCard
+
+note:
+  app: notes
+  name: Note
+
 storeBook:
   app: PocketLib
   name: StoreBook
