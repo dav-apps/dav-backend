@@ -248,6 +248,11 @@ class ValidationService
 		!ext.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_table_alias_type(table_alias)
+		error_code = 2217
+		!table_alias.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for length of fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -363,7 +368,7 @@ class ValidationService
 		TableObject.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
-	# Methods for existance of fields
+	# Methods for existence of fields
 	def self.validate_user_existence(user)
 		error_code = 2801
 		user.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
@@ -392,6 +397,12 @@ class ValidationService
 	def self.validate_session_existence(session)
 		error_code = 2806
 		session.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
+	# Methods for non-existence of fields
+	def self.validate_table_object_user_access_nonexistence(access)
+		error_code = 2901
+		!access.nil? ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
 	# Utility methods
@@ -522,6 +533,8 @@ class ValidationService
 			"Field has wrong type: value (for TableObjectProperty)"
 		when 2216
 			"Field has wrong type: ext"
+		when 2217
+			"Field has wrong type: table_alias"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -578,6 +591,8 @@ class ValidationService
 			"Resource does not exist: TableObject"
 		when 2806
 			"Resource does not exist: Session"
+		when 2901
+			"Resource already exists: TableObjectUserAccess"
 		end
 	end
 end
