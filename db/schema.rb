@@ -237,7 +237,7 @@ ActiveRecord::Schema.define(version: 2020_12_24_154815) do
   end
 
   create_table "web_push_subscriptions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "user_id"
+    t.bigint "session_id"
     t.string "uuid"
     t.string "endpoint"
     t.string "p256dh"
