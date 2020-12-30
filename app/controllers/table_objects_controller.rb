@@ -53,7 +53,7 @@ class TableObjectsController < ApplicationController
 			table_object.uuid = SecureRandom.uuid
 		else
 			# Check if the uuid is already taken
-			ValidationService.raise_validation_error(ValidationService.validate_uuid_availability(uuid))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_uuid_availability(uuid))
 			table_object.uuid = uuid
 		end
 

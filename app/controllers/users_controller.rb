@@ -2,7 +2,7 @@ class UsersController < ApplicationController
 	def signup
 		auth = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_presence(auth))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body

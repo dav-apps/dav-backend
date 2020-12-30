@@ -21,6 +21,9 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:id/access', to: 'table_objects#add_table_object', via: :post
 	match '/v1/table_object/:id/access', to: 'table_objects#remove_table_object', via: :delete
 
+	# WebPushSubscriptionsController
+	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
+
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
 

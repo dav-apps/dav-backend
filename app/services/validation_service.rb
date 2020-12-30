@@ -111,7 +111,7 @@ class ValidationService
 	end
 
 	# Methods for presence of fields
-	def self.validate_auth_presence(auth)
+	def self.validate_auth_header_presence(auth)
 		error_code = 2101
 		auth.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
@@ -159,6 +159,21 @@ class ValidationService
 	def self.validate_properties_presence(properties)
 		error_code = 2110
 		properties.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_endpoint_presence(endpoint)
+		error_code = 2111
+		endpoint.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_p256dh_presence(p256dh)
+		error_code = 2112
+		p256dh.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+	
+	def self.validate_auth_presence(auth)
+		error_code = 2113
+		auth.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -251,6 +266,21 @@ class ValidationService
 	def self.validate_table_alias_type(table_alias)
 		error_code = 2217
 		!table_alias.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_endpoint_type(endpoint)
+		error_code = 2218
+		!endpoint.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_p256dh_type(p256dh)
+		error_code = 2219
+		!p256dh.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_auth_type(auth)
+		error_code = 2220
+		!auth.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -346,6 +376,36 @@ class ValidationService
 		end
 	end
 
+	def self.validate_endpoint_length(endpoint)
+		if endpoint.length < Constants::ENDPOINT_MIN_LENGTH
+			get_validation_hash(false, 2310, 400)
+		elsif endpoint.length > Constants::ENDPOINT_MAX_LENGTH
+			get_validation_hash(false, 2410, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_p256dh_length(p256dh)
+		if p256dh.length < Constants::P256DH_MIN_LENGTH
+			get_validation_hash(false, 2311, 400)
+		elsif p256dh.length > Constants::P256DH_MAX_LENGTH
+			get_validation_hash(false, 2411, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_auth_length(auth)
+		if auth.length < Constants::AUTH_MIN_LENGTH
+			get_validation_hash(false, 2312, 400)
+		elsif auth.length > Constants::AUTH_MAX_LENGTH
+			get_validation_hash(false, 2412, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -363,9 +423,14 @@ class ValidationService
 		User.exists?(email: email) ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
-	def self.validate_uuid_availability(uuid)
+	def self.validate_table_object_uuid_availability(uuid)
 		error_code = 2702
 		TableObject.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
+	end
+
+	def self.validate_web_push_subscription_uuid_availability(uuid)
+		error_code = 2702
+		WebPushSubscription.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
 	# Methods for existence of fields
@@ -506,6 +571,12 @@ class ValidationService
 			"Missing field: table_id"
 		when 2110
 			"Missing field: properties"
+		when 2111
+			"Missing field: endpoint"
+		when 2112
+			"Missing field: p256dh"
+		when 2113
+			"Missing field: auth"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -540,6 +611,12 @@ class ValidationService
 			"Field has wrong type: ext"
 		when 2217
 			"Field has wrong type: table_alias"
+		when 2218
+			"Field has wrong type: endpoint"
+		when 2219
+			"Field has wrong type: p256dh"
+		when 2220
+			"Field has wrong type: auth"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -558,6 +635,12 @@ class ValidationService
 			"Field too short: value (for TableObjectProperty)"
 		when 2309
 			"Field too short: ext"
+		when 2310
+			"Field too short: endpoint"
+		when 2311
+			"Field too short: p256dh"
+		when 2312
+			"Field too short: auth"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -576,6 +659,12 @@ class ValidationService
 			"Field too long: value (for TableObjectProperty)"
 		when 2409
 			"Field too long: ext"
+		when 2410
+			"Field too long: endpoint"
+		when 2411
+			"Field too long: p256dh"
+		when 2412
+			"Field too long: auth"
 		when 2501
 			"Field invalid: email"
 		when 2502
