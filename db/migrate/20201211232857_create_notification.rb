@@ -7,6 +7,8 @@ class CreateNotification < ActiveRecord::Migration[6.0]
 		t.index :uuid, unique: true
 		t.datetime :time
 		t.integer :interval
+		t.string :title
+		t.string :body
 		t.datetime :created_at, precision: 6, null: false
     end
   end

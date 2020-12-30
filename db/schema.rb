@@ -121,18 +121,14 @@ ActiveRecord::Schema.define(version: 2020_12_24_154815) do
     t.datetime "created_at", precision: 6, null: false
   end
 
-  create_table "notification_properties", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "notification_id"
-    t.string "name"
-    t.text "value"
-  end
-
   create_table "notifications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "uuid"
     t.datetime "time"
     t.integer "interval"
+    t.string "title"
+    t.string "body"
     t.datetime "created_at", precision: 6, null: false
     t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
