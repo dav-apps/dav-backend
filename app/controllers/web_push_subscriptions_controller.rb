@@ -15,6 +15,9 @@ class WebPushSubscriptionsController < ApplicationController
 		app = App.find_by(id: payload[:app_id])
 		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
 
+		session = Session.find_by(id: session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_session_existence(session))
+
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		uuid = body["uuid"]
@@ -46,7 +49,7 @@ class WebPushSubscriptionsController < ApplicationController
 
 		# Create the WebPushSubscription
 		subscription = WebPushSubscription.new(
-			user: user,
+			session: session,
 			endpoint: endpoint,
 			p256dh: p256dh,
 			auth: auth
@@ -65,7 +68,7 @@ class WebPushSubscriptionsController < ApplicationController
 		# Return the data
 		result = {
 			id: subscription.id,
-			user_id: subscription.user_id,
+			session_id: subscription.session_id,
 			uuid: subscription.uuid,
 			endpoint: subscription.endpoint,
 			p256dh: subscription.p256dh,

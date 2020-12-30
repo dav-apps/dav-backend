@@ -134,7 +134,8 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should create web push subscription" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
+		session = sessions(:mattCardsSession)
+		jwt = generate_jwt(session)
 		endpoint = "https://fcm.google.com/..."
 		p256dh = "asdasdasdasd"
 		auth = "oshdfuhw9ehuosfd"
@@ -152,7 +153,7 @@ describe WebPushSubscriptionsController do
 		assert_response 201
 		
 		assert_not_nil(res["id"])
-		assert_equal(users(:matt).id, res["user_id"])
+		assert_equal(session.id, res["session_id"])
 		assert_not_nil(res["uuid"])
 		assert_equal(endpoint, res["endpoint"])
 		assert_equal(p256dh, res["p256dh"])
@@ -161,7 +162,7 @@ describe WebPushSubscriptionsController do
 		subscription = WebPushSubscription.find_by(id: res["id"])
 		assert_not_nil(subscription)
 		assert_equal(subscription.id, res["id"])
-		assert_equal(subscription.user_id, res["user_id"])
+		assert_equal(subscription.session_id, res["session_id"])
 		assert_equal(subscription.uuid, res["uuid"])
 		assert_equal(subscription.endpoint, res["endpoint"])
 		assert_equal(subscription.p256dh, res["p256dh"])
@@ -169,7 +170,8 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should create web push subscription with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
+		session = sessions(:mattCardsSession)
+		jwt = generate_jwt(session)
 		uuid = SecureRandom.uuid
 		endpoint = "https://fcm.google.com/..."
 		p256dh = "asdasdasdasd"
@@ -189,7 +191,7 @@ describe WebPushSubscriptionsController do
 		assert_response 201
 		
 		assert_not_nil(res["id"])
-		assert_equal(users(:matt).id, res["user_id"])
+		assert_equal(session.id, res["session_id"])
 		assert_equal(uuid, res["uuid"])
 		assert_equal(endpoint, res["endpoint"])
 		assert_equal(p256dh, res["p256dh"])
@@ -198,7 +200,7 @@ describe WebPushSubscriptionsController do
 		subscription = WebPushSubscription.find_by(id: res["id"])
 		assert_not_nil(subscription)
 		assert_equal(subscription.id, res["id"])
-		assert_equal(subscription.user_id, res["user_id"])
+		assert_equal(subscription.session_id, res["session_id"])
 		assert_equal(subscription.uuid, res["uuid"])
 		assert_equal(subscription.endpoint, res["endpoint"])
 		assert_equal(subscription.p256dh, res["p256dh"])
