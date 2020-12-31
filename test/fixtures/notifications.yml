@@ -1,0 +1,8 @@
+mattCardsFirstReminderNotification:
+  user: matt
+  app: cards
+  uuid: fcce4e63-62df-443b-b5d4-a697daabbed2
+  time: <%= Time.now + 1.month %>
+  interval: <%= 1.month %>
+  title: "Don't forget!"
+  body: "Remember this important thing!"

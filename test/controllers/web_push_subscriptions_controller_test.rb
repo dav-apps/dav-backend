@@ -133,6 +133,26 @@ describe WebPushSubscriptionsController do
 		assert_equal(ErrorCodes::AUTH_TOO_LONG, res["errors"][2]["code"])
 	end
 
+	it "should not create web push subscription with uuid that is already in use" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		subscription = web_push_subscriptions(:mattCardsWebPushSubscription)
+
+		res = post_request(
+			"/v1/web_push_subscription",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				uuid: subscription.uuid,
+				endpoint: "https://notify.windows.com/asdasdasd",
+				p256dh: "asasdasdasdads",
+				auth: "asdasdad2e20rhwefwe"
+			}
+		)
+
+		assert_response 409
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::UUID_ALREADY_TAKEN, res["errors"][0]["code"])
+	end
+
 	it "should create web push subscription" do
 		session = sessions(:mattCardsSession)
 		jwt = generate_jwt(session)

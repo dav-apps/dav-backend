@@ -1,0 +1,6 @@
+mattCardsWebPushSubscription:
+  session: mattCardsSession
+  uuid: b7e21280-16ed-4839-ab72-dba7c61a1bc3
+  endpoint: "https://am3p.notify.windows.com/w/?token=BQYAAACfBxOBEfKi"
+  p256dh: "BGwQSMNsbjfVmeTBw3m-JqIUbL1_NzgSbBxHppoNUp"
+  auth: "BYUgS5jr0XuJafPPOymusQ"
