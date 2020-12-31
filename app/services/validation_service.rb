@@ -176,6 +176,26 @@ class ValidationService
 		auth.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_time_presence(time)
+		error_code = 2114
+		time.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_interval_presence(interval)
+		error_code = 2115
+		interval.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_title_presence(title)
+		error_code = 2116
+		title.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_body_presence(body)
+		error_code = 2117
+		body.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -281,6 +301,26 @@ class ValidationService
 	def self.validate_auth_type(auth)
 		error_code = 2220
 		!auth.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_time_type(time)
+		error_code = 2221
+		!time.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_interval_type(interval)
+		error_code = 2222
+		!interval.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_title_type(title)
+		error_code = 2223
+		!title.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_body_type(body)
+		error_code = 2224
+		!body.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -406,6 +446,26 @@ class ValidationService
 		end
 	end
 
+	def self.validate_title_length(title)
+		if title.length < Constants::TITLE_MIN_LENGTH
+			get_validation_hash(false, 2313, 400)
+		elsif title.length > Constants::TITLE_MAX_LENGTH
+			get_validation_hash(false, 2413, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_body_length(body)
+		if body.length < Constants::BODY_MIN_LENGTH
+			get_validation_hash(false, 2314, 400)
+		elsif body.length > Constants::BODY_MAX_LENGTH
+			get_validation_hash(false, 2414, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -431,6 +491,11 @@ class ValidationService
 	def self.validate_web_push_subscription_uuid_availability(uuid)
 		error_code = 2702
 		WebPushSubscription.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
+	end
+
+	def self.validate_notification_uuid_availability(uuid)
+		error_code = 2702
+		Notification.exists?(uuid: uuid) ? get_validation_hash(false, error_code, 409) : get_validation_hash
 	end
 
 	# Methods for existence of fields
@@ -577,6 +642,14 @@ class ValidationService
 			"Missing field: p256dh"
 		when 2113
 			"Missing field: auth"
+		when 2114
+			"Missing field: time"
+		when 2115
+			"Missing field: interval"
+		when 2116
+			"Missing field: title"
+		when 2117
+			"Missing field: body"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -617,6 +690,14 @@ class ValidationService
 			"Field has wrong type: p256dh"
 		when 2220
 			"Field has wrong type: auth"
+		when 2221
+			"Field has wrong type: time"
+		when 2222
+			"Field has wrong type: interval"
+		when 2223
+			"Field has wrong type: title"
+		when 2224
+			"Field has wrong type: body"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -641,6 +722,10 @@ class ValidationService
 			"Field too short: p256dh"
 		when 2312
 			"Field too short: auth"
+		when 2313
+			"Field too short: title"
+		when 2314
+			"Field too short: body"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -665,6 +750,10 @@ class ValidationService
 			"Field too long: p256dh"
 		when 2412
 			"Field too long: auth"
+		when 2413
+			"Field too long: title"
+		when 2414
+			"Field too long: body"
 		when 2501
 			"Field invalid: email"
 		when 2502

@@ -9,7 +9,7 @@ class CreateNotification < ActiveRecord::Migration[6.0]
 		t.integer :interval
 		t.string :title
 		t.string :body
-		t.datetime :created_at, precision: 6, null: false
+		t.timestamps
     end
   end
 end

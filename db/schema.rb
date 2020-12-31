@@ -130,6 +130,7 @@ ActiveRecord::Schema.define(version: 2020_12_24_154815) do
     t.string "title"
     t.string "body"
     t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
 
