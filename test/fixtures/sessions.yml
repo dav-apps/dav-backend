@@ -16,6 +16,15 @@ mattCardsSession:
   device_type: Dual-Screen
   device_os: Android
 
+mattWebsiteSession:
+  user: matt
+  app: website
+  secret: "03EMagNyOzOTeCrb_aDGm0Gp4RY9ceTBsTSA3pXc"
+  exp: <%= DateTime.new(2059, 04, 03).to_s(:db) %>
+  device_name: Desktop
+  device_type: PC
+  device_os: Windows 10
+
 davWebsiteSession:
   user: dav
   app: website
