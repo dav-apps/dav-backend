@@ -428,4 +428,80 @@ describe NotificationsController do
 		assert_equal(notification.title, res["title"])
 		assert_equal(notification.body, res["body"])
 	end
+
+	# delete_notification
+	it "should not delete notification without jwt" do
+		res = delete_request("/v1/notification/asdasdsad")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not delete notification with invalid jwt" do
+		res = delete_request(
+			"/v1/notification/pjadpiasdjasd",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not delete notificaion that does not exist" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+
+		res = delete_request(
+			"/v1/notification/asdasd234fdaf3r",
+			{Authorization: jwt}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::NOTIFICATION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not delete notification that does not belong to the user" do
+		jwt = generate_jwt(sessions(:davCardsSession))
+		notification = notifications(:mattCardsFirstReminderNotification)
+
+		res = delete_request(
+			"/v1/notification/#{notification.uuid}",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not delete notification that does not belong to the app" do
+		jwt = generate_jwt(sessions(:mattWebsiteSession))
+		notification = notifications(:mattCardsFirstReminderNotification)
+
+		res = delete_request(
+			"/v1/notification/#{notification.uuid}",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should delete notification" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		notification = notifications(:mattCardsFirstReminderNotification)
+
+		res = delete_request(
+			"/v1/notification/#{notification.uuid}",
+			{Authorization: jwt}
+		)
+
+		assert_response 204
+
+		notification = Notification.find_by(id: notification.id)
+		assert_nil(notification)
+	end
 end

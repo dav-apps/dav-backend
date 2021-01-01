@@ -151,4 +151,36 @@ class NotificationsController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def delete_notification
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		uuid = params["uuid"]
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Get the notification
+		notification = Notification.find_by(uuid: uuid)
+		ValidationService.raise_validation_error(ValidationService.validate_notification_existence(notification))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_user(notification, user))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_app(notification, app))
+
+		# Delete the notification
+		notification.destroy!
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end
