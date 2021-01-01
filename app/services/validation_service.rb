@@ -45,6 +45,16 @@ class ValidationService
 		table_object.table.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_notification_belongs_to_user(notification, user)
+		error_code = 1103
+		notification.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
+	def self.validate_notification_belongs_to_app(notification, app)
+		error_code = 1103
+		notification.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_dev_is_first_dev(dev)
 		error_code = 1103
 		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -534,6 +544,11 @@ class ValidationService
 		access.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_notification_existence(notification)
+		error_code = 2808
+		notification.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -776,6 +791,8 @@ class ValidationService
 			"Resource does not exist: Session"
 		when 2807
 			"Resource does not exist: TableObjectUserAccess"
+		when 2808
+			"Resource does not exist: Notification"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		end

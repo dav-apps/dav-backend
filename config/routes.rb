@@ -23,6 +23,7 @@ Rails.application.routes.draw do
 
 	# NotificationsController
 	match '/v1/notification', to: 'notifications#create_notification', via: :post
+	match '/v1/notification/:uuid', to: 'notifications#update_notification', via: :put
 
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
