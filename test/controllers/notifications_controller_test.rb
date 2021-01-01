@@ -140,7 +140,7 @@ describe NotificationsController do
 
 	it "should not create notification with uuid that is already in use" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = post_request(
 			"/v1/notification",
@@ -245,6 +245,58 @@ describe NotificationsController do
 		assert_equal(notification.body, res["body"])
 	end
 
+	# get_notifications
+	it "should not get notifications without jwt" do
+		res = get_request("/v1/notifications")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get notifications with invalid jwt" do
+		res = get_request(
+			"/v1/notifications",
+			{Authorization: "asdasdasdsadsda"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should get notifications" do
+		jwt = generate_jwt(sessions(:mattCardsSession))
+		first_notification = notifications(:mattCardsFirstNotification)
+		second_notification = notifications(:mattCardsSecondNotification)
+
+		res = get_request(
+			"/v1/notifications",
+			{Authorization: jwt}
+		)
+
+		assert_response 200
+		assert_equal(2, res["notifications"].length)
+
+		assert_equal(first_notification.id, res["notifications"][0]["id"])
+		assert_equal(first_notification.user_id, res["notifications"][0]["user_id"])
+		assert_equal(first_notification.app_id, res["notifications"][0]["app_id"])
+		assert_equal(first_notification.uuid, res["notifications"][0]["uuid"])
+		assert_equal(first_notification.time.to_i, res["notifications"][0]["time"])
+		assert_equal(first_notification.interval, res["notifications"][0]["interval"])
+		assert_equal(first_notification.title, res["notifications"][0]["title"])
+		assert_equal(first_notification.body, res["notifications"][0]["body"])
+
+		assert_equal(second_notification.id, res["notifications"][1]["id"])
+		assert_equal(second_notification.user_id, res["notifications"][1]["user_id"])
+		assert_equal(second_notification.app_id, res["notifications"][1]["app_id"])
+		assert_equal(second_notification.uuid, res["notifications"][1]["uuid"])
+		assert_equal(second_notification.time.to_i, res["notifications"][1]["time"])
+		assert_equal(second_notification.interval, res["notifications"][1]["interval"])
+		assert_equal(second_notification.title, res["notifications"][1]["title"])
+		assert_equal(second_notification.body, res["notifications"][1]["body"])
+	end
+
 	# update_notification
 	it "should not update notification without jwt" do
 		res = put_request("/v1/notification/23234234")
@@ -278,7 +330,7 @@ describe NotificationsController do
 
 	it "should not update notification with properties with wrong types" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
@@ -301,7 +353,7 @@ describe NotificationsController do
 
 	it "should not update notification with too short properties" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
@@ -320,7 +372,7 @@ describe NotificationsController do
 
 	it "should not update notification with too long properties" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
@@ -355,7 +407,7 @@ describe NotificationsController do
 
 	it "should not update notification that does not belong to the user" do
 		jwt = generate_jwt(sessions(:davCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
@@ -372,7 +424,7 @@ describe NotificationsController do
 
 	it "should not update notification that does not belong to the app" do
 		jwt = generate_jwt(sessions(:mattWebsiteSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
@@ -389,7 +441,7 @@ describe NotificationsController do
 
 	it "should update notification" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 		time = Time.now.to_i
 		interval = 13123123
 		title = "Updated title"
@@ -464,7 +516,7 @@ describe NotificationsController do
 
 	it "should not delete notification that does not belong to the user" do
 		jwt = generate_jwt(sessions(:davCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",
@@ -478,7 +530,7 @@ describe NotificationsController do
 
 	it "should not delete notification that does not belong to the app" do
 		jwt = generate_jwt(sessions(:mattWebsiteSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",
@@ -492,7 +544,7 @@ describe NotificationsController do
 
 	it "should delete notification" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
-		notification = notifications(:mattCardsFirstReminderNotification)
+		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",

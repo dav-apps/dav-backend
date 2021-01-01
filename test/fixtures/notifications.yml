@@ -1,4 +1,4 @@
-mattCardsFirstReminderNotification:
+mattCardsFirstNotification:
   user: matt
   app: cards
   uuid: fcce4e63-62df-443b-b5d4-a697daabbed2
@@ -6,3 +6,30 @@ mattCardsFirstReminderNotification:
   interval: <%= 1.month %>
   title: "Don't forget!"
   body: "Remember this important thing!"
+
+mattCardsSecondNotification:
+  user: matt
+  app: cards
+  uuid: 326beba1-a2d8-43dd-93e4-4e2aa511cb4d
+  time: <%= Time.now + 1.week %>
+  interval: <%= 1.week %>
+  title: Don't forget (2)!
+  body: "Remember this other important thing!"
+
+mattNotesFirstNotification:
+  user: matt
+  app: notes
+  uuid: 1c96954a-2245-4f84-b11f-f21cfebe228a
+  time: <%= Time.now + 4.months %>
+  interval: 0
+  title: "Test notification"
+  body: "This is a test notification"
+
+sherlockCardsFirstNotification:
+  user: sherlock
+  app: cards
+  uuid: d62f4018-a42f-4d42-a4a4-84878efb2df3
+  time: <%= Time.now + 2.weeks %>
+  interval: <%= 5.days %>
+  title: "Hello World"
+  body: "You have a new message"

@@ -23,6 +23,7 @@ Rails.application.routes.draw do
 
 	# NotificationsController
 	match '/v1/notification', to: 'notifications#create_notification', via: :post
+	match '/v1/notifications', to: 'notifications#get_notifications', via: :get
 	match '/v1/notification/:uuid', to: 'notifications#update_notification', via: :put
 	match '/v1/notification/:uuid', to: 'notifications#delete_notification', via: :delete
 

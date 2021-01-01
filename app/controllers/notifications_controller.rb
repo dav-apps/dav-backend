@@ -83,6 +83,47 @@ class NotificationsController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def get_notifications
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Get the notifications
+		notifications = Array.new
+
+		Notification.where(user: user, app: app).each do |notification|
+			notifications.push({
+				id: notification.id,
+				user_id: notification.user_id,
+				app_id: notification.app_id,
+				uuid: notification.uuid,
+				time: notification.time.to_i,
+				interval: notification.interval,
+				title: notification.title,
+				body: notification.body
+			})
+		end
+
+		# Return the data
+		result = {
+			notifications: notifications
+		}
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def update_notification
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
