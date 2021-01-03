@@ -37,7 +37,7 @@ describe TablesController do
 	end
 
 	it "should not create table with jwt for app that is not the website" do
-		jwt = generate_jwt(sessions(:mattTestAppSession))
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 
 		res = post_request(
 			"/v1/table",
@@ -181,6 +181,7 @@ describe TablesController do
 		)
 
 		assert_response 201
+		
 		assert_not_nil(res["id"])
 		assert_equal(app_id, res["app_id"])
 		assert_equal(name, res["name"])
