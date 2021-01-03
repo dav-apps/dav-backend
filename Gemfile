@@ -38,6 +38,13 @@ gem 'sassc'
 # Azure Blob Storage
 gem 'azure-storage-blob'
 
+# S-Expression parser
+gem 'sexpistol', git: 'https://github.com/dav-apps/sexpistol'
+
+# Blurhash
+gem 'blurhash'
+gem 'rmagick'
+
 group :development, :test do
 	gem 'dotenv-rails'
 end

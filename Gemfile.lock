@@ -1,3 +1,9 @@
+GIT
+  remote: https://github.com/dav-apps/sexpistol
+  revision: db0e61017fb70622f79be18a63bf0fcbd14c55e8
+  specs:
+    sexpistol (0.0.7)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -58,14 +64,17 @@ GEM
       zeitwerk (~> 2.2, >= 2.2.2)
     addressable (2.7.0)
       public_suffix (>= 2.0.2, < 5.0)
-    azure-storage-blob (2.0.0)
+    azure-storage-blob (2.0.1)
       azure-storage-common (~> 2.0)
-      nokogiri (~> 1.10.4)
-    azure-storage-common (2.0.1)
+      nokogiri (~> 1.11.0.rc2)
+    azure-storage-common (2.0.2)
       faraday (~> 1.0)
       faraday_middleware (~> 1.0.0.rc1)
-      nokogiri (~> 1.10.4)
+      net-http-persistent (~> 4.0)
+      nokogiri (~> 1.11.0.rc2)
     bcrypt (3.1.16)
+    blurhash (0.1.4)
+      ffi (~> 1.10.0)
     bootsnap (1.5.1)
       msgpack (~> 1.0)
     bootstrap-email (0.3.2)
@@ -75,6 +84,7 @@ GEM
       rails (>= 3)
     builder (3.2.4)
     concurrent-ruby (1.1.7)
+    connection_pool (2.2.3)
     crass (1.0.6)
     css_parser (1.7.1)
       addressable
@@ -83,19 +93,21 @@ GEM
       dotenv (= 2.7.6)
       railties (>= 3.2)
     erubi (1.10.0)
-    faraday (1.2.0)
+    faraday (1.3.0)
+      faraday-net_http (~> 1.0)
       multipart-post (>= 1.2, < 3)
       ruby2_keywords
+    faraday-net_http (1.0.0)
     faraday_middleware (1.0.0)
       faraday (~> 1.0)
-    ffi (1.13.1)
+    ffi (1.10.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
     htmlentities (4.3.4)
-    i18n (1.8.5)
+    i18n (1.8.6)
       concurrent-ruby (~> 1.0)
     jwt (2.2.2)
-    listen (3.3.3)
+    listen (3.4.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     loofah (2.8.0)
@@ -108,7 +120,7 @@ GEM
     method_source (1.0.0)
     mimemagic (0.3.5)
     mini_mime (1.0.2)
-    mini_portile2 (2.4.0)
+    mini_portile2 (2.5.0)
     minitest (5.14.2)
     minitest-rails (6.0.1)
       minitest (~> 5.10)
@@ -116,9 +128,12 @@ GEM
     msgpack (1.3.3)
     multipart-post (2.1.1)
     mysql2 (0.5.3)
+    net-http-persistent (4.0.0)
+      connection_pool (~> 2.2)
     nio4r (2.5.4)
-    nokogiri (1.10.10)
-      mini_portile2 (~> 2.4.0)
+    nokogiri (1.11.0.rc4)
+      mini_portile2 (~> 2.5.0)
+      racc (~> 1.4)
     pg (1.2.3)
     premailer (1.14.2)
       addressable
@@ -130,6 +145,7 @@ GEM
     public_suffix (4.0.6)
     puma (4.3.7)
       nio4r (~> 2.0)
+    racc (1.5.2)
     rack (2.2.3)
     rack-cors (1.1.1)
       rack (>= 2.0.0)
@@ -161,11 +177,12 @@ GEM
       method_source
       rake (>= 0.8.7)
       thor (>= 0.20.3, < 2.0)
-    rake (13.0.1)
+    rake (13.0.3)
     rb-fsevent (0.10.4)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     redis (4.2.5)
+    rmagick (4.1.2)
     ruby2_keywords (0.0.2)
     sassc (2.4.0)
       ffi (~> 1.9)
@@ -182,7 +199,7 @@ GEM
       sprockets (>= 3.0.0)
     thor (1.0.1)
     thread_safe (0.3.6)
-    tzinfo (1.2.8)
+    tzinfo (1.2.9)
       thread_safe (~> 0.1)
     websocket-driver (0.7.3)
       websocket-extensions (>= 0.1.0)
@@ -195,6 +212,7 @@ PLATFORMS
 DEPENDENCIES
   azure-storage-blob
   bcrypt
+  blurhash
   bootsnap (>= 1.4.2)
   bootstrap-email
   dotenv-rails
@@ -207,7 +225,9 @@ DEPENDENCIES
   rack-cors
   rails (~> 6.0.3, >= 6.0.3.4)
   redis
+  rmagick
   sassc
+  sexpistol!
   spring
   spring-watcher-listen (~> 2.0.0)
   tzinfo-data
