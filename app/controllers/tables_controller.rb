@@ -12,8 +12,11 @@ class TablesController < ApplicationController
 		dev = Dev.find_by(id: payload[:dev_id])
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
 
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(payload[:app_id]))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -32,16 +35,16 @@ class TablesController < ApplicationController
 			ValidationService.validate_name_type(name)
 		])
 
+		# Validate the name
+		ValidationService.raise_validation_error(ValidationService.validate_name_length(name))
+		ValidationService.raise_validation_error(ValidationService.validate_name_validity(name))
+
 		# Get the app
 		app = App.find_by(id: app_id)
 		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
 
 		# Make sure the user is the dev of the app
 		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, user.dev))
-
-		# Validate the name
-		ValidationService.raise_validation_error(ValidationService.validate_name_length(name))
-		ValidationService.raise_validation_error(ValidationService.validate_name_validity(name))
 
 		# Create the table
 		table = Table.new(

@@ -25,9 +25,9 @@ class ValidationService
 		(app.nil? || dev.nil? || app.dev != dev) ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
-	def self.validate_app_is_dav_app(app_id)
+	def self.validate_app_is_dav_app(app)
 		error_code = 1103
-		app_id.to_i != ENV["DAV_APPS_APP_ID"].to_i ? get_validation_hash(false, error_code, 403) : get_validation_hash
+		app.id != ENV["DAV_APPS_APP_ID"].to_i ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
 	def self.validate_table_belongs_to_app(table, app)

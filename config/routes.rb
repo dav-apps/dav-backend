@@ -32,6 +32,7 @@ Rails.application.routes.draw do
 
 	# ApisController
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
+	match '/v1/api', to: 'apis#create_api', via: :post
 
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post

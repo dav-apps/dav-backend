@@ -133,4 +133,72 @@ class ApisController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def create_api
+		jwt, session_id = get_jwt
+		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		app_id = body["app_id"]
+		name = body["name"]
+
+		# Validate missing fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_app_id_presence(app_id),
+			ValidationService.validate_name_presence(name)
+		])
+
+		# Validate the types of the fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_app_id_type(app_id),
+			ValidationService.validate_name_type(name)
+		])
+
+		# Validate the name
+		ValidationService.raise_validation_error(ValidationService.validate_name_length(name))
+		ValidationService.raise_validation_error(ValidationService.validate_name_validity(name))
+
+		# Get the app
+		app = App.find_by(id: app_id)
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure the user is the dev of the app
+		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, user.dev))
+
+		# Create the api
+		api = Api.new(
+			app: app,
+			name: name
+		)
+		ValidationService.raise_unexpected_error(!api.save)
+
+		result = {
+			id: api.id,
+			app_id: app.id,
+			name: api.name,
+			endpoints: Array.new,
+			functions: Array.new,
+			errors: Array.new
+		}
+		render json: result, status: 201
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end
