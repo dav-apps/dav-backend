@@ -79,5 +79,29 @@ class UtilsService
 
 	def self.get_file_size(file)
 		file.class == StringIO ? file.size : File.size(file)
-   end
+	end
+	
+	def self.convert_env_value(class_name, value)
+		if class_name == "bool"
+			return value == "true"
+		elsif class_name == "int"
+			return value.to_i
+		elsif class_name == "float"
+			return value.to_f
+		elsif class_name.include?(':')
+			parts = class_name.split(':')
+
+			if parts[0] == "array"
+				array = Array.new
+
+				value.split(',').each do |val|
+					array.push(convert_env_value(parts[1], val))
+				end
+
+				return array
+			else
+				return value
+			end
+		end
+	end
 end

@@ -30,6 +30,9 @@ Rails.application.routes.draw do
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
 
+	# ApisController
+	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
+
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
 
