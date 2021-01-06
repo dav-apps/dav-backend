@@ -206,6 +206,21 @@ class ValidationService
 		body.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_path_presence(path)
+		error_code = 2118
+		path.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_method_presence(method)
+		error_code = 2119
+		method.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_commands_presence(commands)
+		error_code = 2120
+		commands.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -331,6 +346,26 @@ class ValidationService
 	def self.validate_body_type(body)
 		error_code = 2224
 		!body.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_path_type(path)
+		error_code = 2225
+		!path.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_method_type(method)
+		error_code = 2226
+		!method.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_commands_type(commands)
+		error_code = 2227
+		!commands.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_caching_type(caching)
+		error_code = 2228
+		(!caching.is_a?(TrueClass) && !caching.is_a?(FalseClass)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -476,6 +511,26 @@ class ValidationService
 		end
 	end
 
+	def self.validate_path_length(path)
+		if path.length < Constants::PATH_MIN_LENGTH
+			get_validation_hash(false, 2315, 400)
+		elsif path.length > Constants::PATH_MAX_LENGTH
+			get_validation_hash(false, 2415, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_commands_length(commands)
+		if commands.length < Constants::COMMANDS_MIN_LENGTH
+			get_validation_hash(false, 2316, 400)
+		elsif commands.length > Constants::COMMANDS_MAX_LENGTH
+			get_validation_hash(false, 2416, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -485,6 +540,11 @@ class ValidationService
 	def self.validate_name_validity(name)
 		error_code = 2502
 		!validate_name(name) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_method_validity(method)
+		error_code = 2503
+		!validate_method(method) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for availability of fields
@@ -572,6 +632,10 @@ class ValidationService
 
 	def self.validate_name(name)
 		/^([A-Z]|[a-z])+$/.match?(name)
+	end
+
+	def self.validate_method(method)
+		["get", "post", "put", "delete"].include?(method.downcase)
 	end
 
 	# Error methods
@@ -675,6 +739,12 @@ class ValidationService
 			"Missing field: title"
 		when 2117
 			"Missing field: body"
+		when 2118
+			"Missing field: path"
+		when 2119
+			"Missing field: method"
+		when 2120
+			"Missing field: commands"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -723,6 +793,14 @@ class ValidationService
 			"Field has wrong type: title"
 		when 2224
 			"Field has wrong type: body"
+		when 2225
+			"Field has wrong type: path"
+		when 2226
+			"Field has wrong type: method"
+		when 2227
+			"Field has wrong type: commands"
+		when 2228
+			"Field has wrong type: caching"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -751,6 +829,10 @@ class ValidationService
 			"Field too short: title"
 		when 2314
 			"Field too short: body"
+		when 2315
+			"Field too short: path"
+		when 2316
+			"Field too short: commands"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -779,10 +861,16 @@ class ValidationService
 			"Field too long: title"
 		when 2414
 			"Field too long: body"
+		when 2415
+			"Field too long: path"
+		when 2416
+			"Field too long: commands"
 		when 2501
 			"Field invalid: email"
 		when 2502
 			"Field invalid: name"
+		when 2503
+			"Field invalid: method"
 		when 2701
 			"Field already taken: email"
 		when 2702
