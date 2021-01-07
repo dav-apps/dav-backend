@@ -126,7 +126,7 @@ describe ApiEndpointsController do
 		assert_equal(ErrorCodes::METHOD_INVALID, res["errors"][0]["code"])
 	end
 
-	it "should not set api endpoint for api of app of another dev" do
+	it "should not set api endpoint for api of the app of another dev" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
@@ -172,6 +172,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
+		assert_equal(endpoint.api_id, res["api_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
@@ -208,6 +209,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
+		assert_equal(endpoint.api_id, res["api_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
@@ -241,6 +243,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
+		assert_equal(endpoint.api_id, res["api_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
@@ -276,6 +279,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
+		assert_equal(endpoint.api_id, res["api_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
