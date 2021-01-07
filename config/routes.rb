@@ -37,6 +37,9 @@ Rails.application.routes.draw do
 	# ApiEndpointsController
 	match '/v1/api/:id/endpoint', to: 'api_endpoints#set_api_endpoint', via: :put
 
+	# ApiFunctionsController
+	match '/v1/api/:id/function', to: 'api_functions#set_api_function', via: :put
+
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
 

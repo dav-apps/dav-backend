@@ -43,6 +43,8 @@ module Constants
 	PATH_MAX_LENGTH = 150
 	COMMANDS_MIN_LENGTH = 2
 	COMMANDS_MAX_LENGTH = 65000
+	PARAMS_MIN_LENGTH = 0
+	PARAMS_MAX_LENGTH = 200
 
 	# Constants for tests
 	MATT_PASSWORD = "schachmatt"

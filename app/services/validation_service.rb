@@ -368,6 +368,11 @@ class ValidationService
 		(!caching.is_a?(TrueClass) && !caching.is_a?(FalseClass)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_params_type(params)
+		error_code = 2229
+		!params.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for length of fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -526,6 +531,16 @@ class ValidationService
 			get_validation_hash(false, 2316, 400)
 		elsif commands.length > Constants::COMMANDS_MAX_LENGTH
 			get_validation_hash(false, 2416, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_params_length(params)
+		if params.length < Constants::PARAMS_MIN_LENGTH
+			get_validation_hash(false, 2317, 400)
+		elsif params.length > Constants::PARAMS_MAX_LENGTH
+			get_validation_hash(false, 2417, 400)
 		else
 			get_validation_hash
 		end
@@ -801,6 +816,8 @@ class ValidationService
 			"Field has wrong type: commands"
 		when 2228
 			"Field has wrong type: caching"
+		when 2229
+			"Field has wrong type: params"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -833,6 +850,8 @@ class ValidationService
 			"Field too short: path"
 		when 2316
 			"Field too short: commands"
+		when 2317
+			"Field too short: params"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -865,6 +884,8 @@ class ValidationService
 			"Field too long: path"
 		when 2416
 			"Field too long: commands"
+		when 2417
+			"Field too long: params"
 		when 2501
 			"Field invalid: email"
 		when 2502
