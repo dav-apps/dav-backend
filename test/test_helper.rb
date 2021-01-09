@@ -30,12 +30,12 @@ class ActiveSupport::TestCase
 
 	def put_request(url, headers = {}, body = {}, json = true)
 		put url, headers: headers, params: json ? body.to_json : body
-		JSON.parse(response.body)
+		response.body.length > 0 ? JSON.parse(response.body) : nil
 	end
 
 	def delete_request(url, headers = {})
 		delete url, headers: headers
-		response.body.length < 2 ? nil : JSON.parse(response.body)
+		response.body.length > 0 ? JSON.parse(response.body) : nil
 	end
 
 	def generate_auth(dev)

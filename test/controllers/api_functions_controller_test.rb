@@ -25,6 +25,17 @@ describe ApiFunctionsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
+	it "should not set api function with invalid auth" do
+		res = put_request(
+			"/v1/api/1/function",
+			{Authorization: "#{devs(:dav).api_key},jhdfh92h3r9sa", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
 	it "should not set api function without required properties" do
 		res = put_request(
 			"/v1/api/1/function",

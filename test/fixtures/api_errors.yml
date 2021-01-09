@@ -1,0 +1,9 @@
+pocketlibApiFirstError:
+  api: pocketlibApi
+  code: 100
+  message: "First error"
+
+pocketlibApiSecondError:
+  api: pocketlibApi
+  code: 101
+  message: "Second error"
