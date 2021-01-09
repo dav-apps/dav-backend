@@ -221,6 +221,11 @@ class ValidationService
 		commands.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_errors_presence(errors)
+		error_code = 2121
+		errors.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -371,6 +376,21 @@ class ValidationService
 	def self.validate_params_type(params)
 		error_code = 2229
 		!params.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_errors_type(errors)
+		error_code = 2230
+		!errors.is_a?(Array) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_code_type(code)
+		error_code = 2231
+		!code.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_message_type(message)
+		error_code = 2232
+		!message.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -541,6 +561,16 @@ class ValidationService
 			get_validation_hash(false, 2317, 400)
 		elsif params.length > Constants::PARAMS_MAX_LENGTH
 			get_validation_hash(false, 2417, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_message_length(message)
+		if message.length < Constants::MESSAGE_MIN_LENGTH
+			get_validation_hash(false, 2318, 400)
+		elsif message.length > Constants::MESSAGE_MAX_LENGTH
+			get_validation_hash(false, 2418, 400)
 		else
 			get_validation_hash
 		end
@@ -760,6 +790,8 @@ class ValidationService
 			"Missing field: method"
 		when 2120
 			"Missing field: commands"
+		when 2121
+			"Missing field: errors"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -818,6 +850,8 @@ class ValidationService
 			"Field has wrong type: caching"
 		when 2229
 			"Field has wrong type: params"
+		when 2230
+			"Field has wrong type: errors"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -852,6 +886,8 @@ class ValidationService
 			"Field too short: commands"
 		when 2317
 			"Field too short: params"
+		when 2318
+			"Field too short: message"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -886,6 +922,8 @@ class ValidationService
 			"Field too long: commands"
 		when 2417
 			"Field too long: params"
+		when 2418
+			"Field too long: message"
 		when 2501
 			"Field invalid: email"
 		when 2502

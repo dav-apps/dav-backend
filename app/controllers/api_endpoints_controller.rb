@@ -7,6 +7,13 @@ class ApiEndpointsController < ApplicationController
 
 		api_id = params[:id]
 
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		path = body["path"]
@@ -37,13 +44,6 @@ class ApiEndpointsController < ApplicationController
 
 		# Check if the method is valid
 		ValidationService.raise_validation_error(ValidationService.validate_method_validity(method))
-
-		# Get the dev
-		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
 
 		# Get the api
 		api = Api.find_by(id: api_id)

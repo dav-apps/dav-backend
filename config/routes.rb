@@ -40,6 +40,9 @@ Rails.application.routes.draw do
 	# ApiFunctionsController
 	match '/v1/api/:id/function', to: 'api_functions#set_api_function', via: :put
 
+	# ApiErrorsController
+	match '/v1/api/:id/errors', to: 'api_errors#set_api_errors', via: :put
+
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
 

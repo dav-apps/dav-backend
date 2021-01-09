@@ -7,6 +7,13 @@ class ApiFunctionsController < ApplicationController
 
 		api_id = params[:id]
 
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		name = body["name"]
@@ -32,13 +39,6 @@ class ApiFunctionsController < ApplicationController
 		validations.push(ValidationService.validate_params_length(params)) if !params.nil?
 		validations.push(ValidationService.validate_commands_length(commands))
 		ValidationService.raise_multiple_validation_errors(validations)
-
-		# Get the dev
-		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
 
 		# Get the api
 		api = Api.find_by(id: api_id)
