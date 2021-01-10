@@ -47,6 +47,8 @@ module Constants
 	PARAMS_MAX_LENGTH = 200
 	MESSAGE_MIN_LENGTH = 2
 	MESSAGE_MAX_LENGTH = 200
+	VALUE_MIN_LENGTH = 2
+	VALUE_MAX_LENGTH = 250
 
 	# Constants for tests
 	MATT_PASSWORD = "schachmatt"

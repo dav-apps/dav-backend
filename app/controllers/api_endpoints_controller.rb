@@ -1,11 +1,10 @@
 class ApiEndpointsController < ApplicationController
 	def set_api_endpoint
 		auth = get_auth
+		api_id = params[:id]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-
-		api_id = params[:id]
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])

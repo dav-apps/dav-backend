@@ -226,6 +226,11 @@ class ValidationService
 		errors.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_env_vars_presence(env_vars)
+		error_code = 2122
+		env_vars.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -391,6 +396,22 @@ class ValidationService
 	def self.validate_message_type(message)
 		error_code = 2232
 		!message.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_env_vars_type(env_vars)
+		error_code = 2233
+		!env_vars.is_a?(Hash) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_value_type(value)
+		error_code = 2234
+		return get_validation_hash if value.is_a?(TrueClass)
+		return get_validation_hash if value.is_a?(FalseClass)
+		return get_validation_hash if value.is_a?(String)
+		return get_validation_hash if value.is_a?(Integer)
+		return get_validation_hash if value.is_a?(Float)
+		return get_validation_hash if value.is_a?(Array)
+		get_validation_hash(false, error_code, 400)
 	end
 
 	# Methods for length of fields
@@ -571,6 +592,16 @@ class ValidationService
 			get_validation_hash(false, 2318, 400)
 		elsif message.length > Constants::MESSAGE_MAX_LENGTH
 			get_validation_hash(false, 2418, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_value_length(value)
+		if value.length < Constants::VALUE_MIN_LENGTH
+			get_validation_hash(false, 2319, 400)
+		elsif value.length > Constants::VALUE_MAX_LENGTH
+			get_validation_hash(false, 2419, 400)
 		else
 			get_validation_hash
 		end
@@ -792,6 +823,8 @@ class ValidationService
 			"Missing field: commands"
 		when 2121
 			"Missing field: errors"
+		when 2122
+			"Missing field: env_vars"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -852,6 +885,14 @@ class ValidationService
 			"Field has wrong type: params"
 		when 2230
 			"Field has wrong type: errors"
+		when 2231
+			"Field has wrong type: code"
+		when 2232
+			"Field has wrong type: message"
+		when 2233
+			"Field has wrong type: env_vars"
+		when 2234
+			"Field has wrong type: value (for ApiEnvVar)"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -888,6 +929,8 @@ class ValidationService
 			"Field too short: params"
 		when 2318
 			"Field too short: message"
+		when 2319
+			"Field too short: value (for ApiEnvVar)"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -924,6 +967,8 @@ class ValidationService
 			"Field too long: params"
 		when 2418
 			"Field too long: message"
+		when 2419
+			"Field too long: value (for ApiEnvVar)"
 		when 2501
 			"Field invalid: email"
 		when 2502

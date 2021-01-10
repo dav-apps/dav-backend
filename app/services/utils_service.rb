@@ -80,6 +80,23 @@ class UtilsService
 	def self.get_file_size(file)
 		file.class == StringIO ? file.size : File.size(file)
 	end
+
+	def self.get_env_class_name(value)
+		class_name = "string"
+
+		if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+			class_name = "bool"
+		elsif value.is_a?(Integer)
+			class_name = "int"
+		elsif value.is_a?(Float)
+			class_name = "float"
+		elsif value.is_a?(Array)
+			content_class_name = get_env_class_name(value[0])
+			class_name = "array:#{content_class_name}"
+		end
+
+		return class_name
+	end
 	
 	def self.convert_env_value(class_name, value)
 		if class_name == "bool"

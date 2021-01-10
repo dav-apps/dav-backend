@@ -1,5 +1,5 @@
-class ApiErrorsController < ApplicationController
-	def set_api_errors
+class ApiEnvVarsController < ApplicationController
+	def set_api_env_vars
 		auth = get_auth
 		api_id = params[:id]
 
@@ -15,24 +15,17 @@ class ApiErrorsController < ApplicationController
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
-		errors = body["errors"]
+		env_vars = body["env_vars"]
 
 		# Validate missing fields
-		ValidationService.raise_validation_error(ValidationService.validate_errors_presence(errors))
+		ValidationService.raise_validation_error(ValidationService.validate_env_vars_presence(env_vars))
 
 		# Validate the types of the fields
-		ValidationService.raise_validation_error(ValidationService.validate_errors_type(errors))
+		ValidationService.raise_validation_error(ValidationService.validate_env_vars_type(env_vars))
 
-		# Validate the errors
-		errors.each do |error|
-			ValidationService.raise_multiple_validation_errors([
-				ValidationService.validate_code_type(error["code"]),
-				ValidationService.validate_message_type(error["message"])
-			])
-		end
-
-		errors.each do |error|
-			ValidationService.raise_validation_error(ValidationService.validate_message_length(error["message"]))
+		# Validate the env vars
+		env_vars.each do |key, value|
+			ValidationService.raise_validation_error(ValidationService.validate_value_type(value))
 		end
 
 		# Get the api
@@ -42,22 +35,35 @@ class ApiErrorsController < ApplicationController
 		# Check if the api belongs to an app of the dev
 		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
-		errors.each do |error|
-			# Try to find the api error
-			api_error = ApiError.find_by(api: api, code: error["code"])
-
-			if !api_error.nil?
-				# Update the existing error
-				api_error.message = error["message"]
+		env_vars.each do |key, value|
+			class_name = UtilsService.get_env_class_name(value)
+			if class_name.start_with?("array")
+				value = value.join(',')
 			else
-				api_error = ApiError.new(
+				value = value.to_s
+			end
+
+			# Validate the length
+			ValidationService.raise_validation_error(ValidationService.validate_value_length(value))
+			
+			# Try to find the api env var
+			env_var = ApiEnvVar.find_by(api: api, name: key)
+
+			if !env_var.nil?
+				# Update the existing env var
+				env_var.value = value
+				env_var.class_name = class_name
+			else
+				# Create a new env var
+				env_var = ApiEnvVar.new(
 					api: api,
-					code: error["code"],
-					message: error["message"]
+					name: key,
+					value: value,
+					class_name: class_name
 				)
 			end
 
-			ValidationService.raise_unexpected_error(!api_error.save)
+			ValidationService.raise_unexpected_error(!env_var.save)
 		end
 
 		head 204, content_type: "application/json"
