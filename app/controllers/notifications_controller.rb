@@ -1,7 +1,8 @@
 class NotificationsController < ApplicationController
 	def create_notification
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
@@ -85,7 +86,8 @@ class NotificationsController < ApplicationController
 
 	def get_notifications
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the payload data
@@ -126,11 +128,11 @@ class NotificationsController < ApplicationController
 
 	def update_notification
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		uuid = params["uuid"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		uuid = params["uuid"]
 
 		# Get the params from the body
 		request_body = ValidationService.parse_json(request.body.string)
@@ -195,10 +197,10 @@ class NotificationsController < ApplicationController
 
 	def delete_notification
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
 		uuid = params["uuid"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the payload data
 		user = User.find_by(id: payload[:user_id])

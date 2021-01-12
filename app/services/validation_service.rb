@@ -61,17 +61,15 @@ class ValidationService
 	end
 
 	def self.validate_content_type_json(content_type)
-		error_code = 1104
-		if content_type && content_type.include?("application/json")
-			get_validation_hash
-		else
-			get_validation_hash(false, error_code, 415)
-		end
+		return get_validation_hash(false, 1402, 400) if content_type.nil?
+		return get_validation_hash(false, 1104, 415) if !content_type.include?("application/json")
+		get_validation_hash
 	end
 
 	def self.validate_content_type_supported(content_type)
-		error_code = 1104
-		content_type.nil? || content_type.include?("application/x-www-form-urlencoded") ? get_validation_hash(false, error_code, 415) : get_validation_hash
+		return get_validation_hash(false, 1402, 400) if content_type.nil?
+		return get_validation_hash(false, 1104, 415) if content_type.include?("application/x-www-form-urlencoded")
+		get_validation_hash
 	end
 
 	def self.parse_json(json)
@@ -120,15 +118,16 @@ class ValidationService
 		end
 	end
 
-	# Methods for presence of fields
+	# Methods for presence of headers
 	def self.validate_auth_header_presence(auth)
-		error_code = 2101
+		error_code = 1401
 		auth.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
+	# Methods for presence of fields
 	def self.validate_jwt_presence(jwt)
 		error_code = 2102
-		jwt.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
+		jwt.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_email_presence(email)
@@ -786,8 +785,10 @@ class ValidationService
 			"JWT expired"
 		when 1303
 			"JWT unexpected error"
-		when 2101
-			"Missing field: auth"
+		when 1401
+			"Missing header: Authorization"
+		when 1402
+			"Missing header: Content-Type"
 		when 2102
 			"Missing field: jwt"
 		when 2103

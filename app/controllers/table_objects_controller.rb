@@ -1,7 +1,8 @@
 class TableObjectsController < ApplicationController
 	def create_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
@@ -158,10 +159,10 @@ class TableObjectsController < ApplicationController
 
 	def get_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
 		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the user and dev
 		user = User.find_by(id: payload[:user_id])
@@ -229,11 +230,11 @@ class TableObjectsController < ApplicationController
 
 	def update_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		id = params["id"]
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -377,10 +378,10 @@ class TableObjectsController < ApplicationController
 
 	def delete_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
 		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the user and dev
 		user = User.find_by(id: payload[:user_id])
@@ -437,12 +438,12 @@ class TableObjectsController < ApplicationController
 
 	def set_table_object_file
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
 		content_type = get_content_type
+		id = params["id"]
+		
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_supported(content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		id = params["id"]
 
 		# Validate the payload data
 		user = User.find_by(id: payload[:user_id])
@@ -566,10 +567,10 @@ class TableObjectsController < ApplicationController
 
 	def get_table_object_file
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
 		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the payload data
 		user = User.find_by(id: payload[:user_id])
@@ -634,11 +635,11 @@ class TableObjectsController < ApplicationController
 
 	def add_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
 		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		id = params["id"]
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -724,10 +725,10 @@ class TableObjectsController < ApplicationController
 
 	def remove_table_object
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-		
 		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
 
 		# Validate the payload data
 		user = User.find_by(id: payload[:user_id])

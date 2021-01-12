@@ -207,7 +207,7 @@ class SessionsController < ApplicationController
 
 	def delete_session
 		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
 
 		payload = ValidationService.validate_jwt(jwt, session_id)
 
