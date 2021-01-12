@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 	
 	# SessionsController
 	match '/v1/session', to: 'sessions#create_session', via: :post
+	match '/v1/session/jwt', to: 'sessions#create_session_from_jwt', via: :post
 	match '/v1/session', to: 'sessions#delete_session', via: :delete
 
 	# TablesController

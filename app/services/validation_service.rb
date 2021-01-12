@@ -414,6 +414,11 @@ class ValidationService
 		get_validation_hash(false, error_code, 400)
 	end
 
+	def self.validate_jwt_type(jwt)
+		error_code = 2235
+		!jwt.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for length of fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -893,6 +898,8 @@ class ValidationService
 			"Field has wrong type: env_vars"
 		when 2234
 			"Field has wrong type: value (for ApiEnvVar)"
+		when 2235
+			"Field has wrong type: jwt"
 		when 2301
 			"Field too short: first_name"
 		when 2302

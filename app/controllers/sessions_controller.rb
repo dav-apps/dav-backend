@@ -98,6 +98,113 @@ class SessionsController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def create_session_from_jwt
+		auth = get_auth
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		jwt = body["jwt"]
+		app_id = body["app_id"]
+		api_key = body["api_key"]
+		device_name = body["device_name"]
+		device_type = body["device_type"]
+		device_os = body["device_os"]
+
+		# Validate missing fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_jwt_presence(jwt),
+			ValidationService.validate_app_id_presence(app_id),
+			ValidationService.validate_api_key_presence(api_key)
+		])
+
+		# Validate the types of the fields
+		validations = [
+			ValidationService.validate_jwt_type(jwt),
+			ValidationService.validate_app_id_type(app_id),
+			ValidationService.validate_api_key_type(api_key)
+		]
+
+		validations.push(ValidationService.validate_device_name_type(device_name)) if !device_name.nil?
+		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
+		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
+
+		ValidationService.raise_multiple_validation_errors(validations)
+
+		# Validate the length of the fields
+		validations = []
+
+		validations.push(ValidationService.validate_device_name_length(device_name)) if !device_name.nil?
+		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
+		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
+
+		ValidationService.raise_multiple_validation_errors(validations)
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Validate the jwt
+		jwt, session_id = split_jwt(jwt)
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		jwt_user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(jwt_user))
+
+		jwt_dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(jwt_dev))
+
+		jwt_app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(jwt_app))
+
+		# Make sure the jwt is for the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(jwt_app))
+
+		# Get the app
+		app = App.find_by(id: app_id)
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Check if the app belongs to the dev with the api key
+		api_key_dev = Dev.find_by(api_key: api_key)
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(api_key_dev))
+		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, api_key_dev))
+
+		# Create a session and generate the session jwt
+		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
+		exp = Time.now.to_i + exp_hours * 3600
+		secret = SecureRandom.urlsafe_base64(30)
+
+		session = Session.new(
+			user: jwt_user,
+			app: app,
+			secret: secret,
+			exp: Time.at(exp).utc,
+			device_name: device_name,
+			device_type: device_type,
+			device_os: device_os
+		)
+		ValidationService.raise_unexpected_error(!session.save)
+
+		payload = {user_id: jwt_user.id, app_id: app.id, dev_id: api_key_dev.id, exp: exp}
+		jwt = "#{JWT.encode(payload, secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
+
+		result = {
+			jwt: jwt
+		}
+		render json: result, status: 201
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def delete_session
 		jwt, session_id = get_jwt
 		ValidationService.raise_validation_error(ValidationService.validate_jwt_presence(jwt))
