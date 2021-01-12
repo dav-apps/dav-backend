@@ -704,7 +704,7 @@ describe UsersController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not get user with invalid jwt" do

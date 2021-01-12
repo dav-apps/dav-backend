@@ -11,7 +11,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not create table object without Content-Type json" do
@@ -704,7 +704,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not get table object with invalid jwt" do
@@ -911,7 +911,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not update table object without Content-Type json" do
@@ -1442,7 +1442,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not delete table object with invalid jwt" do
@@ -1545,7 +1545,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not set table object file with not supported content type" do
@@ -1873,7 +1873,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not get table object file with invalid jwt" do
@@ -2091,7 +2091,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not add table object without Content-Type json" do
@@ -2348,7 +2348,7 @@ describe TableObjectsController do
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
 	it "should not remove table object with invalid jwt" do
