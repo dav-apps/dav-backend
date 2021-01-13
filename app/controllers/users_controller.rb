@@ -111,9 +111,9 @@ class UsersController < ApplicationController
 				email: user.email,
 				first_name: user.first_name,
 				confirmed: user.confirmed,
-				plan: user.plan,
 				total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
-				used_storage: user.used_storage
+				used_storage: user.used_storage,
+				plan: user.plan
 			},
 			jwt: jwt
 		}

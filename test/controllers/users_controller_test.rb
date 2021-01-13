@@ -346,9 +346,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 		
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -357,8 +357,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
@@ -399,9 +399,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -410,8 +410,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
@@ -462,9 +462,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -473,8 +473,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
@@ -531,9 +531,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -542,8 +542,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
@@ -590,9 +590,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -601,8 +601,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
@@ -659,9 +659,9 @@ describe UsersController do
 		assert_equal(email, res["user"]["email"])
 		assert_equal(first_name, res["user"]["first_name"])
 		assert(!res["user"]["confirmed"])
-		assert_equal(0, res["user"]["plan"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_equal(0, res["user"]["plan"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -670,8 +670,8 @@ describe UsersController do
 		assert_equal(res["user"]["email"], user.email)
 		assert_equal(res["user"]["first_name"], user.first_name)
 		assert(!user.confirmed)
-		assert_equal(0, user.plan)
 		assert_equal(0, user.used_storage)
+		assert_equal(0, user.plan)
 
 		# Check the session
 		session_id = res["jwt"].split('.').last.to_i
