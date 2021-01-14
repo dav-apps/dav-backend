@@ -52,6 +52,15 @@ sherlockTestAppSession:
   device_type: Smartphone
   device_os: iOS
 
+sherlockWebsiteSession:
+  user: sherlock
+  app: website
+  secret: "HWELyvq8qKnMA7GdtVlv3x5_4v4UInA8LWph1WSe"
+  exp: <%= DateTime.new(2062, 07, 22).to_s(:db) %>
+  device_name: Huawei Mate X
+  device_type: Smartphone
+  device_os: Android
+
 davTestAppSession:
   user: dav
   app: testApp
