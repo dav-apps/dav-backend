@@ -34,6 +34,7 @@ Rails.application.routes.draw do
 	# ApisController
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api', to: 'apis#create_api', via: :post
+	match '/v1/api/:id', to: 'apis#get_api', via: :get
 
 	# ApiEndpointsController
 	match '/v1/api/:id/endpoint', to: 'api_endpoints#set_api_endpoint', via: :put

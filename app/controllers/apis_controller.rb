@@ -201,4 +201,75 @@ class ApisController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def get_api
+		jwt, session_id = get_jwt
+		id = params["id"]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the payload data
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+
+		# Get the api
+		api = Api.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+
+		# Check if the api belongs to an app of the dev of the user
+		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, user.dev))
+
+		# Return the data
+		endpoints = Array.new
+		api.api_endpoints.each do |endpoint|
+			endpoints.push({
+				id: endpoint.id,
+				path: endpoint.path,
+				method: endpoint.method,
+				caching: endpoint.caching
+			})
+		end
+
+		functions = Array.new
+		api.api_functions.each do |function|
+			functions.push({
+				id: function.id,
+				name: function.name,
+				params: function.params
+			})
+		end
+
+		errors = Array.new
+		api.api_errors.each do |error|
+			errors.push({
+				id: error.id,
+				code: error.code,
+				message: error.message
+			})
+		end
+		
+		result = {
+			id: api.id,
+			app_id: api.app_id,
+			name: api.name,
+			endpoints: endpoints,
+			functions: functions,
+			errors: errors
+		}
+		
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end
