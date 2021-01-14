@@ -30,3 +30,6 @@ pocketlib:
   name: PocketLib
   description: The library in your pocket
   published: false
+  web_link: "https://pocketlib.dav-apps.tech"
+  google_play_link: "https://play.google.com/store/apps/details?id=app.dav.pocketlib"
+  microsoft_store_link: "https://store.microsoft.com/98hsdfhh83"

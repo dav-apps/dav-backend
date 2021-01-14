@@ -65,8 +65,8 @@ describe AppsController do
 	end
 
 	it "should get app" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-		app = apps(:cards)
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+		app = apps(:pocketlib)
 
 		res = get_request(
 			"/v1/app/#{app.id}",
@@ -83,5 +83,19 @@ describe AppsController do
 		assert_equal(app.web_link, res["web_link"])
 		assert_equal(app.google_play_link, res["google_play_link"])
 		assert_equal(app.microsoft_store_link, res["microsoft_store_link"])
+
+		i = 0
+		app.tables.each do |table|
+			assert_equal(table.id, res["tables"][i]["id"])
+			assert_equal(table.name, res["tables"[i]["name"]])
+			i += 1
+		end
+
+		i = 0
+		app.apis.each do |api|
+			assert_equal(api.id, res["apis"][i]["id"])
+			assert_equal(api.name, res["apis"][i]["name"])
+			i += 1
+		end
 	end
 end

@@ -27,6 +27,22 @@ class AppsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, user.dev))
 
 		# Return the data
+		tables = Array.new
+		app.tables.each do |table|
+			tables.push({
+				id: table.id,
+				name: table.name
+			})
+		end
+
+		apis = Array.new
+		app.apis.each do |api|
+			apis.push({
+				id: api.id,
+				name: api.name
+			})
+		end
+
 		result = {
 			id: app.id,
 			dev_id: app.dev_id,
@@ -35,7 +51,9 @@ class AppsController < ApplicationController
 			published: app.published,
 			web_link: app.web_link,
 			google_play_link: app.google_play_link,
-			microsoft_store_link: app.microsoft_store_link
+			microsoft_store_link: app.microsoft_store_link,
+			tables: tables,
+			apis: apis
 		}
 
 		render json: result, status: 200
