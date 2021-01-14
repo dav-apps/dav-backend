@@ -10,6 +10,8 @@ cards:
   description: This is a vocabulary app
   published: true
   web_link: "https://cards.dav-apps.tech"
+  google_play_link: "https://play.google.com/store/apps/details?id=app.dav.cards"
+  microsoft_store_link: "https://store.microsoft.com/asdsad"
 
 notes:
   dev: sherlock

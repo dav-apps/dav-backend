@@ -254,7 +254,7 @@ describe ApisController do
 	end
 
 	it "should not get api from another app than the website" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 
 		res = get_request(
 			"/v1/api/1",

@@ -776,8 +776,8 @@ describe UsersController do
 		assert_equal(cards.description, res["apps"][0]["description"])
 		assert_equal(cards.published, res["apps"][0]["published"])
 		assert_equal(cards.web_link, res["apps"][0]["web_link"])
-		assert_nil(cards.google_play_link, res["apps"][0]["google_play_link"])
-		assert_nil(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
+		assert_equal(cards.google_play_link, res["apps"][0]["google_play_link"])
+		assert_equal(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
 		assert_equal(0, res["apps"][0]["used_storage"])
 	end
 end
