@@ -8,6 +8,9 @@ Rails.application.routes.draw do
 	match '/v1/session/jwt', to: 'sessions#create_session_from_jwt', via: :post
 	match '/v1/session', to: 'sessions#delete_session', via: :delete
 
+	# AppsController
+	match '/v1/app/:id', to: 'apps#get_app', via: :get
+
 	# TablesController
 	match '/v1/table', to: 'tables#create_table', via: :post
 	match '/v1/table/:id', to: 'tables#get_table', via: :get
