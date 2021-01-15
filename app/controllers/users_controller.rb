@@ -143,6 +143,50 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def get_users
+		jwt, session_id = get_jwt
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+
+		# Make sure the user is the first dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(user.dev))
+
+		# Collect and return the data
+		users = Array.new
+		User.all.each do |user|
+			users.push({
+				id: user.id,
+				confirmed: user.confirmed,
+				last_active: user.last_active,
+				plan: user.plan,
+				created_at: user.created_at
+			})
+		end
+
+		result = {
+			users: users
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def get_user
 		jwt, session_id = get_jwt
 
