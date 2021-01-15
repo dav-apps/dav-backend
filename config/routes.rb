@@ -26,14 +26,17 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:id/access', to: 'table_objects#add_table_object', via: :post
 	match '/v1/table_object/:id/access', to: 'table_objects#remove_table_object', via: :delete
 
+	# WebPushSubscriptionsController
+	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
+
 	# NotificationsController
 	match '/v1/notification', to: 'notifications#create_notification', via: :post
 	match '/v1/notifications', to: 'notifications#get_notifications', via: :get
 	match '/v1/notification/:uuid', to: 'notifications#update_notification', via: :put
 	match '/v1/notification/:uuid', to: 'notifications#delete_notification', via: :delete
 
-	# WebPushSubscriptionsController
-	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
+	# UserActivitiesController
+	match '/v1/user_activities', to: 'user_activities#get_user_activities', via: :get
 
 	# ApisController
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]

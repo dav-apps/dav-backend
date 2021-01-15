@@ -20,6 +20,11 @@ class ValidationService
 		sig != signature ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
+	def self.validate_dev_is_first_dev(dev)
+		error_code = 1103
+		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_app_belongs_to_dev(app, dev)
 		error_code = 1103
 		(app.nil? || dev.nil? || app.dev != dev) ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -53,11 +58,6 @@ class ValidationService
 	def self.validate_notification_belongs_to_app(notification, app)
 		error_code = 1103
 		notification.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
-	end
-
-	def self.validate_dev_is_first_dev(dev)
-		error_code = 1103
-		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
 	def self.validate_content_type_json(content_type)
