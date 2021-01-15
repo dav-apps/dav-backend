@@ -698,6 +698,85 @@ describe UsersController do
 		assert_equal(device_os, website_session.device_os)
 	end
 
+	# get_users
+	it "should not get users without jwt" do
+		res = get_request("/v1/users")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get users with invalid jwt" do
+		res = get_request(
+			"/v1/users",
+			{Authorization: "asdasdjsgoljsdfsfd"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not get users from another app than the website" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = get_request(
+			"/v1/users",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get users with another dev than the first one" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = get_request(
+			"/v1/users",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should get users" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+		sherlock = users(:sherlock)
+		dav = users(:dav)
+		matt = users(:matt)
+
+		res = get_request(
+			"/v1/users",
+			{Authorization: jwt}
+		)
+
+		assert_response 200
+		assert_equal(3, res["users"].length)
+
+		assert_equal(sherlock.id, res["users"][0]["id"])
+		assert_equal(sherlock.confirmed, res["users"][0]["confirmed"])
+		assert_equal(sherlock.last_active, res["users"][0]["last_active"])
+		assert_equal(sherlock.plan, res["users"][0]["plan"])
+		assert_equal(sherlock.created_at.to_i, DateTime.parse(res["users"][0]["created_at"]).to_i)
+
+		assert_equal(dav.id, res["users"][1]["id"])
+		assert_equal(dav.confirmed, res["users"][1]["confirmed"])
+		assert_equal(dav.last_active, res["users"][1]["last_active"])
+		assert_equal(dav.plan, res["users"][1]["plan"])
+		assert_equal(dav.created_at.to_i, DateTime.parse(res["users"][1]["created_at"]).to_i)
+
+		assert_equal(matt.id, res["users"][2]["id"])
+		assert_equal(matt.confirmed, res["users"][2]["confirmed"])
+		assert_equal(matt.last_active, res["users"][2]["last_active"])
+		assert_equal(matt.plan, res["users"][2]["plan"])
+		assert_equal(matt.created_at.to_i, DateTime.parse(res["users"][2]["created_at"]).to_i)
+	end
+
 	# get_user
 	it "should not get user without jwt" do
 		res = get_request("/v1/user")
