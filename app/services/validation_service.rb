@@ -418,6 +418,31 @@ class ValidationService
 		!jwt.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_description_type(description)
+		error_code = 2236
+		!description.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_published_type(published)
+		error_code = 2237
+		(!published.is_a?(TrueClass) && !published.is_a?(FalseClass)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_web_link_type(web_link)
+		error_code = 2238
+		!web_link.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_google_play_link_type(google_play_link)
+		error_code = 2239
+		!google_play_link.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_microsoft_store_link_type(microsoft_store_link)
+		error_code = 2240
+		!microsoft_store_link.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for length of fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -611,6 +636,46 @@ class ValidationService
 		end
 	end
 
+	def self.validate_description_length(description)
+		if description.length < Constants::DESCRIPTION_MIN_LENGTH
+			get_validation_hash(false, 2320, 400)
+		elsif description.length > Constants::DESCRIPTiON_MAX_LENGTH
+			get_validation_hash(false, 2420, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_web_link_length(web_link)
+		if web_link.length < Constants::WEB_LINK_MIN_LENGTH
+			get_validation_hash(false, 2321, 400)
+		elsif web_link.length > Constants::WEB_LINK_MAX_LENGTH
+			get_validation_hash(false, 2421, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_google_play_link_length(google_play_link)
+		if google_play_link.length < Constants::GOOGLE_PLAY_LINK_MIN_LENGTH
+			get_validation_hash(false, 2322, 400)
+		elsif google_play_link.length > Constants::GOOGLE_PLAY_LINK_MAX_LENGTH
+			get_validation_hash(false, 2422, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_microsoft_store_link_length(microsoft_store_link)
+		if microsoft_store_link.length < Constants::MICROSOFT_STORE_LINK_MIN_LENGTH
+			get_validation_hash(false, 2323, 400)
+		elsif microsoft_store_link.length > Constants::MICROSOFT_STORE_LINK_MAX_LENGTH
+			get_validation_hash(false, 2423, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -625,6 +690,21 @@ class ValidationService
 	def self.validate_method_validity(method)
 		error_code = 2503
 		!validate_method(method) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_web_link_validity(web_link)
+		error_code = 2504
+		(web_link.length > 0 && !validate_url(web_link)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_google_play_link_validity(google_play_link)
+		error_code = 2505
+		(google_play_link.length > 0 && !validate_url(google_play_link)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_microsoft_store_link_validity(microsoft_store_link)
+		error_code = 2506
+		(microsoft_store_link.length > 0 && !validate_url(microsoft_store_link)) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for availability of fields
@@ -716,6 +796,10 @@ class ValidationService
 
 	def self.validate_method(method)
 		["get", "post", "put", "delete"].include?(method.downcase)
+	end
+
+	def self.validate_url(url)
+		/^(https?:\/\/)?[\w.-]+(\.[\w.-]+)+[\w\-._~\/?#@&\+,;=]+$/.match?(url)
 	end
 
 	# Error methods
@@ -901,6 +985,16 @@ class ValidationService
 			"Field has wrong type: value (for ApiEnvVar)"
 		when 2235
 			"Field has wrong type: jwt"
+		when 2236
+			"Field has wrong type: description"
+		when 2237
+			"Field has wrong type: published"
+		when 2238
+			"Field has wrong type: web_link"
+		when 2239
+			"Field has wrong type: google_play_link"
+		when 2240
+			"Field has wrong type: microsoft_store_link"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -939,6 +1033,14 @@ class ValidationService
 			"Field too short: message"
 		when 2319
 			"Field too short: value (for ApiEnvVar)"
+		when 2320
+			"Field too short: description"
+		when 2321
+			"Field too short: web_link"
+		when 2322
+			"Field too short: google_play_link"
+		when 2323
+			"Field too short: microsoft_store_link"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -977,12 +1079,26 @@ class ValidationService
 			"Field too long: message"
 		when 2419
 			"Field too long: value (for ApiEnvVar)"
+		when 2420
+			"Field too long: description"
+		when 2421
+			"Field too long: web_link"
+		when 2422
+			"Field too long: google_play_link"
+		when 2423
+			"Field too long: microsoft_store_link"
 		when 2501
 			"Field invalid: email"
 		when 2502
 			"Field invalid: name"
 		when 2503
 			"Field invalid: method"
+		when 2504
+			"Field invalid: web_link"
+		when 2505
+			"Field invalid: google_play_link"
+		when 2506
+			"Field invalid: microsoft_store_link"
 		when 2701
 			"Field already taken: email"
 		when 2702

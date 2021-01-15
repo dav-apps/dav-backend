@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
 	# AppsController
 	match '/v1/app/:id', to: 'apps#get_app', via: :get
+	match '/v1/app/:id', to: 'apps#update_app', via: :put
 
 	# TablesController
 	match '/v1/table', to: 'tables#create_table', via: :post
