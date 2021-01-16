@@ -18,6 +18,9 @@ notes:
   name: Notes
   description: This is a note taking app
   published: true
+  web_link: "https://notes.dav-apps.tech"
+  google_play_link: "https://play.google.com/store/apps/details?id=app.dav.notes"
+  microsoft_store_link: "https://store.microsoft.com/notes"
 
 testApp:
   dev: dav

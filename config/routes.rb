@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 	match '/v1/session', to: 'sessions#delete_session', via: :delete
 
 	# AppsController
+	match '/v1/apps', to: 'apps#get_apps', via: :get
 	match '/v1/app/:id', to: 'apps#get_app', via: :get
 	match '/v1/app/:id', to: 'apps#update_app', via: :put
 

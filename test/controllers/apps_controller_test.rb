@@ -5,6 +5,35 @@ describe AppsController do
 		setup
 	end
 
+	# get_apps
+	it "should get apps" do
+		cards = apps(:cards)
+		notes = apps(:notes)
+
+		res = get_request("/v1/apps")
+
+		assert_response 200
+		assert_equal(2, res["apps"].length)
+
+		assert_equal(notes.id, res["apps"][0]["id"])
+		assert_equal(notes.dev_id, res["apps"][0]["dev_id"])
+		assert_equal(notes.name, res["apps"][0]["name"])
+		assert_equal(notes.description, res["apps"][0]["description"])
+		assert_equal(notes.published, res["apps"][0]["published"])
+		assert_equal(notes.web_link, res["apps"][0]["web_link"])
+		assert_equal(notes.google_play_link, res["apps"][0]["google_play_link"])
+		assert_equal(notes.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
+
+		assert_equal(cards.id, res["apps"][1]["id"])
+		assert_equal(cards.dev_id, res["apps"][1]["dev_id"])
+		assert_equal(cards.name, res["apps"][1]["name"])
+		assert_equal(cards.description, res["apps"][1]["description"])
+		assert_equal(cards.published, res["apps"][1]["published"])
+		assert_equal(cards.web_link, res["apps"][1]["web_link"])
+		assert_equal(cards.google_play_link, res["apps"][1]["google_play_link"])
+		assert_equal(cards.microsoft_store_link, res["apps"][1]["microsoft_store_link"])
+	end
+
 	# get_app
 	it "should not get app without jwt" do
 		res = get_request("/v1/app/1")

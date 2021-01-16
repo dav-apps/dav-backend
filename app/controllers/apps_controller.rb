@@ -1,4 +1,31 @@
 class AppsController < ApplicationController
+	def get_apps
+		# Collect and return the data
+		apps = Array.new
+
+		App.where(published: true).each do |app|
+			apps.push({
+				id: app.id,
+				dev_id: app.dev_id,
+				name: app.name,
+				description: app.description,
+				published: app.published,
+				web_link: app.web_link,
+				google_play_link: app.google_play_link,
+				microsoft_store_link: app.microsoft_store_link
+			})
+		end
+
+		result = {
+			apps: apps
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def get_app
 		jwt, session_id = get_jwt
 		id = params["id"]
