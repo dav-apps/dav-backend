@@ -51,6 +51,19 @@ describe AppUserActivitiesController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
+	it "should not get app user activities if the user is not a dev" do
+		jwt = generate_jwt(sessions(:mattWebsiteSession))
+
+		res = get_request(
+			"/v1/app/#{apps(:pocketlib).id}/user_activities",
+			{Authorization: jwt}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
 	it "should get app user activities" do
 		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		app = apps(:cards)
