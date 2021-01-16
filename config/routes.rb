@@ -42,6 +42,9 @@ Rails.application.routes.draw do
 	# AppUserActivitiesController
 	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
 
+	# AppUsersController
+	match '/v1/app/:id/users', to: 'app_users#get_app_users', via: :get
+
 	# ApisController
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api', to: 'apis#create_api', via: :post
