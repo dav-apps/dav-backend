@@ -5,6 +5,172 @@ describe AppsController do
 		setup
 	end
 
+	# create_app
+	it "should not create app without jwt" do
+		res = post_request("/v1/app")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not create app without Content-Type json" do
+		res = post_request(
+			"/v1/app",
+			{Authorization: "asdasdasdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not create app with invalid jwt" do
+		res = post_request(
+			"/v1/app",
+			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not create app from another app than the website" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not create app without required properties" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::NAME_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DESCRIPTION_MISSING, res["errors"][1]["code"])
+	end
+
+	it "should not create app with properties with wrong types" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				name: true,
+				description: 1.2
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::NAME_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DESCRIPTION_WRONG_TYPE, res["errors"][1]["code"])
+	end
+
+	it "should not create app with too short properties" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				name: "a",
+				description: "a"
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::NAME_TOO_SHORT, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DESCRIPTION_TOO_SHORT, res["errors"][1]["code"])
+	end
+
+	it "should not create app with too long properties" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				name: "a" * 250,
+				description: "a" * 250
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::NAME_TOO_LONG, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DESCRIPTION_TOO_LONG, res["errors"][1]["code"])
+	end
+
+	it "should not create app if the user is not a dev" do
+		jwt = generate_jwt(sessions(:mattWebsiteSession))
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				name: "TestApp",
+				description: "This is a test app"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should create app" do
+		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
+		name = "TestApp"
+		description = "This is a test app"
+
+		res = post_request(
+			"/v1/app",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				name: name,
+				description: description
+			}
+		)
+
+		assert_response 201
+
+		assert_not_nil(res["id"])
+		assert_equal(devs(:sherlock).id, res["dev_id"])
+		assert_equal(name, res["name"])
+		assert_equal(description, res["description"])
+		assert(!res["published"])
+		assert_nil(res["web_link"])
+		assert_nil(res["google_play_link"])
+		assert_nil(res["microsoft_store_link"])
+
+		app = App.find_by(id: res["id"])
+		assert_not_nil(app)
+		assert_equal(app.id, res["id"])
+		assert_equal(app.dev_id, res["dev_id"])
+		assert_equal(app.name, res["name"])
+		assert_equal(app.description, res["description"])
+		assert(!app.published)
+		assert_nil(app.web_link)
+		assert_nil(app.google_play_link)
+		assert_nil(app.microsoft_store_link)
+	end
+
 	# get_apps
 	it "should get apps" do
 		cards = apps(:cards)
