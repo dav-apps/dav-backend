@@ -747,6 +747,7 @@ describe UsersController do
 	it "should get users" do
 		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		sherlock = users(:sherlock)
+		cato = users(:cato)
 		dav = users(:dav)
 		matt = users(:matt)
 
@@ -756,7 +757,7 @@ describe UsersController do
 		)
 
 		assert_response 200
-		assert_equal(3, res["users"].length)
+		assert_equal(4, res["users"].length)
 
 		assert_equal(sherlock.id, res["users"][0]["id"])
 		assert_equal(sherlock.confirmed, res["users"][0]["confirmed"])
@@ -764,17 +765,23 @@ describe UsersController do
 		assert_equal(sherlock.plan, res["users"][0]["plan"])
 		assert_equal(sherlock.created_at.to_i, DateTime.parse(res["users"][0]["created_at"]).to_i)
 
-		assert_equal(dav.id, res["users"][1]["id"])
-		assert_equal(dav.confirmed, res["users"][1]["confirmed"])
-		assert_equal(dav.last_active, res["users"][1]["last_active"])
-		assert_equal(dav.plan, res["users"][1]["plan"])
-		assert_equal(dav.created_at.to_i, DateTime.parse(res["users"][1]["created_at"]).to_i)
+		assert_equal(cato.id, res["users"][1]["id"])
+		assert_equal(cato.confirmed, res["users"][1]["confirmed"])
+		assert_equal(cato.last_active, res["users"][1]["last_active"])
+		assert_equal(cato.plan, res["users"][1]["plan"])
+		assert_equal(cato.created_at.to_i, DateTime.parse(res["users"][1]["created_at"]).to_i)
 
-		assert_equal(matt.id, res["users"][2]["id"])
-		assert_equal(matt.confirmed, res["users"][2]["confirmed"])
-		assert_equal(matt.last_active, res["users"][2]["last_active"])
-		assert_equal(matt.plan, res["users"][2]["plan"])
-		assert_equal(matt.created_at.to_i, DateTime.parse(res["users"][2]["created_at"]).to_i)
+		assert_equal(dav.id, res["users"][2]["id"])
+		assert_equal(dav.confirmed, res["users"][2]["confirmed"])
+		assert_equal(dav.last_active, res["users"][2]["last_active"])
+		assert_equal(dav.plan, res["users"][2]["plan"])
+		assert_equal(dav.created_at.to_i, DateTime.parse(res["users"][2]["created_at"]).to_i)
+
+		assert_equal(matt.id, res["users"][3]["id"])
+		assert_equal(matt.confirmed, res["users"][3]["confirmed"])
+		assert_equal(matt.last_active, res["users"][3]["last_active"])
+		assert_equal(matt.plan, res["users"][3]["plan"])
+		assert_equal(matt.created_at.to_i, DateTime.parse(res["users"][3]["created_at"]).to_i)
 	end
 
 	# get_user
@@ -858,5 +865,155 @@ describe UsersController do
 		assert_equal(cards.google_play_link, res["apps"][0]["google_play_link"])
 		assert_equal(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
 		assert_equal(0, res["apps"][0]["used_storage"])
+	end
+
+	# confirm_user
+	it "should not confirm user without auth" do
+		res = post_request("/v1/user/1/confirm")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user without Content-Type json" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: "asdasasdsad"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user without required properties" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_CONFIRMATION_TOKEN_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user with properties with wrong types" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: 12.3
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_CONFIRMATION_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user with dev that does not exist" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user with invalid auth" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasdasd"
+			}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user with another dev than the first one" do
+		res = post_request(
+			"/v1/user/1/confirm",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user that does not exist" do
+		res = post_request(
+			"/v1/user/-123/confirm",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user that is already confirmed" do
+		res = post_request(
+			"/v1/user/#{users(:matt).id}/confirm",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asasdasdasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_IS_ALREADY_CONFIRMED, res["errors"][0]["code"])
+	end
+
+	it "should not confirm user with incorrect email confirmation token" do
+		cato = users(:cato)
+
+		res = post_request(
+			"/v1/user/#{cato.id}/confirm",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "adsasdasdasdasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WRONG_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+	end
+
+	it "should confirm user" do
+		cato = users(:cato)
+
+		res = post_request(
+			"/v1/user/#{cato.id}/confirm",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: cato.email_confirmation_token
+			}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		cato = User.find_by(id: cato.id)
+		assert_nil(cato.email_confirmation_token)
+		assert(cato.confirmed)
 	end
 end

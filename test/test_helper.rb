@@ -20,12 +20,12 @@ class ActiveSupport::TestCase
 
 	def post_request(url, headers = {}, body = {})
 		post url, headers: headers, params: body.to_json
-		JSON.parse(response.body)
+		response.body.length > 0 ? JSON.parse(response.body) : nil
 	end
 
 	def get_request(url, headers = {}, json_response = true)
 		get url, headers: headers
-		json_response ? JSON.parse(response.body) : response.body
+		json_response ? (response.body.length > 0 ? JSON.parse(response.body) : nil) : response.body
 	end
 
 	def put_request(url, headers = {}, body = {}, json = true)
