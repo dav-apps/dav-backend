@@ -230,6 +230,11 @@ class ValidationService
 		env_vars.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_description_presence(description)
+		error_code = 2123
+		description.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	# Methods for type of fields
 	def self.validate_email_type(email)
 		error_code = 2201
@@ -915,6 +920,8 @@ class ValidationService
 			"Missing field: errors"
 		when 2122
 			"Missing field: env_vars"
+		when 2123
+			"Missing field: description"
 		when 2201
 			"Field has wrong type: email"
 		when 2202

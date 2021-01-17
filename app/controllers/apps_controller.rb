@@ -1,4 +1,77 @@
 class AppsController < ApplicationController
+	def create_app
+		jwt, session_id = get_jwt
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		name = body["name"]
+		description = body["description"]
+
+		# Validate missing fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_name_presence(name),
+			ValidationService.validate_description_presence(description)
+		])
+
+		# Validate the types of the fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_name_type(name),
+			ValidationService.validate_description_type(description)
+		])
+
+		# Validate the length of the fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_name_length(name),
+			ValidationService.validate_description_length(description)
+		])
+
+		# Get the dev of the user
+		dev = user.dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Create the app
+		app = App.new(
+			dev: dev,
+			name: name,
+			description: description
+		)
+		ValidationService.raise_unexpected_error(!app.save)
+
+		# Return the data
+		result = {
+			id: app.id,
+			dev_id: app.dev_id,
+			name: app.name,
+			description: app.description,
+			published: app.published,
+			web_link: app.web_link,
+			google_play_link: app.google_play_link,
+			microsoft_store_link: app.microsoft_store_link
+		}
+
+		render json: result, status: 201
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+	
 	def get_apps
 		# Collect and return the data
 		apps = Array.new
