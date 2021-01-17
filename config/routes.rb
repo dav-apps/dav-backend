@@ -3,6 +3,7 @@ Rails.application.routes.draw do
 	match '/v1/signup', to: 'users#signup', via: :post
 	match '/v1/users', to: 'users#get_users', via: :get
 	match '/v1/user', to: 'users#get_user', via: :get
+	match '/v1/user/:id/confirm', to: 'users#confirm_user', via: :post
 	
 	# SessionsController
 	match '/v1/session', to: 'sessions#create_session', via: :post

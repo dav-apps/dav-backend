@@ -95,9 +95,24 @@ class ValidationService
 		free_storage < file_size ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_user_not_confirmed(user)
+		error_code = 1109
+		user.confirmed ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_email_confirmation_token_of_user(user, email_confirmation_token)
+		error_code = 1202
+		user.email_confirmation_token != email_confirmation_token ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_password_confirmation_token_of_user(user, password_confirmation_token)
+		error_code = 1203
+		user.password_confirmation_token != password_confirmation_token ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_jwt(jwt, session_id)
@@ -233,6 +248,16 @@ class ValidationService
 	def self.validate_description_presence(description)
 		error_code = 2123
 		description.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_email_confirmation_token_presence(email_confirmation_token)
+		error_code = 2124
+		email_confirmation_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_password_confirmation_token(password_confirmation_token)
+		error_code = 2125
+		password_confirmation_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -446,6 +471,16 @@ class ValidationService
 	def self.validate_microsoft_store_link_type(microsoft_store_link)
 		error_code = 2240
 		!microsoft_store_link.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_email_confirmation_token_type(email_confirmation_token)
+		error_code = 2241
+		!email_confirmation_token.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_password_confirmation_token_type(password_confirmation_token)
+		error_code = 2242
+		!password_confirmation_token.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -866,8 +901,14 @@ class ValidationService
 			"The table object has no file"
 		when 1108
 			"Not sufficient storage available"
+		when 1109
+			"User is already confirmed"
 		when 1201
 			"Password is incorrect"
+		when 1202
+			"Email confirmation token is incorrect"
+		when 1203
+			"Password confirmation token is incorrect"
 		when 1301
 			"JWT invalid"
 		when 1302
@@ -922,6 +963,10 @@ class ValidationService
 			"Missing field: env_vars"
 		when 2123
 			"Missing field: description"
+		when 2124
+			"Missing field: email_confirmation_token"
+		when 2125
+			"Missing field: password_confirmation_token"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -1002,6 +1047,10 @@ class ValidationService
 			"Field has wrong type: google_play_link"
 		when 2240
 			"Field has wrong type: microsoft_store_link"
+		when 2241
+			"Field has wrong type: email_confirmation_token"
+		when 2242
+			"Field has wrong type: password_confirmation_token"
 		when 2301
 			"Field too short: first_name"
 		when 2302

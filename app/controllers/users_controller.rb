@@ -245,6 +245,52 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def confirm_user
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		email_confirmation_token = body["email_confirmation_token"]
+
+		# Validate the email_confirmation_token
+		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
+		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Check if the user is already confirmed
+		ValidationService.raise_validation_error(ValidationService.validate_user_not_confirmed(user))
+
+		# Check the confirmation token
+		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
+
+		# Reset the email confirmation token and confirm the user
+		user.email_confirmation_token = nil
+		user.confirmed = true
+		ValidationService.raise_unexpected_error(!user.save)
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	private
 	def generate_token
       SecureRandom.hex(20)
