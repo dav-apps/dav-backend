@@ -245,6 +245,91 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def update_user
+		jwt, session_id = get_jwt
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Validate the user and dev
+		user = User.find_by(id: payload[:user_id])
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		dev = Dev.find_by(id: payload[:dev_id])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		app = App.find_by(id: payload[:app_id])
+		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		email = body["email"]
+		first_name = body["first_name"]
+		password = body["password"]
+
+		# Validate the types of the fields
+		validations = Array.new
+		validations.push(ValidationService.validate_email_type(email)) if !email.nil?
+		validations.push(ValidationService.validate_first_name_type(first_name)) if !first_name.nil?
+		validations.push(ValidationService.validate_password_type(password)) if !password.nil?
+		ValidationService.raise_multiple_validation_errors(validations)
+
+		# Validate the email
+		ValidationService.raise_validation_error(ValidationService.validate_email_availability(email))
+		ValidationService.raise_validation_error(ValidationService.validate_email_validity(email)) if !email.nil?
+
+		# Validate the length of the fields
+		validations = Array.new
+		validations.push(ValidationService.validate_first_name_length(first_name)) if !first_name.nil?
+		validations.push(ValidationService.validate_password_length(password)) if !password.nil?
+		ValidationService.raise_multiple_validation_errors(validations)
+
+		if !email.nil?
+			user.new_email = email
+			user.email_confirmation_token = generate_token
+		end
+
+		if !first_name.nil?
+			user.first_name = first_name
+		end
+
+		if !password.nil?
+			user.new_password = BCrypt::Password.create(password)
+			user.password_confirmation_token = generate_token
+		end
+
+		ValidationService.raise_unexpected_error(!user.save)
+
+		# Send the appropriate emails
+		UserNotifierMailer.change_email(user).deliver_later if !email.nil?
+		UserNotifierMailer.change_password(user).deliver_later if !password.nil?
+
+		# Return the data
+		result = {
+			id: user.id,
+			email: user.email,
+			first_name: user.first_name,
+			confirmed: user.confirmed,
+			total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
+			used_storage: user.used_storage,
+			stripe_customer_id: user.stripe_customer_id,
+			plan: user.plan,
+			subscription_status: user.subscription_status,
+			period_end: user.period_end,
+			dev: !Dev.find_by(user: user).nil?,
+			provider: !Provider.find_by(user: user).nil?
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def confirm_user
 		auth = get_auth
 		id = params[:id]
