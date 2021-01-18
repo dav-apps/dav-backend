@@ -36,7 +36,7 @@ describe TablesController do
 		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
-	it "should not create table with jwt for app that is not the website" do
+	it "should not create table from another app than the website" do
 		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 
 		res = post_request(

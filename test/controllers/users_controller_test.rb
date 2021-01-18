@@ -804,7 +804,7 @@ describe UsersController do
 		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
 	end
 
-	it "should return user" do
+	it "should get user" do
 		jwt = generate_jwt(sessions(:mattCardsSession))
 
 		res = get_request(
@@ -831,7 +831,7 @@ describe UsersController do
 		assert_nil(res["apps"])
 	end
 
-	it "should return user with additional information with website session" do
+	it "should get user with additional information with website session" do
 		jwt = generate_jwt(sessions(:davWebsiteSession))
 
 		res = get_request(
@@ -865,6 +865,181 @@ describe UsersController do
 		assert_equal(cards.google_play_link, res["apps"][0]["google_play_link"])
 		assert_equal(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
 		assert_equal(0, res["apps"][0]["used_storage"])
+	end
+
+	# update_user
+	it "should not update user without jwt" do
+		res = put_request("/v1/user")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not update user without Content-Type json" do
+		res = put_request(
+			"/v1/user",
+			{Authorization: "asdsdasdasdasda"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not update user with invalid jwt" do
+		res = put_request(
+			"/v1/user",
+			{Authorization: "asdsdasdasdasda", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not update user from another app than the website" do
+		jwt = generate_jwt(sessions(:sherlockTestAppSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not update user with properties with wrong types" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				email: true,
+				first_name: 23.4,
+				password: false
+			}
+		)
+
+		assert_response 400
+		assert_equal(3, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
+		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
+	end
+
+	it "should not update user with email that is already in use" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				email: users(:sherlock).email
+			}
+		)
+
+		assert_response 409
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
+	end
+
+	it "should not update user with invalid email" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				email: "hello world"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not update user with too short properties" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				first_name: "a",
+				password: "a"
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
+	end
+
+	it "should not update user with too long properties" do
+		jwt = generate_jwt(sessions(:davWebsiteSession))
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				first_name: "a" * 200,
+				password: "a" * 200
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_TOO_LONG, res["errors"][1]["code"])
+	end
+
+	it "should update user" do
+		jwt = generate_jwt(sessions(:mattWebsiteSession))
+		matt = users(:matt)
+		email = "updatedemail@dav-apps.tech"
+		first_name = "updated name"
+		password = "updated password"
+
+		res = put_request(
+			"/v1/user",
+			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{
+				email: email,
+				first_name: first_name,
+				password: password
+			}
+		)
+
+		assert_response 200
+
+		assert_equal(matt.id, res["id"])
+		assert_equal(matt.email, res["email"])
+		assert_equal(first_name, res["first_name"])
+		assert_equal(matt.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(matt.plan, matt.confirmed), res["total_storage"])
+		assert_equal(matt.used_storage, res["used_storage"])
+		assert_equal(matt.stripe_customer_id, res["stripe_customer_id"])
+		assert_equal(matt.plan, res["plan"])
+		assert_equal(matt.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(!res["dev"])
+		assert(!res["provider"])
+
+		# Check if the user was updated
+		matt = User.find_by(id: matt.id)
+		assert_not_nil(matt)
+		assert_equal(first_name, matt.first_name)
+		assert_equal(email, matt.new_email)
+		assert(BCrypt::Password.new(matt.new_password) == password)
+
+		assert_not_nil(matt.email_confirmation_token)
+		assert_not_nil(matt.password_confirmation_token)
 	end
 
 	# confirm_user
