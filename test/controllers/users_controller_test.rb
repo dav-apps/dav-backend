@@ -1304,7 +1304,7 @@ describe UsersController do
 
 		assert_response 412
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_NEW_EMAIL_IS_EMPTY, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::NEW_EMAIL_OF_USER_IS_EMPTY, res["errors"][0]["code"])
 	end
 
 	it "should not save new email with incorrect email confirmation token" do
@@ -1325,6 +1325,7 @@ describe UsersController do
 
 	it "should save new email" do
 		cato = users(:cato)
+		email_confirmation_token_before = cato.email_confirmation_token
 		email_before = cato.email
 		new_email_before = cato.new_email
 
@@ -1340,7 +1341,8 @@ describe UsersController do
 
 		# Check if the user was updated
 		cato = User.find_by(id: cato.id)
-		assert_nil(cato.email_confirmation_token)
+		assert_not_nil(cato.email_confirmation_token)
+		assert_not_equal(email_confirmation_token_before, cato.email_confirmation_token)
 		assert_equal(email_before, cato.old_email)
 		assert_equal(new_email_before, cato.email)
 		assert_nil(cato.new_email)
@@ -1458,7 +1460,7 @@ describe UsersController do
 
 		assert_response 412
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_NEW_PASSWORD_IS_EMPTY, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::NEW_PASSWORD_OF_USER_IS_EMPTY, res["errors"][0]["code"])
 	end
 
 	it "should not save new password with incorrect password confirmation token" do
@@ -1500,5 +1502,157 @@ describe UsersController do
 
 		# The user should be able to authenticate with the new password
 		assert(cato.authenticate("654321"))
+	end
+
+	# reset_email
+	it "should not reset email without auth" do
+		res = post_request("/v1/user/1/reset_email")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not reset email without Content-Type json" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: "asdasdasdasdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not reset email without required properties" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: "adsdasasdasd", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_CONFIRMATION_TOKEN_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not reset email with properties with wrong types" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: "asdasasadasdasd", 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: true
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_CONFIRMATION_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not reset email with dev that does not exist" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: "asdasdasd,asdwfqfwafasf", 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not reset email with invalid auth" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not reset email with another dev than the first one" do
+		res = post_request(
+			"/v1/user/1/reset_email",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasasd"
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not reset email of user that does not exist" do
+		res = post_request(
+			"/v1/user/-421/reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not reset email of user with empty old_email" do
+		res = post_request(
+			"/v1/user/#{users(:matt).id}/reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::OLD_EMAIL_OF_USER_IS_EMPTY, res["errors"][0]["code"])
+	end
+
+	it "should not reset email with incorrect email confirmation token" do
+		cato = users(:cato)
+
+		res = post_request(
+			"/v1/user/#{cato.id}/reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WRONG_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+	end
+
+	it "should reset email" do
+		cato = users(:cato)
+		old_email_before = cato.old_email
+
+		res = post_request(
+			"/v1/user/#{cato.id}/reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email_confirmation_token: cato.email_confirmation_token
+			}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		cato = User.find_by(id: cato.id)
+		assert_nil(cato.email_confirmation_token)
+		assert_nil(cato.old_email)
+		assert_equal(cato.email, old_email_before)
 	end
 end
