@@ -140,17 +140,17 @@ class ValidationService
 	end
 
 	# Methods for empty User attributes
-	def self.validate_user_old_email_not_empty(user)
+	def self.validate_old_email_of_user_not_empty(user)
 		error_code = 1501
 		user.old_email.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
 	end
 
-	def self.validate_user_new_email_not_empty(user)
+	def self.validate_new_email_of_user_not_empty(user)
 		error_code = 1502
 		user.new_email.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
 	end
 
-	def self.validate_new_password_not_empty(user)
+	def self.validate_new_password_of_user_not_empty(user)
 		error_code = 1503
 		user.new_password.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
 	end
@@ -271,7 +271,7 @@ class ValidationService
 		email_confirmation_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_password_confirmation_token(password_confirmation_token)
+	def self.validate_password_confirmation_token_presence(password_confirmation_token)
 		error_code = 2125
 		password_confirmation_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end

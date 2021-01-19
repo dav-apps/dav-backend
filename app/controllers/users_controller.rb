@@ -387,7 +387,7 @@ class UsersController < ApplicationController
 		body = ValidationService.parse_json(request.body.string)
 		email_confirmation_token = body["email_confirmation_token"]
 
-		# Validate the email_confirmation_token
+		# Validate the email confirmation token
 		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
 		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
 
@@ -406,16 +406,16 @@ class UsersController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
 
 		# Check if the user has a new email
-		ValidationService.raise_validation_error(ValidationService.validate_user_new_email_not_empty(user))
+		ValidationService.raise_validation_error(ValidationService.validate_new_email_of_user_not_empty(user))
 
 		# Check the confirmation token
 		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
 
 		# Reset the email confirmation token and set the new email
-		user.email_confirmation_token = nil
 		user.old_email = user.email
 		user.email = user.new_email
 		user.new_email = nil
+		user.email_confirmation_token = nil
 
 		ValidationService.raise_unexpected_error(!user.save)
 
@@ -424,6 +424,54 @@ class UsersController < ApplicationController
 
 		# Send email to reset the new email
 		UserNotifierMailer.reset_email(user).deliver_later
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def save_new_password
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		password_confirmation_token = body["password_confirmation_token"]
+
+		# Validate the password confirmation token
+		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_presence(password_confirmation_token))
+		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_type(password_confirmation_token))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Check if the user has a new password
+		ValidationService.raise_validation_error(ValidationService.validate_new_password_of_user_not_empty(user))
+
+		# Check the confirmation token
+		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
+
+		# Reset the password confirmation token and set the new password
+		user.password_digest = user.new_password
+		user.new_password = nil
+		user.password_confirmation_token = nil
+
+		ValidationService.raise_unexpected_error(!user.save)
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
