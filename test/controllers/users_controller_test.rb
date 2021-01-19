@@ -1345,4 +1345,160 @@ describe UsersController do
 		assert_equal(new_email_before, cato.email)
 		assert_nil(cato.new_email)
 	end
+
+	# save_new_password
+	it "should not save new password without auth" do
+		res = post_request("/v1/user/1/save_new_password")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not save new password without Content-Type json" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: "asdsaasdasddda"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not save new password without required properties" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_CONFIRMATION_TOKEN_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not save new password with properties with wrong types" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: []
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_CONFIRMATION_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not save new password with dev that does not exist" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: "adasasdasdasd,asdsdasdasfasgafas", 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasdasdsda"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not save new password with invalid auth" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasdads"
+			}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not save new password with another dev than the first one" do
+		res = post_request(
+			"/v1/user/1/save_new_password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not save new password of user that does not exist" do
+		res = post_request(
+			"/v1/user/-123/save_new_password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not save new password of user with empty new_password" do
+		res = post_request(
+			"/v1/user/#{users(:matt).id}/save_new_password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasdasd"
+			}
+		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_NEW_PASSWORD_IS_EMPTY, res["errors"][0]["code"])
+	end
+
+	it "should not save new password with incorrect password confirmation token" do
+		cato = users(:cato)
+
+		res = post_request(
+			"/v1/user/#{cato.id}/save_new_password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: "asdasdasdads"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WRONG_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+	end
+
+	it "should save new password" do
+		cato = users(:cato)
+		password_digest_before = cato.password_digest
+		new_password_before = cato.new_password
+
+		res = post_request(
+			"/v1/user/#{cato.id}/save_new_password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password_confirmation_token: cato.password_confirmation_token
+			}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		cato = User.find_by(id: cato.id)
+		assert_nil(cato.password_confirmation_token)
+		assert_equal(new_password_before, cato.password_digest)
+		assert_nil(cato.new_password)
+
+		# The user should be able to authenticate with the new password
+		assert(cato.authenticate("654321"))
+	end
 end
