@@ -8,6 +8,7 @@ Rails.application.routes.draw do
 	match '/v1/user/:id/save_new_email', to: 'users#save_new_email', via: :post
 	match '/v1/user/:id/save_new_password', to: 'users#save_new_password', via: :post
 	match '/v1/user/:id/reset_email', to: 'users#reset_email', via: :post
+	match '/v1/user/:id/send_confirmation_email', to: 'users#send_confirmation_email', via: :post
 	
 	# SessionsController
 	match '/v1/session', to: 'sessions#create_session', via: :post

@@ -33,7 +33,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def reset_email(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/email_link?type=reset_email&user_id=#{@user.id}"
+		@link = "#{ENV['BASE_URL']}/email_link?type=reset_email&user_id=#{@user.id}&email_confirmation_token=#{@user.email_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.old_email,
