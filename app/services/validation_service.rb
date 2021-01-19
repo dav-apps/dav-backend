@@ -139,6 +139,22 @@ class ValidationService
 		auth.nil? ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
+	# Methods for empty User attributes
+	def self.validate_user_old_email_not_empty(user)
+		error_code = 1501
+		user.old_email.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_user_new_email_not_empty(user)
+		error_code = 1502
+		user.new_email.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_new_password_not_empty(user)
+		error_code = 1503
+		user.new_password.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
 	# Methods for presence of fields
 	def self.validate_jwt_presence(jwt)
 		error_code = 2102
@@ -919,6 +935,12 @@ class ValidationService
 			"Missing header: Authorization"
 		when 1402
 			"Missing header: Content-Type"
+		when 1501
+			"User.old_email is empty"
+		when 1502
+			"User.new_email is empty"
+		when 1503
+			"User.new_password is empty"
 		when 2102
 			"Missing field: jwt"
 		when 2103

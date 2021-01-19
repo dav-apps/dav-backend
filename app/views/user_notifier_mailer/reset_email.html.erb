@@ -1,0 +1,16 @@
+<div class="container py-3">
+	<div class="card my-5">
+		<div class="card-body">
+			<a href="https://dav-apps.tech"
+				class="navbar-brand ml-3"
+				style="color: black; font-size: 35px; font-weight: bold; font-family: 'MV Boli', Kalam">
+				dav
+			</a>
+			<h2 class="text-center mt-3 mb-3">Your email address was changed</h2>
+			<h5 class="card-text text-center">The new email address of your dav account is <span class="font-weight-bold"><%= @user.email %></span></h5>
+			<h6 class="card-text text-center mt-4">
+				If you don't own the email address above, click <%= link_to "here", @link %> to undo this change.<br>Otherwise, you can ignore this email.
+			</h6>
+		</div>
+	</div>
+</div>

@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 	match '/v1/user', to: 'users#get_user', via: :get
 	match '/v1/user', to: 'users#update_user', via: :put
 	match '/v1/user/:id/confirm', to: 'users#confirm_user', via: :post
+	match '/v1/user/:id/save_new_email', to: 'users#save_new_email', via: :post
 	
 	# SessionsController
 	match '/v1/session', to: 'sessions#create_session', via: :post

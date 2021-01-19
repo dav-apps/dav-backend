@@ -30,4 +30,14 @@ class UserNotifierMailer < ApplicationMailer
 			subject: "Confirm your new password"
 		)
 	end
+
+	def reset_email(user)
+		@user = user
+		@link = "#{ENV['BASE_URL']}/email_link?type=reset_email&user_id=#{@user.id}"
+
+		make_bootstrap_mail(
+			to: @user.old_email,
+			subject: "Your email address was changed"
+		)
+	end
 end
