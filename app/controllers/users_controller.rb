@@ -596,6 +596,62 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def set_password
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		password = body["password"]
+		password_confirmation_token = body["password_confirmation_token"]
+
+		# Validate missing fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_password_presence(password),
+			ValidationService.validate_password_confirmation_token_presence(password_confirmation_token)
+		])
+
+		# Validate the types of the fields
+		ValidationService.raise_multiple_validation_errors([
+			ValidationService.validate_password_type(password),
+			ValidationService.validate_password_confirmation_token_type(password_confirmation_token)
+		])
+
+		# Validate the password length
+		ValidationService.raise_validation_error(ValidationService.validate_password_length(password))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Check the confirmation token
+		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
+
+		# Update the user with the new password and clear the password confirmation token
+		user.password = password
+		user.password_confirmation_token = nil
+
+		ValidationService.raise_unexpected_error(!user.save)
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	private
 	def generate_token
       SecureRandom.hex(20)
