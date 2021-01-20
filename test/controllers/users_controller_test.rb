@@ -1042,6 +1042,142 @@ describe UsersController do
 		assert_not_nil(matt.password_confirmation_token)
 	end
 
+	# send_confirmation_email
+	it "should not send confirmation email without auth" do
+		res = post_request("/v1/user/1/send_confirmation_email")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not send confirmation email with dev that does not exist" do
+		res = post_request(
+			"/v1/user/1/send_confirmation_email",
+			{Authorization: "asdasdasd,asdwfqfwafasf"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not send confirmation email with invalid auth" do
+		res = post_request(
+			"/v1/user/1/send_confirmation_email",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not send confirmation email with another dev than the first one" do
+		res = post_request(
+			"/v1/user/1/send_confirmation_email",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not send confirmation email for user that does not exist" do
+		res = post_request(
+			"/v1/user/-123/send_confirmation_email",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should send confirmation email" do
+		matt = users(:matt)
+
+		res = post_request(
+			"/v1/user/#{matt.id}/send_confirmation_email",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		matt = User.find_by(id: matt.id)
+		assert_not_nil(matt.email_confirmation_token)
+	end
+
+	# send_password_reset_email
+	it "should not send password reset email without auth" do
+		res = post_request("/v1/user/1/send_password_reset_email")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email with dev that does not exist" do
+		res = post_request(
+			"/v1/user/1/send_password_reset_email",
+			{Authorization: "asdasdasd,asdwfqfwafasf"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email with invalid auth" do
+		res = post_request(
+			"/v1/user/1/send_password_reset_email",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email with another dev than the first one" do
+		res = post_request(
+			"/v1/user/1/send_password_reset_email",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email for user that does not exist" do
+		res = post_request(
+			"/v1/user/1/send_password_reset_email",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should send password reset email" do
+		matt = users(:matt)
+
+		res = post_request(
+			"/v1/user/#{matt.id}/send_password_reset_email",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		matt = User.find_by(id: matt.id)
+		assert_not_nil(matt.password_confirmation_token)
+	end
+
 	# confirm_user
 	it "should not confirm user without auth" do
 		res = post_request("/v1/user/1/confirm")
@@ -1654,73 +1790,5 @@ describe UsersController do
 		assert_nil(cato.email_confirmation_token)
 		assert_nil(cato.old_email)
 		assert_equal(cato.email, old_email_before)
-	end
-
-	# send_confirmation_email
-	it "should not send confirmation email without auth" do
-		res = post_request("/v1/user/1/send_confirmation_email")
-
-		assert_response 401
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
-	end
-
-	it "should not send confirmation email with dev that does not exist" do
-		res = post_request(
-			"/v1/user/1/send_confirmation_email",
-			{Authorization: "asdasdasd,asdwfqfwafasf"}
-		)
-
-		assert_response 404
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
-	end
-
-	it "should not send confirmation email with invalid auth" do
-		res = post_request(
-			"/v1/user/1/send_confirmation_email",
-			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
-		)
-
-		assert_response 401
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
-	end
-
-	it "should not send confirmation email with another dev than the first one" do
-		res = post_request(
-			"/v1/user/1/send_confirmation_email",
-			{Authorization: generate_auth(devs(:dav))}
-		)
-
-		assert_response 403
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
-	end
-
-	it "should not send confirmation email for user that does not exist" do
-		res = post_request(
-			"/v1/user/-123/send_confirmation_email",
-			{Authorization: generate_auth(devs(:sherlock))}
-		)
-
-		assert_response 404
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
-	end
-
-	it "should send confirmation email" do
-		matt = users(:matt)
-
-		res = post_request(
-			"/v1/user/#{matt.id}/send_confirmation_email",
-			{Authorization: generate_auth(devs(:sherlock))}
-		)
-
-		assert_response 204
-
-		# Check if the user was updated
-		matt = User.find_by(id: matt.id)
-		assert_not_nil(matt.email_confirmation_token)
 	end
 end
