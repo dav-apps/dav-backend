@@ -1791,4 +1791,180 @@ describe UsersController do
 		assert_nil(cato.old_email)
 		assert_equal(cato.email, old_email_before)
 	end
+
+	# set_password
+	it "should not set password without auth" do
+		res = put_request("/v1/user/1/password")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not set password without Content-Type json" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: "asdasdasdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not set password without required properties" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_CONFIRMATION_TOKEN_MISSING, res["errors"][1]["code"])
+	end
+
+	it "should not set password with properties with wrong types" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				password: 1234,
+				password_confirmation_token: false
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::PASSWORD_CONFIRMATION_TOKEN_WRONG_TYPE, res["errors"][1]["code"])
+	end
+
+	it "should not set password with too short properties" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password: "a",
+				password_confirmation_token: "adasasdasdasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not set password with too long properties" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password: "a" * 100,
+				password_confirmation_token: "adasasdasdasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PASSWORD_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should not set password with dev that does not exist" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: "adasasdasdasd,asdsdasdasfasgafas", 'Content-Type': 'application/json'},
+			{
+				password: "asdasdasdasd",
+				password_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not set password with invalid auth" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				password: "asdasdasdasd",
+				password_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not set password with another dev than the first one" do
+		res = put_request(
+			"/v1/user/1/password",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				password: "asdasdasdasd",
+				password_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not set password of user that does not exist" do
+		res = put_request(
+			"/v1/user/-213/password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password: "asdasdasdasd",
+				password_confirmation_token: "asdasdasd"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not set password with incorrect password confirmation token" do
+		cato = users(:cato)
+
+		res = put_request(
+			"/v1/user/#{cato.id}/password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password: "asdasdasd",
+				password_confirmation_token: "asdasdsadasd"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WRONG_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+	end
+
+	it "should set password" do
+		cato = users(:cato)
+		password = "new password"
+
+		res = put_request(
+			"/v1/user/#{cato.id}/password",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				password: password,
+				password_confirmation_token: cato.password_confirmation_token
+			}
+		)
+
+		assert_response 204
+
+		# Check if the user was updated
+		cato = User.find_by(id: cato.id)
+		assert_nil(cato.password_confirmation_token)
+		assert(cato.authenticate(password))
+	end
 end
