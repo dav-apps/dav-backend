@@ -330,6 +330,72 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def send_confirmation_email
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Generate the email confirmation token
+		user.email_confirmation_token = generate_token
+		ValidationService.raise_unexpected_error(!user.save)
+
+		# Send the email
+		UserNotifierMailer.email_confirmation(user).deliver_later
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def send_password_reset_email
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Generate the password confirmation token
+		user.password_confirmation_token = generate_token
+		ValidationService.raise_unexpected_error(!user.save)
+
+		# Send the email
+		UserNotifierMailer.password_reset(user).deliver_later
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def confirm_user
 		auth = get_auth
 		id = params[:id]
@@ -523,39 +589,6 @@ class UsersController < ApplicationController
 
 		# Update the email of the Stripe customer
 		update_stripe_customer_with_email(user)
-
-		head 204, content_type: "application/json"
-	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
-	end
-
-	def send_confirmation_email
-		auth = get_auth
-		id = params[:id]
-
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-
-		# Get the dev
-		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
-
-		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
-
-		# Get the user
-		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		# Generate the email confirmation token
-		user.email_confirmation_token = generate_token
-		ValidationService.raise_unexpected_error(!user.save)
-
-		# Send the email
-		UserNotifierMailer.email_confirmation(user).deliver_later
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
