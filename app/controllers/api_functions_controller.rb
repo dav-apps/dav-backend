@@ -34,7 +34,7 @@ class ApiFunctionsController < ApplicationController
 
 		# Validate the length of the fields
 		validations = Array.new
-		validations.push(ValidationService.validate_name_length(name))
+		validations.push(ValidationService.validate_api_function_name_length(name))
 		validations.push(ValidationService.validate_params_length(params)) if !params.nil?
 		validations.push(ValidationService.validate_commands_length(commands))
 		ValidationService.raise_multiple_validation_errors(validations)

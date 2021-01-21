@@ -44,7 +44,7 @@ class ApiEnvVarsController < ApplicationController
 			end
 
 			# Validate the length
-			ValidationService.raise_validation_error(ValidationService.validate_value_length(value))
+			ValidationService.raise_validation_error(ValidationService.validate_api_env_var_value_length(value))
 			
 			# Try to find the api env var
 			env_var = ApiEnvVar.find_by(api: api, name: key)

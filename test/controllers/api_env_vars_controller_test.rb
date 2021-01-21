@@ -85,7 +85,7 @@ describe ApiEnvVarsController do
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
-					test: "a"
+					test: ""
 				}
 			}
 		)

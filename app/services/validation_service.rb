@@ -560,6 +560,16 @@ class ValidationService
 		end
 	end
 
+	def self.validate_api_function_name_length(name)
+		if name.length < Constants::API_FUNCTION_NAME_MIN_LENGTH
+			get_validation_hash(false, 2306, 400)
+		elsif name.length > Constants::API_FUNCTION_NAME_MAX_LENGTH
+			get_validation_hash(false, 2406, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	def self.validate_property_name_length(name)
 		if name.length < Constants::PROPERTY_NAME_MIN_LENGTH
 			get_validation_hash(false, 2307, 400)
@@ -682,10 +692,10 @@ class ValidationService
 		end
 	end
 
-	def self.validate_value_length(value)
-		if value.length < Constants::VALUE_MIN_LENGTH
+	def self.validate_api_env_var_value_length(value)
+		if value.length < Constants::API_ENV_VAR_VALUE_MIN_LENGTH
 			get_validation_hash(false, 2319, 400)
-		elsif value.length > Constants::VALUE_MAX_LENGTH
+		elsif value.length > Constants::API_ENV_VAR_VALUE_MAX_LENGTH
 			get_validation_hash(false, 2419, 400)
 		else
 			get_validation_hash
