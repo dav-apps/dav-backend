@@ -5,6 +5,7 @@ class User < ApplicationRecord
 	has_many :table_objects, dependent: :destroy
 	has_many :sessions, dependent: :destroy
 	has_many :table_object_user_access, dependent: :destroy
+	has_many :purchases, dependent: :destroy
 	has_many :notifications, dependent: :destroy
 	has_many :websocket_connections, dependent: :destroy
 
