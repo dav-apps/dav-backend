@@ -88,6 +88,7 @@ GEM
     crass (1.0.6)
     css_parser (1.7.1)
       addressable
+    cuid (1.0.1)
     dotenv (2.7.6)
     dotenv-rails (2.7.6)
       dotenv (= 2.7.6)
@@ -215,6 +216,7 @@ DEPENDENCIES
   blurhash
   bootsnap (>= 1.4.2)
   bootstrap-email
+  cuid
   dotenv-rails
   jwt
   listen (~> 3.2)

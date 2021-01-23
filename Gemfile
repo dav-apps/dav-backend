@@ -45,6 +45,9 @@ gem 'sexpistol', git: 'https://github.com/dav-apps/sexpistol'
 gem 'blurhash'
 gem 'rmagick'
 
+# Generating CUIDs (Collision-resistant ids)
+gem 'cuid'
+
 group :development, :test do
 	gem 'dotenv-rails'
 end
