@@ -1,23 +1,12 @@
 class WebPushSubscriptionsController < ApplicationController
 	def create_web_push_subscription
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_existence(session))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)

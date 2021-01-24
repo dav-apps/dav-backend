@@ -6,7 +6,7 @@ describe WebPushSubscriptionsController do
 	end
 
 	# create_web_push_subscription
-	it "should not create web push subscription without jwt" do
+	it "should not create web push subscription without access token" do
 		res = post_request("/v1/web_push_subscription")
 
 		assert_response 401
@@ -25,23 +25,21 @@ describe WebPushSubscriptionsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create web push subscription with invalid jwt" do
+	it "should not create web push subscription with access token of session that does not exist" do
 		res = post_request(
 			"/v1/web_push_subscription",
 			{Authorization: "asdasdsadsda", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create web push subscription without required properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -52,11 +50,9 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should not create web push subscription with properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				endpoint: 123,
 				p256dh: true,
@@ -72,11 +68,9 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should not create web push subscription with optional properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				endpoint: 123,
 				p256dh: true,
@@ -94,11 +88,9 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should not create web push subscription with too short properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				endpoint: "",
 				p256dh: "",
@@ -114,11 +106,9 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should not create web push subscription with too long properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				endpoint: "a" * 300,
 				p256dh: "a" * 300,
@@ -134,12 +124,11 @@ describe WebPushSubscriptionsController do
 	end
 
 	it "should not create web push subscription with uuid that is already in use" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		subscription = web_push_subscriptions(:mattCardsWebPushSubscription)
 
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				uuid: subscription.uuid,
 				endpoint: "https://notify.windows.com/asdasdasd",
@@ -155,14 +144,13 @@ describe WebPushSubscriptionsController do
 
 	it "should create web push subscription" do
 		session = sessions(:mattCardsSession)
-		jwt = generate_jwt(session)
 		endpoint = "https://fcm.google.com/..."
 		p256dh = "asdasdasdasd"
 		auth = "oshdfuhw9ehuosfd"
 
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: session.token, 'Content-Type': 'application/json'},
 			{
 				endpoint: endpoint,
 				p256dh: p256dh,
@@ -191,7 +179,6 @@ describe WebPushSubscriptionsController do
 
 	it "should create web push subscription with uuid" do
 		session = sessions(:mattCardsSession)
-		jwt = generate_jwt(session)
 		uuid = SecureRandom.uuid
 		endpoint = "https://fcm.google.com/..."
 		p256dh = "asdasdasdasd"
@@ -199,7 +186,7 @@ describe WebPushSubscriptionsController do
 
 		res = post_request(
 			"/v1/web_push_subscription",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: session.token, 'Content-Type': 'application/json'},
 			{
 				uuid: uuid,
 				endpoint: endpoint,
