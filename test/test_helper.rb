@@ -42,11 +42,6 @@ class ActiveSupport::TestCase
 		dev.api_key + "," + Base64.strict_encode64(OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), dev.secret_key, dev.uuid))
 	end
 
-	def generate_jwt(session)
-		payload = {user_id: session.user.id, app_id: session.app.id, dev_id: session.app.dev.id, exp: session.exp.to_i}
-		"#{JWT.encode(payload, session.secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
-	end
-
 	def generate_table_object_etag(table_object)
 		# uuid,property1Name:property1Value,property2Name:property2Value,...
 		etag_string = table_object.uuid

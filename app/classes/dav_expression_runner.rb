@@ -239,52 +239,6 @@ class DavExpressionRunner
 					i += 1
 				end
 				return @errors
-			when :decode_jwt
-				jwt_parts = execute_command(command[1], vars).to_s.split('.')
-				jwt = jwt_parts[0..2].join('.')
-				session_id = jwt_parts[3].to_i
-				
-				secret = ENV["JWT_SECRET"]
-
-				error = Hash.new
-				error["name"] = "decode_jwt"
-				
-				if session_id != 0
-					session = Session.find_by(id: session_id)
-
-					if session.nil?
-						# Session does not exist
-						error["code"] = 0
-						@errors.push(error)
-						return @errors
-					elsif session.app_id != @api.app_id
-						# Action not allowed
-						error["code"] = 1
-						@errors.push(error)
-						return @errors
-					end
-
-					secret = session.secret
-				end
-				
-				begin
-					JWT.decode(jwt, secret, true, {algorithm: ENV['JWT_ALGORITHM']})[0]
-				rescue JWT::ExpiredSignature
-					# JWT expired
-					error["code"] = 2
-					@errors.push(error)
-					return @errors
-				rescue JWT::DecodeError
-					# JWT decode failed
-					error["code"] = 3
-					@errors.push(error)
-					return @errors
-				rescue Exception
-					# Generic error
-					error["code"] = 4
-					@errors.push(error)
-					return @errors
-				end
 			when :log
 				result = execute_command(command[1], vars)
 				puts result

@@ -141,24 +141,6 @@ class ValidationService
 		user.password_confirmation_token != password_confirmation_token ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_jwt(jwt, session_id)
-		raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json if session_id == 0
-
-		session = Session.find_by(id: session_id)
-		raise RuntimeError, [get_validation_hash(false, 2806, 404)].to_json if session.nil?
-
-		# Try to decode the jwt
-		begin
-			JWT.decode(jwt, session.secret, true, { algorithm: ENV["JWT_ALGORITHM"] })[0].transform_keys(&:to_sym)
-		rescue JWT::DecodeError
-			raise RuntimeError, [get_validation_hash(false, 1301, 401)].to_json
-		rescue JWT::ExpiredSignature
-			raise RuntimeError, [get_validation_hash(false, 1302, 401)].to_json
-		rescue
-			raise RuntimeError, [get_validation_hash(false, 1303, 401)].to_json
-		end
-	end
-
 	# Methods for presence of headers
 	def self.validate_auth_header_presence(auth)
 		error_code = 1401
@@ -182,9 +164,9 @@ class ValidationService
 	end
 
 	# Methods for presence of fields
-	def self.validate_access_token_presence(jwt)
+	def self.validate_access_token_presence(access_token)
 		error_code = 2102
-		jwt.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		access_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_email_presence(email)
@@ -485,9 +467,9 @@ class ValidationService
 		get_validation_hash(false, error_code, 400)
 	end
 
-	def self.validate_access_token_type(jwt)
+	def self.validate_access_token_type(access_token)
 		error_code = 2235
-		!jwt.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+		!access_token.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_description_type(description)
@@ -961,12 +943,6 @@ class ValidationService
 			"Email confirmation token is incorrect"
 		when 1203
 			"Password confirmation token is incorrect"
-		when 1301
-			"JWT invalid"
-		when 1302
-			"JWT expired"
-		when 1303
-			"JWT unexpected error"
 		when 1401
 			"Missing header: Authorization"
 		when 1402
