@@ -74,4 +74,32 @@ class ActiveSupport::TestCase
 			return storage_on_free_plan
 		end
 	end
+
+	def upload_blob(table_object, blob)
+		client = Azure::Storage::Blob::BlobService.create(
+			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
+			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+		)
+
+		# Read the file
+		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+
+		client.create_block_blob(
+			ENV['AZURE_FILES_CONTAINER_NAME'],
+			"#{table_object.table.app.id}/#{table_object.id}",
+			contents
+		)
+	end
+
+	def download_blob(table_object)
+		client = Azure::Storage::Blob::BlobService.create(
+			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
+			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+		)
+
+		client.get_blob(
+			ENV['AZURE_FILES_CONTAINER_NAME'],
+			"#{table_object.table.app.id}/#{table_object.id}"
+		)
+	end
 end

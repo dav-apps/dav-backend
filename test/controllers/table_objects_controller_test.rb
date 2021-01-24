@@ -6,7 +6,7 @@ describe TableObjectsController do
 	end
 
 	# create_table_object
-	it "should not create table object without jwt" do
+	it "should not create table object without access token" do
 		res = post_request("/v1/table_object")
 
 		assert_response 401
@@ -25,23 +25,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create table object with invalid jwt" do
+	it "should not create table object with access token for session that does not exist" do
 		res = post_request(
 			"/v1/table_object",
 			{Authorization: "asdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create table object without required properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -50,11 +48,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: "142"
 			}
@@ -66,11 +62,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with optional properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				uuid: 123,
 				table_id: "142",
@@ -88,11 +82,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object for table that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: -12
 			}
@@ -104,11 +96,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object for table of app of another dev" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:storeBook).id
 			}
@@ -120,11 +110,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object for table that does not belong to the app of the session" do
-		jwt = generate_jwt(sessions(:mattTestAppSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:storeBook).id
 			}
@@ -136,11 +124,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with uuid that is already in use" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				uuid: table_objects(:davSecondCard).uuid
@@ -153,11 +139,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object as file with ext with wrong type" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				file: true,
@@ -173,11 +157,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with too short property name" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				properties: {
@@ -193,11 +175,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with too long property name" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				properties: {
@@ -213,11 +193,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with too short property value" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				properties: {
@@ -233,11 +211,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object with too long property value" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				properties: {
@@ -253,11 +229,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object as file with too short ext" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				file: true,
@@ -273,11 +247,9 @@ describe TableObjectsController do
 	end
 
 	it "should not create table object as file with too long ext" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: tables(:card).id,
 				file: true,
@@ -293,7 +265,6 @@ describe TableObjectsController do
 	end
 
 	it "should create table object" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		first_property_name = "test1"
 		first_property_value = "Hello World"
@@ -306,7 +277,7 @@ describe TableObjectsController do
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				properties: {
@@ -384,7 +355,6 @@ describe TableObjectsController do
 	end
 
 	it "should create table object with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		uuid = SecureRandom.uuid
 		first_property_name = "test1"
@@ -398,7 +368,7 @@ describe TableObjectsController do
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				uuid: uuid,
@@ -477,12 +447,11 @@ describe TableObjectsController do
 	end
 
 	it "should create table object without properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id
 			}
@@ -512,13 +481,12 @@ describe TableObjectsController do
 	end
 
 	it "should create table object with uuid without properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		uuid = SecureRandom.uuid
 		
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				uuid: uuid
@@ -549,12 +517,11 @@ describe TableObjectsController do
 	end
 
 	it "should create table object as file" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				file: true,
@@ -589,13 +556,12 @@ describe TableObjectsController do
 	end
 
 	it "should create table object with uuid as file" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		uuid = SecureRandom.uuid
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				uuid: uuid,
@@ -631,13 +597,12 @@ describe TableObjectsController do
 	end
 
 	it "should create table object as file with ext" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table = tables(:testTable)
 		ext = "mp4"
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				file: true,
@@ -672,12 +637,11 @@ describe TableObjectsController do
 	end
 
 	it "should create table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 
 		res = post_request(
 			"/v1/table_object",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_id: table.id,
 				properties: {
@@ -697,7 +661,7 @@ describe TableObjectsController do
 	end
 
 	# get_table_object
-	it "should not get table object without jwt" do
+	it "should not get table object without access token" do
 		res = get_request(
 			"/v1/table_object/1"
 		)
@@ -707,23 +671,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get table object with invalid jwt" do
+	it "should not get table object with access token of session that does not exist" do
 		res = get_request(
 			"/v1/table_object/1",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = get_request(
 			"/v1/table_object/-123",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -732,11 +694,9 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object that belongs to another user" do
-		jwt = generate_jwt(sessions(:davCardsSession))
-
 		res = get_request(
 			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davCardsSession).token}
 		)
 
 		assert_response 403
@@ -745,11 +705,9 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object with session that does not belong to the app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = get_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -758,12 +716,11 @@ describe TableObjectsController do
 	end
 
 	it "should get table object" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestData)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 200
@@ -794,12 +751,11 @@ describe TableObjectsController do
 	end
 
 	it "should get table object with uuid" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestData)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 200
@@ -830,12 +786,11 @@ describe TableObjectsController do
 	end
 
 	it "should get table object with access" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -858,12 +813,11 @@ describe TableObjectsController do
 	end
 
 	it "should get table with uuid with access" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -886,12 +840,11 @@ describe TableObjectsController do
 	end
 
 	it "should get table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestData)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 200
@@ -904,7 +857,7 @@ describe TableObjectsController do
 	end
 
 	# update_table_object
-	it "should not update table object without jwt" do
+	it "should not update table object without access token" do
 		res = put_request(
 			"/v1/table_object/1"
 		)
@@ -925,23 +878,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not update table object with invalid jwt" do
+	it "should not update table object with access token of session that does not exist" do
 		res = put_request(
 			"/v1/table_object/1",
 			{Authorization: "asdasdasds", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not update table object without properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/-413",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -950,11 +901,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with properties with wrong type" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/-413",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: "hello"
 			}
@@ -966,11 +915,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/-413",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {}
 			}
@@ -982,11 +929,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object that belongs to another user" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:davSecondCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {}
 			}
@@ -998,11 +943,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with session that does not belong to the app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {}
 			}
@@ -1014,11 +957,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update file table object with ext with wrong type" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					ext: false
@@ -1032,11 +973,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with too short property name" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					test1: "Test",
@@ -1051,11 +990,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with too long property name" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					test1: "Test",
@@ -1070,11 +1007,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with too short property value" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					test1: "Test",
@@ -1089,11 +1024,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update table object with too long property value" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:mattSecondCard).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					test1: "Test",
@@ -1108,11 +1041,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update file table object with too short ext" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					ext: ""
@@ -1126,11 +1057,9 @@ describe TableObjectsController do
 	end
 
 	it "should not update file table object with too long ext" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:sherlockTestFile).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					ext: "asdasdasdasd"
@@ -1144,7 +1073,6 @@ describe TableObjectsController do
 	end
 
 	it "should update table object" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		table_object = table_objects(:mattSecondCard)
 		first_property_name = table_object_properties(:mattSecondCardPage1).name
@@ -1160,7 +1088,7 @@ describe TableObjectsController do
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					"#{second_property_name}": second_property_value,
@@ -1238,7 +1166,6 @@ describe TableObjectsController do
 	end
 
 	it "should update table object with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 		table_object = table_objects(:mattSecondCard)
 		first_property_name = table_object_properties(:mattSecondCardPage1).name
@@ -1254,7 +1181,7 @@ describe TableObjectsController do
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					"#{second_property_name}": second_property_value,
@@ -1332,7 +1259,6 @@ describe TableObjectsController do
 	end
 
 	it "should update table object and remove properties using nil" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattSecondCard)
 		first_property_name = table_object_properties(:mattSecondCardPage1).name
 		second_property_name = table_object_properties(:mattSecondCardPage2).name
@@ -1340,7 +1266,7 @@ describe TableObjectsController do
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					"#{first_property_name}": nil
@@ -1375,13 +1301,12 @@ describe TableObjectsController do
 	end
 
 	it "should update file table object with ext" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		ext = "mp3"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {
 					ext: ext
@@ -1406,12 +1331,11 @@ describe TableObjectsController do
 	end
 
 	it "should update table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattSecondCard)
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				properties: {}
 			}
@@ -1435,7 +1359,7 @@ describe TableObjectsController do
 	end
 
 	# delete_table_object
-	it "should not delete table object without jwt" do
+	it "should not delete table object without access token" do
 		res = delete_request(
 			"/v1/table_object/1"
 		)
@@ -1445,23 +1369,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not delete table object with invalid jwt" do
+	it "should not delete table object with access token of session that does not exist" do
 		res = delete_request(
 			"/v1/table_object/1",
 			{Authorization: "asdasdasd.asdasd.sda"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not delete table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = delete_request(
 			"/v1/table_object/-413",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -1470,14 +1392,13 @@ describe TableObjectsController do
 	end
 
 	it "should delete table object" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattSecondCard)
 		first_property = table_object_properties(:mattSecondCardPage1)
 		second_property = table_object_properties(:mattSecondCardPage2)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
@@ -1493,14 +1414,13 @@ describe TableObjectsController do
 	end
 
 	it "should delete table object with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattSecondCard)
 		first_property = table_object_properties(:mattSecondCardPage1)
 		second_property = table_object_properties(:mattSecondCardPage2)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
@@ -1516,12 +1436,11 @@ describe TableObjectsController do
 	end
 
 	it "should delete table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattSecondCard)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
@@ -1534,11 +1453,28 @@ describe TableObjectsController do
 	end
 
 	it "should delete table object with file" do
-		# TODO
+		table_object = table_objects(:sherlockTestFile)
+
+		# Upload a file for the table object
+		upload_blob(table_object, StringIO.new("Hello World"))
+
+		res = delete_request(
+			"/v1/table_object/#{table_object.id}",
+			{Authorization: sessions(:sherlockTestAppSession).token}
+		)
+
+		assert_response 204
+
+		# Check if the file was deleted
+		begin
+			download_blob(table_object)
+		rescue => e
+			assert(!e.nil?)
+		end
 	end
 
 	# set_table_object_file
-	it "should not set table object file without jwt" do
+	it "should not set table object file without access token" do
 		res = put_request(
 			"/v1/table_object/1/file"
 		)
@@ -1559,23 +1495,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not set table object file with invalid jwt" do
+	it "should not set table object file with access token of session that does not exist" do
 		res = put_request(
 			"/v1/table_object/1/file",
 			{Authorization: "ssdasdsasafsgd", 'Content-Type': "audio/mpeg"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not set table object file for table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/-123/file",
-			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': "audio/mpeg"}
 		)
 
 		assert_response 404
@@ -1584,12 +1518,11 @@ describe TableObjectsController do
 	end
 
 	it "should not set table object file for table object that is not a file" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:mattThirdCard)
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': "audio/mpeg"}
 		)
 
 		assert_response 422
@@ -1598,11 +1531,9 @@ describe TableObjectsController do
 	end
 
 	it "should not set table object file for table object that belongs to another user" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:davSecondCard).id}/file",
-			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': "audio/mpeg"}
 		)
 
 		assert_response 403
@@ -1611,11 +1542,9 @@ describe TableObjectsController do
 	end
 
 	it "should not set table object file with session that does not belong to the app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}/file",
-			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': "audio/mpeg"}
 		)
 
 		assert_response 403
@@ -1624,7 +1553,6 @@ describe TableObjectsController do
 	end
 
 	it "should not set table object file if the user has not enough free storage" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		sherlock = users(:sherlock)
 		sherlock.used_storage = 50000000000
@@ -1632,7 +1560,7 @@ describe TableObjectsController do
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': "audio/mpeg"}
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': "audio/mpeg"}
 		)
 
 		assert_response 400
@@ -1641,14 +1569,13 @@ describe TableObjectsController do
 	end
 
 	it "should set table object file" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1691,14 +1618,13 @@ describe TableObjectsController do
 	end
 
 	it "should set table object file with uuid" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1741,14 +1667,13 @@ describe TableObjectsController do
 	end
 
 	it "should set table object file with binary data" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 		content_type = "image/png"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1791,14 +1716,13 @@ describe TableObjectsController do
 	end
 
 	it "should set table object file with binary data with uuid" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 		content_type = "image/png"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1841,14 +1765,13 @@ describe TableObjectsController do
 	end
 
 	it "should set table object file and update last_active fields" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1866,7 +1789,7 @@ describe TableObjectsController do
 	end
 
 	# get_table_object_file
-	it "should not get table object file without jwt" do
+	it "should not get table object file without access token" do
 		res = get_request(
 			"/v1/table_object/1/file"
 		)
@@ -1876,23 +1799,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get table object file with invalid jwt" do
+	it "should not get table object file with access token of session that does not exist" do
 		res = get_request(
 			"/v1/table_object/1/file",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get table object file of table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = get_request(
 			"/v1/table_object/-123/file",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -1901,11 +1822,9 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object file of table object that belongs to another user" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/table_object/#{table_objects(:davTestFile).id}/file",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -1914,11 +1833,9 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object file with session that does not belong to the app" do
-		jwt = generate_jwt(sessions(:davCardsSession))
-
 		res = get_request(
 			"/v1/table_object/#{table_objects(:davTestFile).id}/file",
-			{Authorization: jwt}
+			{Authorization: sessions(:davCardsSession).token}
 		)
 
 		assert_response 403
@@ -1927,11 +1844,9 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object file of table object that is not a file" do
-		jwt = generate_jwt(sessions(:davCardsSession))
-
 		res = get_request(
 			"/v1/table_object/#{table_objects(:davSecondCard).id}/file",
-			{Authorization: jwt}
+			{Authorization: sessions(:davCardsSession).token}
 		)
 
 		assert_response 422
@@ -1940,12 +1855,11 @@ describe TableObjectsController do
 	end
 
 	it "should not get table object file of table object that has no file" do
-		jwt = generate_jwt(sessions(:davTestAppSession))
 		table_object = table_objects(:davTestFile)
 
 		res = get_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt}
+			{Authorization: sessions(:davTestAppSession).token}
 		)
 
 		assert_response 404
@@ -1955,14 +1869,13 @@ describe TableObjectsController do
 
 	it "should get table object file" do
 		# Set the file
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -1972,7 +1885,7 @@ describe TableObjectsController do
 		# Get the file
 		res = get_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt},
+			{Authorization: sessions(:sherlockTestAppSession).token},
 			false
 		)
 
@@ -1988,14 +1901,13 @@ describe TableObjectsController do
 
 	it "should get table object file with uuid" do
 		# Set the file
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -2005,7 +1917,7 @@ describe TableObjectsController do
 		# Get the file
 		res = get_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt},
+			{Authorization: sessions(:sherlockTestAppSession).token},
 			false
 		)
 
@@ -2021,14 +1933,13 @@ describe TableObjectsController do
 
 	it "should get table object file with binary data" do
 		# Set the file
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 		content_type = "image/png"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -2038,7 +1949,7 @@ describe TableObjectsController do
 		# Get the file
 		res = get_request(
 			"/v1/table_object/#{table_object.id}/file",
-			{Authorization: jwt},
+			{Authorization: sessions(:sherlockTestAppSession).token},
 			false
 		)
 
@@ -2054,14 +1965,13 @@ describe TableObjectsController do
 
 	it "should get table object file with binary data and uuid" do
 		# Set the file
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
 		table_object = table_objects(:sherlockTestFile)
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 		content_type = "image/png"
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt, 'Content-Type': content_type},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
 			file_content,
 			false
 		)
@@ -2071,7 +1981,7 @@ describe TableObjectsController do
 		# Get the file
 		res = get_request(
 			"/v1/table_object/#{table_object.uuid}/file",
-			{Authorization: jwt},
+			{Authorization: sessions(:sherlockTestAppSession).token},
 			false
 		)
 
@@ -2086,7 +1996,7 @@ describe TableObjectsController do
 	end
 
 	# add_table_object
-	it "should not add table object without jwt" do
+	it "should not add table object without access token" do
 		res = post_request("/v1/table_object/1/access")
 
 		assert_response 401
@@ -2105,23 +2015,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not add table object with invalid jwt" do
+	it "should not add table object with access token of session that does not exist" do
 		res = post_request(
 			"/v1/table_object/1/access",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not add table object with optional properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_alias: "Hello World"
 			}
@@ -2133,11 +2041,9 @@ describe TableObjectsController do
 	end
 
 	it "should not add table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object/-123/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 404
@@ -2146,11 +2052,9 @@ describe TableObjectsController do
 	end
 
 	it "should not add table object that belongs to another app" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object/#{table_objects(:sherlockTestData).id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -2159,11 +2063,9 @@ describe TableObjectsController do
 	end
 
 	it "should not add table object with alias table that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_alias: -413
 			}
@@ -2175,11 +2077,9 @@ describe TableObjectsController do
 	end
 
 	it "should not add table object with alias table that belongs to another app" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_alias: tables(:note).id
 			}
@@ -2191,12 +2091,11 @@ describe TableObjectsController do
 	end
 
 	it "should not add table object that was already added" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 409
@@ -2205,12 +2104,11 @@ describe TableObjectsController do
 	end
 
 	it "should add table object" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davThirdCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 200
@@ -2233,12 +2131,11 @@ describe TableObjectsController do
 	end
 
 	it "should add table object with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davThirdCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.uuid}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 200
@@ -2261,13 +2158,12 @@ describe TableObjectsController do
 	end
 
 	it "should add table object with table alias" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davThirdCard)
 		alias_table = tables(:imageCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_alias: alias_table.id
 			}
@@ -2293,13 +2189,12 @@ describe TableObjectsController do
 	end
 
 	it "should add table object with table alias and uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davThirdCard)
 		alias_table = tables(:imageCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.uuid}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				table_alias: alias_table.id
 			}
@@ -2325,12 +2220,11 @@ describe TableObjectsController do
 	end
 
 	it "should add table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davThirdCard)
 
 		res = post_request(
 			"/v1/table_object/#{table_object.id}/access",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 200
@@ -2343,7 +2237,7 @@ describe TableObjectsController do
 	end
 
 	# remove_table_object
-	it "should not remove table object without jwt" do
+	it "should not remove table object without access token" do
 		res = delete_request("/v1/table_object/12/access")
 
 		assert_response 401
@@ -2351,23 +2245,21 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not remove table object with invalid jwt" do
+	it "should not remove table object with access token of session that does not exist" do
 		res = delete_request(
 			"/v1/table_object/12/access",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not remove table object that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = delete_request(
 			"/v1/table_object/-123/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -2376,11 +2268,9 @@ describe TableObjectsController do
 	end
 
 	it "should not remove table object that belongs to another app" do
-		jwt = generate_jwt(sessions(:mattTestAppSession))
-
 		res = delete_request(
 			"/v1/table_object/#{table_objects(:davFirstCard).id}/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattTestAppSession).token}
 		)
 
 		assert_response 403
@@ -2389,11 +2279,9 @@ describe TableObjectsController do
 	end
 
 	it "should not remove table object that was not added" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = delete_request(
 			"/v1/table_object/#{table_objects(:davThirdCard).id}/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -2402,12 +2290,11 @@ describe TableObjectsController do
 	end
 
 	it "should remove table object" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.id}/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
@@ -2417,12 +2304,11 @@ describe TableObjectsController do
 	end
 
 	it "should remove table object with uuid" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
@@ -2432,12 +2318,11 @@ describe TableObjectsController do
 	end
 
 	it "should remove table object and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table_object = table_objects(:davFirstCard)
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}/access",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204

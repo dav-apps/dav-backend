@@ -1,10 +1,12 @@
 class TableObjectsController < ApplicationController
 	def create_table_object
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -26,26 +28,16 @@ class TableObjectsController < ApplicationController
 		validations.push(ValidationService.validate_properties_type(properties)) if !properties.nil?
 		ValidationService.raise_multiple_validation_errors(validations)
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
 		# Get the table
 		table = Table.find_by(id: table_id)
 		ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
 
 		# Check if the table belongs to the app
-		ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(table, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(table, session.app))
 
 		# Create the table object
 		table_object = TableObject.new(
-			user: user,
+			user: session.user,
 			table: table,
 			file: file.nil? ? false : file
 		)
@@ -118,14 +110,14 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_unexpected_error(!table_object.save)
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
 		# Save that the user uses the app
-		app_user = AppUser.find_by(user: user, app: app)
+		app_user = AppUser.find_by(user: session.user, app: session.app)
 		if app_user.nil?
 			AppUser.create(
-				user: user,
-				app: app,
+				user: session.user,
+				app: session.app,
 				last_active: Time.now
 			)
 		else
@@ -134,9 +126,9 @@ class TableObjectsController < ApplicationController
 
 		# Notify connected clients of the new table object
 		TableObjectUpdateChannel.broadcast_to(
-			"#{user.id},#{app.id}",
+			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session_id,
+			session_id: session.id,
 			change: 0
 		)
 
@@ -158,21 +150,13 @@ class TableObjectsController < ApplicationController
 	end
 
 	def get_table_object
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
 		if id.include?('-')
@@ -184,12 +168,12 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 
 		# Check if the user can access the table object
-		user_access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		user_access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 		table_id = table_object.table_id
 
 		if user_access.nil?
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 		else
 			table_id = user_access.table_alias
 		end
@@ -201,9 +185,9 @@ class TableObjectsController < ApplicationController
 		end
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: app)
+		app_user = AppUser.find_by(user: session.user, app: session.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Return the data
@@ -229,12 +213,14 @@ class TableObjectsController < ApplicationController
 	end
 
 	def update_table_object
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -246,16 +232,6 @@ class TableObjectsController < ApplicationController
 		# Validate the type of the field
 		ValidationService.raise_validation_error(ValidationService.validate_properties_type(properties))
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
 		# Get the table object
 		if id.include?('-')
 			table_object = TableObject.find_by(uuid: id)
@@ -264,8 +240,8 @@ class TableObjectsController < ApplicationController
 		end
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object is a file
 		if table_object.file
@@ -341,16 +317,16 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_unexpected_error(!table_object.save)
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Notify connected clients of the updated table object
 		TableObjectUpdateChannel.broadcast_to(
-			"#{user.id},#{app.id}",
+			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session_id,
+			session_id: session.id,
 			change: 1
 		)
 
@@ -377,21 +353,13 @@ class TableObjectsController < ApplicationController
 	end
 
 	def delete_table_object
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
 		if id.include?('-')
@@ -401,13 +369,13 @@ class TableObjectsController < ApplicationController
 		end
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Delete the file if there is one
@@ -416,7 +384,7 @@ class TableObjectsController < ApplicationController
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
-			UtilsService.update_used_storage(user, table_object.table.app, -size_property.value.to_i) if !size_property.nil?
+			UtilsService.update_used_storage(session.user, table_object.table.app, -size_property.value.to_i) if !size_property.nil?
 		end
 
 		# Delete the table object
@@ -424,9 +392,9 @@ class TableObjectsController < ApplicationController
 
 		# Notify connected clients of the deleted table object
 		TableObjectUpdateChannel.broadcast_to(
-			"#{user.id},#{app.id}",
+			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session_id,
+			session_id: session.id,
 			change: 2
 		)
 
@@ -437,23 +405,15 @@ class TableObjectsController < ApplicationController
 	end
 
 	def set_table_object_file
-		jwt, session_id = get_jwt
+		access_token = get_auth
 		content_type = get_content_type
-		id = params["id"]
+		id = params[:id]
 		
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_supported(content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
 		if id.include?('-')
@@ -463,8 +423,8 @@ class TableObjectsController < ApplicationController
 		end
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object is a file
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
@@ -475,7 +435,7 @@ class TableObjectsController < ApplicationController
 
 		# Check if the user has enough free storage
 		file_size = UtilsService.get_file_size(request.body)
-		free_storage = UtilsService.get_total_storage(user.plan, user.confirmed) - user.used_storage
+		free_storage = UtilsService.get_total_storage(session.user.plan, session.user.confirmed) - session.user.used_storage
 		file_size_diff = file_size - old_file_size
 		ValidationService.raise_validation_error(ValidationService.validate_sufficient_storage(free_storage, file_size_diff))
 
@@ -522,23 +482,23 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_unexpected_error(!etag_prop.save)
 
 		# Save the new used storage
-		UtilsService.update_used_storage(user, app, file_size_diff)
+		UtilsService.update_used_storage(session.user, session.app, file_size_diff)
 
 		# Update the etag of the table object
 		table_object.etag = UtilsService.generate_table_object_etag(table_object)
 		ValidationService.raise_unexpected_error(!table_object.save)
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Notify connected clients of the updated table object
 		TableObjectUpdateChannel.broadcast_to(
-			"#{user.id},#{app.id}",
+			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session_id,
+			session_id: session.id,
 			change: 1
 		)
 
@@ -566,21 +526,13 @@ class TableObjectsController < ApplicationController
 	end
 
 	def get_table_object_file
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
 		if id.include?('-')
@@ -592,11 +544,11 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 
 		# Check if the user can access the table object
-		user_access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		user_access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 
 		if user_access.nil?
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, user))
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 		end
 
 		# Check if the table object is a file
@@ -620,9 +572,9 @@ class TableObjectsController < ApplicationController
 		filename += ".#{ext}" if !ext.nil?
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: table_object.table.app)
+		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Return the data
@@ -634,12 +586,14 @@ class TableObjectsController < ApplicationController
 	end
 
 	def add_table_object
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -650,16 +604,6 @@ class TableObjectsController < ApplicationController
 			ValidationService.raise_validation_error(ValidationService.validate_table_alias_type(table_alias))
 		end
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
 		# Get the table object
 		if id.include?('-')
 			table_object = TableObject.find_by(uuid: id)
@@ -668,24 +612,24 @@ class TableObjectsController < ApplicationController
 		end
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		if !table_alias.nil?
 			# Get the table of the table alias
 			alias_table = Table.find_by(id: table_alias)
 			ValidationService.raise_validation_error(ValidationService.validate_table_existence(alias_table))
-			ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(alias_table, app))
+			ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(alias_table, session.app))
 		else
 			alias_table = table_object.table
 		end
 
 		# Check if the table object user access already exists
-		access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_user_access_nonexistence(access))
 
 		# Create the table object user access
 		access = TableObjectUserAccess.new(
-			user: user,
+			user: session.user,
 			table_object: table_object,
 			table_alias: alias_table.id
 		)
@@ -696,9 +640,9 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_unexpected_error(!table_object.save)
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: app)
+		app_user = AppUser.find_by(user: session.user, app: session.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Return the data
@@ -724,21 +668,13 @@ class TableObjectsController < ApplicationController
 	end
 
 	def remove_table_object
-		jwt, session_id = get_jwt
-		id = params["id"]
+		access_token = get_auth
+		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
 		if id.include?('-')
@@ -748,16 +684,16 @@ class TableObjectsController < ApplicationController
 		end
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, app))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object user access exists
-		access = TableObjectUserAccess.find_by(user: user, table_object: table_object)
+		access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_user_access_existence(access))
 
 		# Save that the user was active
-		user.update_column(:last_active, Time.now)
+		session.user.update_column(:last_active, Time.now)
 
-		app_user = AppUser.find_by(user: user, app: app)
+		app_user = AppUser.find_by(user: session.user, app: session.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
 		# Delete the table object user access
