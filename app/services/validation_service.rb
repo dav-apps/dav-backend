@@ -20,6 +20,32 @@ class ValidationService
 		sig != signature ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
+	def self.get_session_from_token(token)
+		session = Session.find_by(token: token)
+
+		if session.nil?
+			# Check if there is a session with old_token = token
+			session = Session.find_by(old_token: token)
+
+			if session.nil?
+				# Session does not exist
+				raise RuntimeError, [get_validation_hash(false, 2806, 404)].to_json
+			else
+				# The old token was used
+				# Delete the session, as the token may be stolen
+				session.destroy!
+				raise RuntimeError, [get_validation_hash(false, 1601, 403)].to_json
+			end
+		else
+			# Check if the session needs to be renewed
+			if (Time.now - session.updated_at) > 1.day
+				raise RuntimeError, [get_validation_hash(false, 1602, 401)].to_json
+			else
+				return session
+			end
+		end
+	end
+
 	def self.validate_dev_is_first_dev(dev)
 		error_code = 1103
 		dev != Dev.first ? get_validation_hash(false, error_code, 403) : get_validation_hash
@@ -156,7 +182,7 @@ class ValidationService
 	end
 
 	# Methods for presence of fields
-	def self.validate_jwt_presence(jwt)
+	def self.validate_access_token_presence(jwt)
 		error_code = 2102
 		jwt.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
@@ -459,7 +485,7 @@ class ValidationService
 		get_validation_hash(false, error_code, 400)
 	end
 
-	def self.validate_jwt_type(jwt)
+	def self.validate_access_token_type(jwt)
 		error_code = 2235
 		!jwt.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
@@ -951,8 +977,12 @@ class ValidationService
 			"User.new_email is empty"
 		when 1503
 			"User.new_password is empty"
+		when 1601
+			"Can't use old access token"
+		when 1602
+			"Access token must be renewed"
 		when 2102
-			"Missing field: jwt"
+			"Missing field: access_token"
 		when 2103
 			"Missing field: email"
 		when 2104
@@ -1068,7 +1098,7 @@ class ValidationService
 		when 2234
 			"Field has wrong type: value (for ApiEnvVar)"
 		when 2235
-			"Field has wrong type: jwt"
+			"Field has wrong type: access_token"
 		when 2236
 			"Field has wrong type: description"
 		when 2237

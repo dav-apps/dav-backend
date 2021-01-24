@@ -70,27 +70,19 @@ class SessionsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
 		ValidationService.raise_validation_error(ValidationService.authenticate_user(user, password))
 
-		# Create a session and generate the session jwt
-		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
-		exp = Time.now.to_i + exp_hours * 3600
-		secret = SecureRandom.urlsafe_base64(30)
-
+		# Create the session
 		session = Session.new(
 			user: user,
 			app: app,
-			secret: secret,
-			exp: Time.at(exp).utc,
+			token: Cuid::generate,
 			device_name: device_name,
 			device_type: device_type,
 			device_os: device_os
 		)
 		ValidationService.raise_unexpected_error(!session.save)
-
-		payload = {user_id: user.id, app_id: app.id, dev_id: dev.id, exp: exp}
-		jwt = "#{JWT.encode(payload, secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
 		
 		result = {
-			jwt: jwt
+			access_token: session.token
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
@@ -98,7 +90,7 @@ class SessionsController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
-	def create_session_from_jwt
+	def create_session_from_access_token
 		auth = get_auth
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
@@ -106,7 +98,7 @@ class SessionsController < ApplicationController
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
-		jwt = body["jwt"]
+		access_token = body["access_token"]
 		app_id = body["app_id"]
 		api_key = body["api_key"]
 		device_name = body["device_name"]
@@ -115,14 +107,14 @@ class SessionsController < ApplicationController
 
 		# Validate missing fields
 		ValidationService.raise_multiple_validation_errors([
-			ValidationService.validate_jwt_presence(jwt),
+			ValidationService.validate_access_token_presence(access_token),
 			ValidationService.validate_app_id_presence(app_id),
 			ValidationService.validate_api_key_presence(api_key)
 		])
 
 		# Validate the types of the fields
 		validations = [
-			ValidationService.validate_jwt_type(jwt),
+			ValidationService.validate_access_token_type(access_token),
 			ValidationService.validate_app_id_type(app_id),
 			ValidationService.validate_api_key_type(api_key)
 		]
@@ -152,21 +144,11 @@ class SessionsController < ApplicationController
 		# Validate the dev
 		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
 
-		# Validate the jwt
-		jwt, session_id = split_jwt(jwt)
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		# Get the session
+		website_session = ValidationService.get_session_from_token(access_token)
 
-		jwt_user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(jwt_user))
-
-		jwt_dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(jwt_dev))
-
-		jwt_app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(jwt_app))
-
-		# Make sure the jwt is for the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(jwt_app))
+		# Make sure the session is for the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(website_session.app))
 
 		# Get the app
 		app = App.find_by(id: app_id)
@@ -177,27 +159,19 @@ class SessionsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(api_key_dev))
 		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, api_key_dev))
 
-		# Create a session and generate the session jwt
-		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
-		exp = Time.now.to_i + exp_hours * 3600
-		secret = SecureRandom.urlsafe_base64(30)
-
+		# Create the session
 		session = Session.new(
-			user: jwt_user,
+			user: website_session.user,
 			app: app,
-			secret: secret,
-			exp: Time.at(exp).utc,
+			token: Cuid::generate,
 			device_name: device_name,
 			device_type: device_type,
 			device_os: device_os
 		)
 		ValidationService.raise_unexpected_error(!session.save)
 
-		payload = {user_id: jwt_user.id, app_id: app.id, dev_id: api_key_dev.id, exp: exp}
-		jwt = "#{JWT.encode(payload, secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
-
 		result = {
-			jwt: jwt
+			access_token: session.token
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
@@ -206,21 +180,11 @@ class SessionsController < ApplicationController
 	end
 
 	def delete_session
-		jwt, session_id = get_jwt
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		access_token = get_auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
-		session = Session.find_by(id: session_id)
-		ValidationService.raise_validation_error(ValidationService.validate_session_existence(session))
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Delete the session
 		session.destroy!

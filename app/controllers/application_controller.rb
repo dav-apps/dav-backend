@@ -1,7 +1,7 @@
 class ApplicationController < ActionController::API
 	def get_auth
 		auth = request.headers['HTTP_AUTHORIZATION']
-		return auth.split(' ').last if auth
+		return auth.split(' ').last if !auth.nil?
 		nil
 	end
 
