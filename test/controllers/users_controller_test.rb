@@ -361,18 +361,15 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
 		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 		
-		assert_nil(res["website_jwt"])
+		assert_nil(res["website_access_token"])
 	end
 
 	it "should signup from app" do
@@ -414,11 +411,8 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
@@ -426,11 +420,8 @@ describe UsersController do
 		assert_nil(session.device_os)
 
 		# Check the website session
-		website_session_id = res["website_jwt"].split('.').last.to_i
-		assert_not_equal(0, website_session_id)
-		website_session = Session.find_by(id: website_session_id)
+		website_session = Session.find_by(token: res["website_access_token"])
 		assert_not_nil(website_session)
-		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
@@ -477,11 +468,8 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
@@ -489,11 +477,8 @@ describe UsersController do
 		assert_nil(session.device_os)
 
 		# Check the website session
-		website_session_id = res["website_jwt"].split('.').last.to_i
-		assert_not_equal(0, website_session_id)
-		website_session = Session.find_by(id: website_session_id)
+		website_session = Session.find_by(token: res["website_access_token"])
 		assert_not_nil(website_session)
-		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
@@ -546,18 +531,15 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
 		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 		
-		assert_nil(res["website_jwt"])
+		assert_nil(res["website_access_token"])
 	end
 
 	it "should signup from app with device info" do
@@ -605,11 +587,8 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
@@ -617,11 +596,8 @@ describe UsersController do
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
-		website_session_id = res["website_jwt"].split('.').last.to_i
-		assert_not_equal(0, website_session_id)
-		website_session = Session.find_by(id: website_session_id)
+		website_session = Session.find_by(token: res["website_access_token"])
 		assert_not_nil(website_session)
-		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
@@ -674,11 +650,8 @@ describe UsersController do
 		assert_equal(0, user.plan)
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
@@ -686,11 +659,8 @@ describe UsersController do
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
-		website_session_id = res["website_jwt"].split('.').last.to_i
-		assert_not_equal(0, website_session_id)
-		website_session = Session.find_by(id: website_session_id)
+		website_session = Session.find_by(token: res["website_access_token"])
 		assert_not_nil(website_session)
-		assert_equal(website_session_id, website_session.id)
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
@@ -699,7 +669,7 @@ describe UsersController do
 	end
 
 	# get_users
-	it "should not get users without jwt" do
+	it "should not get users without access token" do
 		res = get_request("/v1/users")
 
 		assert_response 401
@@ -707,23 +677,21 @@ describe UsersController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get users with invalid jwt" do
+	it "should not get users with access token for session that does not exist" do
 		res = get_request(
 			"/v1/users",
 			{Authorization: "asdasdjsgoljsdfsfd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get users from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/users",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -732,11 +700,9 @@ describe UsersController do
 	end
 
 	it "should not get users with another dev than the first one" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = get_request(
 			"/v1/users",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -745,7 +711,6 @@ describe UsersController do
 	end
 
 	it "should get users" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		sherlock = users(:sherlock)
 		cato = users(:cato)
 		dav = users(:dav)
@@ -753,7 +718,7 @@ describe UsersController do
 
 		res = get_request(
 			"/v1/users",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200
@@ -785,7 +750,7 @@ describe UsersController do
 	end
 
 	# get_user
-	it "should not get user without jwt" do
+	it "should not get user without access token" do
 		res = get_request("/v1/user")
 
 		assert_response 401
@@ -793,23 +758,21 @@ describe UsersController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get user with invalid jwt" do
+	it "should not get user with access token for session that does not exist" do
 		res = get_request(
 			"/v1/user",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should get user" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = get_request(
 			"/v1/user",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -832,11 +795,9 @@ describe UsersController do
 	end
 
 	it "should get user with additional information with website session" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = get_request(
 			"/v1/user",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 200
@@ -868,7 +829,7 @@ describe UsersController do
 	end
 
 	# update_user
-	it "should not update user without jwt" do
+	it "should not update user without access token" do
 		res = put_request("/v1/user")
 
 		assert_response 401
@@ -887,23 +848,21 @@ describe UsersController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not update user with invalid jwt" do
+	it "should not update user with access token for session that does not exist" do
 		res = put_request(
 			"/v1/user",
 			{Authorization: "asdsdasdasdasda", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not update user from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -912,11 +871,9 @@ describe UsersController do
 	end
 
 	it "should not update user with properties with wrong types" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				email: true,
 				first_name: 23.4,
@@ -932,11 +889,9 @@ describe UsersController do
 	end
 
 	it "should not update user with email that is already in use" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				email: users(:sherlock).email
 			}
@@ -948,11 +903,9 @@ describe UsersController do
 	end
 
 	it "should not update user with invalid email" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				email: "hello world"
 			}
@@ -964,11 +917,9 @@ describe UsersController do
 	end
 
 	it "should not update user with too short properties" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				first_name: "a",
 				password: "a"
@@ -982,11 +933,9 @@ describe UsersController do
 	end
 
 	it "should not update user with too long properties" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				first_name: "a" * 200,
 				password: "a" * 200
@@ -1000,7 +949,6 @@ describe UsersController do
 	end
 
 	it "should update user" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
 		matt = users(:matt)
 		email = "updatedemail@dav-apps.tech"
 		first_name = "updated name"
@@ -1008,7 +956,7 @@ describe UsersController do
 
 		res = put_request(
 			"/v1/user",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				email: email,
 				first_name: first_name,

@@ -83,27 +83,17 @@ class UsersController < ApplicationController
 			email_confirmation_token: generate_token
 		)
 		ValidationService.raise_unexpected_error(!user.save)
-		
-		# Create a session and generate the session jwt
-		exp_hours = Rails.env.production? ? Constants::JWT_EXPIRATION_HOURS_PROD : Constants::JWT_EXPIRATION_HOURS_DEV
-		exp = Time.now.to_i + exp_hours * 3600
-		secret = SecureRandom.urlsafe_base64(30)
 
+		# Create the session
 		session = Session.new(
 			user: user,
 			app: app,
-			secret: secret,
-			exp: Time.at(exp).utc,
+			token: Cuid.generate,
 			device_name: device_name,
 			device_type: device_type,
 			device_os: device_os
 		)
 		ValidationService.raise_unexpected_error(!session.save)
-
-		payload = {user_id: user.id, app_id: app.id, dev_id: dev.id, exp: exp}
-		jwt = "#{JWT.encode(payload, secret, ENV['JWT_ALGORITHM'])}.#{session.id}"
-
-		UserNotifierMailer.email_confirmation(user).deliver_later
 
 		result = {
 			user: {
@@ -115,27 +105,25 @@ class UsersController < ApplicationController
 				used_storage: user.used_storage,
 				plan: user.plan
 			},
-			jwt: jwt
+			access_token: session.token
 		}
 
 		if app_id != ENV["DAV_APPS_APP_ID"].to_i
 			# If the session is for another app than the website, create another session for the website
-			website_secret = SecureRandom.urlsafe_base64(30)
-
 			website_session = Session.new(
 				user: user,
 				app: App.find_by(id: ENV["DAV_APPS_APP_ID"]),
-				secret: website_secret,
-				exp: Time.at(exp).utc,
+				token: Cuid.generate,
 				device_name: device_name,
 				device_type: device_type,
 				device_os: device_os
 			)
 			ValidationService.raise_unexpected_error(!website_session.save)
 
-			website_payload = {user_id: user.id, app_id: ENV["DAV_APPS_APP_ID"], dev_id: 1, exp: exp}
-			result["website_jwt"] = "#{JWT.encode(website_payload, website_secret, ENV['JWT_ALGORITHM'])}.#{website_session.id}"
+			result["website_access_token"] = website_session.token
 		end
+
+		UserNotifierMailer.email_confirmation(user).deliver_later
 
 		render json: result, status: 201
 	rescue RuntimeError => e
@@ -144,26 +132,18 @@ class UsersController < ApplicationController
 	end
 
 	def get_users
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Make sure the user is the first dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(user.dev))
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(session.user.dev))
 
 		# Collect and return the data
 		users = Array.new
@@ -188,19 +168,14 @@ class UsersController < ApplicationController
 	end
 
 	def get_user
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		is_website = payload[:app_id] == ENV["DAV_APPS_APP_ID"].to_i
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
+		is_website = session.app.id == ENV["DAV_APPS_APP_ID"].to_i
 
 		# Return the data
 		result = {
@@ -246,24 +221,17 @@ class UsersController < ApplicationController
 	end
 
 	def update_user
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
