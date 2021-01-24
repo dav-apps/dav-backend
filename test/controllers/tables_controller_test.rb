@@ -6,7 +6,7 @@ describe TablesController do
 	end
 
 	# create_table
-	it "should not create table without jwt" do
+	it "should not create table without access token" do
 		res = post_request("/v1/table")
 
 		assert_response 401
@@ -25,23 +25,21 @@ describe TablesController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create table with invalid jwt" do
+	it "should not create table with access token of session that does not exist" do
 		res = post_request(
 			"/v1/table",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create table from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -50,11 +48,9 @@ describe TablesController do
 	end
 
 	it "should not create table without required properties" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -64,11 +60,9 @@ describe TablesController do
 	end
 
 	it "should not create table with properties with wrong types" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: "hello",
 				name: 123
@@ -82,11 +76,9 @@ describe TablesController do
 	end
 
 	it "should not create table for app that does not exist" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: -12,
 				name: "TestTable"
@@ -99,11 +91,9 @@ describe TablesController do
 	end
 
 	it "should not create table for app that does not belong to the dev of the app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:cards).id,
 				name: "TestTable"
@@ -116,11 +106,9 @@ describe TablesController do
 	end
 
 	it "should not create table with too short name" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:pocketlib).id,
 				name: "a"
@@ -133,11 +121,9 @@ describe TablesController do
 	end
 
 	it "should not create table with too long name" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:pocketlib).id,
 				name: "a" * 50
@@ -150,11 +136,9 @@ describe TablesController do
 	end
 
 	it "should not create table with invalid name" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:pocketlib).id,
 				name: "test table 123"
@@ -167,13 +151,12 @@ describe TablesController do
 	end
 
 	it "should create table" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
 		app_id = apps(:pocketlib).id
 		name = "TestTable"
 
 		res = post_request(
 			"/v1/table",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: app_id,
 				name: name
@@ -194,7 +177,7 @@ describe TablesController do
 	end
 
 	# get_table
-	it "should not get table without jwt" do
+	it "should not get table without access token" do
 		res = get_request(
 			"/v1/table/1"
 		)
@@ -204,23 +187,21 @@ describe TablesController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get table with invalid jwt" do
+	it "should not get table with access token for session that does not exist" do
 		res = get_request(
 			"/v1/table/1",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get table that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = get_request(
 			"/v1/table/-123",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -229,11 +210,9 @@ describe TablesController do
 	end
 
 	it "should not get table of app that does not belong to the dev" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = get_request(
 			"/v1/table/#{tables(:testTable).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 403
@@ -242,11 +221,9 @@ describe TablesController do
 	end
 
 	it "should not get table with session that does not belong to the app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = get_request(
 			"/v1/table/#{tables(:card).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -255,12 +232,11 @@ describe TablesController do
 	end
 
 	it "should get table" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 
 		res = get_request(
 			"/v1/table/#{table.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -297,12 +273,11 @@ describe TablesController do
 	end
 
 	it "should get table in multiple pages" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 
 		res = get_request(
 			"/v1/table/#{table.id}?count=2",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -323,7 +298,7 @@ describe TablesController do
 
 		res = get_request(
 			"/v1/table/#{table.id}?count=2&page=2",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -344,7 +319,7 @@ describe TablesController do
 
 		res = get_request(
 			"/v1/table/#{table.id}?count=2&page=3",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -365,12 +340,11 @@ describe TablesController do
 	end
 
 	it "should get table and update last_active fields" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		table = tables(:card)
 
 		res = get_request(
 			"/v1/table/#{table.id}?count=2",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
