@@ -1,8 +1,7 @@
 mattTestAppSession:
   user: matt
   app: testApp
-  secret: "P6sTlAh5wQ3B9iyftmXE7TJKqRB6JR2NCEB1z4qJ"
-  exp: <%= DateTime.new(2060, 10, 02).to_s(:db) %>
+  token: "ckkabe3ni0005tlw3lrjyd6gq"
   device_name: Fairphone
   device_type: Smartphone
   device_os: Android
@@ -10,8 +9,7 @@ mattTestAppSession:
 mattCardsSession:
   user: matt
   app: cards
-  secret: "LiXGYUkZNwmIlPGhUndQbtNZCsYkFS-ntK4Z1MeK"
-  exp: <%= DateTime.new(2060, 05, 16).to_s(:db) %>
+  token: "ckkabe9z10006tlw3o6zyil4t"
   device_name: Surface Duo
   device_type: Dual-Screen
   device_os: Android
@@ -19,8 +17,8 @@ mattCardsSession:
 mattWebsiteSession:
   user: matt
   app: website
-  secret: "03EMagNyOzOTeCrb_aDGm0Gp4RY9ceTBsTSA3pXc"
-  exp: <%= DateTime.new(2059, 04, 03).to_s(:db) %>
+  token: "ckkabeeb30007tlw3h717t138"
+  old_token: "ckkadpfw20000dsw3kmpx9vdw"
   device_name: Desktop
   device_type: PC
   device_os: Windows 10
@@ -28,8 +26,7 @@ mattWebsiteSession:
 davWebsiteSession:
   user: dav
   app: website
-  secret: "axDt-XyEufRB7dRBWz_uYZJ9RVnh4D3VSsuXfJ5e"
-  exp: <%= DateTime.new(2061, 02, 13).to_s(:db) %>
+  token: "ckkabc41t0000tlw3divsyrlr"
   device_name: Desktop
   device_type: PC
   device_os: Windows 10
@@ -37,8 +34,7 @@ davWebsiteSession:
 davCardsSession:
   user: dav
   app: cards
-  secret: "Ooa-KXz-4HPjFnLNExHjSntBYPrcqwV7GXSBPKfB"
-  exp: <%= DateTime.new(2061, 01, 26).to_s(:db) %>
+  token: "ckkabcbkh0001tlw3s3orkhgx"
   device_name: Samsung Galaxy Z Flip
   device_type: Foldable
   device_os: Android
@@ -46,8 +42,7 @@ davCardsSession:
 sherlockTestAppSession:
   user: sherlock
   app: testApp
-  secret: "CGpZHmwNauYB2STK2anr9HLTCX43I8PvM46OdZp9"
-  exp: <%= DateTime.new(2061, 04, 14).to_s(:db) %>
+  token: "ckkabchgf0002tlw3c5ujhsp9"
   device_name: iPhone X
   device_type: Smartphone
   device_os: iOS
@@ -55,8 +50,7 @@ sherlockTestAppSession:
 sherlockWebsiteSession:
   user: sherlock
   app: website
-  secret: "HWELyvq8qKnMA7GdtVlv3x5_4v4UInA8LWph1WSe"
-  exp: <%= DateTime.new(2062, 07, 22).to_s(:db) %>
+  token: "ckkabcmz30003tlw3cdkkx9l7"
   device_name: Huawei Mate X
   device_type: Smartphone
   device_os: Android
@@ -64,8 +58,7 @@ sherlockWebsiteSession:
 davTestAppSession:
   user: dav
   app: testApp
-  secret: "sZjCEFWUiE2RZvmzCnjgZZbHeYzo7fnxXV5MPjPg"
-  exp: <%= DateTime.new(2060, 02, 14).to_s(:db) %>
+  token: "ckkabct9s0004tlw3aylkvw5s"
   device_name: Samsung Galaxy A20
   device_type: Smartphone
   device_os: Android

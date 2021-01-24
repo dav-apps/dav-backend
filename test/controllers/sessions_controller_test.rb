@@ -281,14 +281,11 @@ describe SessionsController do
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
@@ -318,14 +315,11 @@ describe SessionsController do
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
@@ -349,14 +343,11 @@ describe SessionsController do
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
@@ -386,14 +377,11 @@ describe SessionsController do
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
@@ -401,18 +389,18 @@ describe SessionsController do
 		assert_equal(device_os, session.device_os)
 	end
 
-	# create_session_from_jwt
-	it "should not create session from jwt without auth" do
-		res = post_request("/v1/session/jwt")
+	# create_session_from_access_token
+	it "should not create session from access token without auth" do
+		res = post_request("/v1/session/access_token")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt without Content-Type jwt" do
+	it "should not create session from access token without Content-Type jwt" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "asdasdasdasd"}
 		)
 
@@ -421,25 +409,25 @@ describe SessionsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt without required properties" do
+	it "should not create session from access token without required properties" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "asdasasd", 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
 		assert_equal(3, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACCESS_TOKEN_MISSING, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::APP_ID_MISSING, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::API_KEY_MISSING, res["errors"][2]["code"])
 	end
 
-	it "should not create session from jwt with properties with wrong types" do
+	it "should not create session from access token with properties with wrong types" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "asdasdasdas", 'Content-Type': 'application/json'},
 			{
-				jwt: 124.5,
+				access_token: 124.5,
 				app_id: true,
 				api_key: 642
 			}
@@ -447,17 +435,17 @@ describe SessionsController do
 
 		assert_response 400
 		assert_equal(3, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACCESS_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][2]["code"])
 	end
 
-	it "should not create session from jwt with optional properties with wrong types" do
+	it "should not create session from access token with optional properties with wrong types" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "asdasdasdas", 'Content-Type': 'application/json'},
 			{
-				jwt: 124.5,
+				access_token: 124.5,
 				app_id: true,
 				api_key: 642,
 				device_name: false,
@@ -468,7 +456,7 @@ describe SessionsController do
 
 		assert_response 400
 		assert_equal(6, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACCESS_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][3]["code"])
@@ -476,12 +464,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][5]["code"])
 	end
 
-	it "should not create session from jwt with too short optional properties" do
+	it "should not create session from access token with too short optional properties" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "adasdasdasd", 'Content-Type': 'application/json'},
 			{
-				jwt: "spjdjfsodfsdfi",
+				access_token: "spjdjfsodfsdfi",
 				app_id: 1,
 				api_key: "sodfsjdgsdnjksfdnklfdfd",
 				device_name: "a",
@@ -497,12 +485,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEVICE_OS_TOO_SHORT, res["errors"][2]["code"])
 	end
 
-	it "should not create session from jwt with too long optional properties" do
+	it "should not create session from access token with too long optional properties" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "adasdasdasd", 'Content-Type': 'application/json'},
 			{
-				jwt: "spjdjfsodfsdfi",
+				access_token: "spjdjfsodfsdfi",
 				app_id: 1,
 				api_key: "sodfsjdgsdnjksfdnklfdfd",
 				device_name: "a" * 50,
@@ -518,12 +506,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][2]["code"])
 	end
 
-	it "should not create session from jwt with dev that does not exist" do
+	it "should not create session from access token with dev that does not exist" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "asdasdasd,asdasdasdasd", 'Content-Type': 'application/json'},
 			{
-				jwt: "spjdjfsodfsdfi",
+				access_token: "spjdjfsodfsdfi",
 				app_id: 1,
 				api_key: "sodfsjdgsdnjksfdnklfdfd"
 			}
@@ -534,12 +522,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt with invalid auth" do
+	it "should not create session from access token with invalid auth" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
 			{
-				jwt: "asdasdasdasd",
+				access_token: "asdasdasdasd",
 				app_id: 1,
 				api_key: "asdassda"
 			}
@@ -550,12 +538,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt with another dev than the first one" do
+	it "should not create session from access token with another dev than the first one" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
-				jwt: "asdasdasdasd",
+				access_token: "asdasdasdasd",
 				app_id: 1,
 				api_key: "asdassda"
 			}
@@ -566,30 +554,66 @@ describe SessionsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt with invalid jwt" do
+	it "should not create session from access token of session that does not exist" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
-				jwt: "asdasdasdasd",
+				access_token: "asdasdasdasd",
 				app_id: 1,
-				api_key: "asdassda"
+				api_key: "asdasdsadsad"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not create session from access token with old access token" do
+		access_token = sessions(:mattWebsiteSession).old_token
+
+		res = post_request(
+			"/v1/session/access_token",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				access_token: access_token,
+				app_id: 1,
+				api_key: "asdasdsad"
+			}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CANNOT_USE_OLD_ACCESS_TOKEN, res["errors"][0]["code"])
+	end
+
+	it "should not create session from access token of session that must be renewed" do
+		session = sessions(:mattWebsiteSession)
+		session.updated_at = Time.now - 3.days
+		session.save
+
+		res = post_request(
+			"/v1/session/access_token",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				access_token: session.token,
+				app_id: 1,
+				api_key: "asdasdasdasd"
 			}
 		)
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::ACCESS_TOKEN_MUST_BE_RENEWED, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt that is not for the website" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
+	it "should not create session from access token of session that is not for the website" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattCardsSession).token,
 				app_id: 1,
 				api_key: "aasdasdasdad"
 			}
@@ -600,14 +624,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt for app that does not exist" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
+	it "should not create session from access token for app that does not exist" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattWebsiteSession).token,
 				app_id: -1233,
 				api_key: "sadadasdasdasd"
 			}
@@ -618,14 +640,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::APP_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt with api key for dev that does not exist" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
+	it "should not create session from access token with api key for dev that does not exist" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattWebsiteSession).token,
 				app_id: apps(:cards).id,
 				api_key: "sadasdassda"
 			}
@@ -636,14 +656,12 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not create session from jwt for app that does not belong to the dev" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
+	it "should not create session from access token for app that does not belong to the dev" do
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattWebsiteSession).token,
 				app_id: apps(:cards).id,
 				api_key: devs(:dav).api_key
 			}
@@ -654,40 +672,36 @@ describe SessionsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should create session from jwt" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
+	it "should create session from access token" do
 		dev = devs(:sherlock)
 		user = users(:matt)
 		app = apps(:cards)
 
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(dev), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattWebsiteSession).token,
 				app_id: app.id,
 				api_key: dev.api_key
 			}
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
+		assert_equal(res["access_token"], session.token)
 		assert_nil(session.device_name)
 		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 	end
 
-	it "should create session from jwt with device info" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
+	it "should create session from access token with device info" do
 		dev = devs(:sherlock)
 		user = users(:matt)
 		app = apps(:cards)
@@ -696,10 +710,10 @@ describe SessionsController do
 		device_os = "Andromeda"
 
 		res = post_request(
-			"/v1/session/jwt",
+			"/v1/session/access_token",
 			{Authorization: generate_auth(dev), 'Content-Type': 'application/json'},
 			{
-				jwt: jwt,
+				access_token: sessions(:mattWebsiteSession).token,
 				app_id: app.id,
 				api_key: dev.api_key,
 				device_name: device_name,
@@ -709,23 +723,21 @@ describe SessionsController do
 		)
 
 		assert_response 201
-		assert_not_nil(res["jwt"])
+		assert_not_nil(res["access_token"])
 
 		# Check the session
-		session_id = res["jwt"].split('.').last.to_i
-		assert_not_equal(0, session_id)
-		session = Session.find_by(id: session_id)
+		session = Session.find_by(token: res["access_token"])
 		assert_not_nil(session)
-		assert_equal(session_id, session.id)
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
+		assert_equal(res["access_token"], session.token)
 		assert_equal(device_name, session.device_name)
 		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 	end
 
 	# delete_session
-	it "should not delete session without jwt" do
+	it "should not delete session without access token" do
 		res = delete_request("/v1/session")
 
 		assert_response 401
@@ -733,24 +745,10 @@ describe SessionsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not delete session with invalid jwt" do
-		res = delete_request(
-			"/v1/session",
-			{Authorization: "asdas.asdasd.asdas"}
-		)
-
-		assert_response 401
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
-	end
-
 	it "should not delete session that does not exist" do
-		jwt = generate_jwt(sessions(:mattTestAppSession))
-		sessions(:mattTestAppSession).destroy!
-		
 		res = delete_request(
 			"/v1/session",
-			{Authorization: jwt}
+			{Authorization: "asdasdasdasd"}
 		)
 
 		assert_response 404
@@ -759,13 +757,17 @@ describe SessionsController do
 	end
 
 	it "should delete session" do
-		jwt = generate_jwt(sessions(:mattTestAppSession))
+		session = sessions(:mattTestAppSession)
 
 		delete_request(
 			"/v1/session",
-			{Authorization: jwt}
+			{Authorization: session.token}
 		)
 
 		assert_response 204
+
+		# Check if the session was deleted
+		session = Session.find_by(id: session.id)
+		assert_nil(session)
 	end
 end
