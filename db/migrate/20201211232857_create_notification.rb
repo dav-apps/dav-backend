@@ -4,12 +4,13 @@ class CreateNotification < ActiveRecord::Migration[6.0]
 		t.bigint :user_id
 		t.bigint :app_id
 		t.string :uuid
-		t.index :uuid, unique: true
 		t.datetime :time
 		t.integer :interval
 		t.string :title
 		t.string :body
 		t.timestamps
+
+		t.index :uuid, unique: true
     end
   end
 end

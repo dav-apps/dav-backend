@@ -4,10 +4,11 @@ class CreateTableObject < ActiveRecord::Migration[6.0]
 		t.bigint :user_id
 		t.bigint :table_id
 		t.string :uuid
-		t.index :uuid, unique: true
 		t.boolean :file, default: false
 		t.string :etag
 		t.timestamps
+
+		t.index :uuid, unique: true
     end
   end
 end

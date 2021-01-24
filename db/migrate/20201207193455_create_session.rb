@@ -3,12 +3,15 @@ class CreateSession < ActiveRecord::Migration[6.0]
 	 create_table :sessions do |t|
 		t.bigint :user_id
 		t.bigint :app_id
-		t.string :secret
-		t.datetime :exp
+		t.string :token
+		t.string :old_token
 		t.string :device_name
 		t.string :device_type
 		t.string :device_os
-		t.datetime :created_at, precision: 6, null: false
+		t.timestamps
+
+		t.index :token, unique: true
+		t.index :old_token, unique: true
     end
   end
 end

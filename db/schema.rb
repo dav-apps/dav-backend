@@ -159,12 +159,15 @@ ActiveRecord::Schema.define(version: 2020_12_24_154815) do
   create_table "sessions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
-    t.string "secret"
-    t.datetime "exp"
+    t.string "token"
+    t.string "old_token"
     t.string "device_name"
     t.string "device_type"
     t.string "device_os"
     t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["old_token"], name: "index_sessions_on_old_token", unique: true
+    t.index ["token"], name: "index_sessions_on_token", unique: true
   end
 
   create_table "table_object_collections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
