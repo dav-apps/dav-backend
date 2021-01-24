@@ -6,7 +6,7 @@ describe AppUserActivitiesController do
 	end
 
 	# get_app_user_activities
-	it "should not get app user activities without jwt" do
+	it "should not get app user activities without access token" do
 		res = get_request("/v1/app/1/user_activities")
 
 		assert_response 401
@@ -14,23 +14,21 @@ describe AppUserActivitiesController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get app user activities with invalid jwt" do
+	it "should not get app user activities with access token for session that does not exist" do
 		res = get_request(
 			"/v1/app/1/user_activities",
 			{Authorization: "asdasdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get app user activities from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/app/1/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -39,11 +37,9 @@ describe AppUserActivitiesController do
 	end
 
 	it "should not get app user activities for the app of another dev" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = get_request(
 			"/v1/app/#{apps(:pocketlib).id}/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -52,11 +48,9 @@ describe AppUserActivitiesController do
 	end
 
 	it "should not get app user activities if the user is not a dev" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = get_request(
 			"/v1/app/#{apps(:pocketlib).id}/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -65,7 +59,6 @@ describe AppUserActivitiesController do
 	end
 
 	it "should get app user activities" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		app = apps(:cards)
 		first_user_activity = AppUserActivity.create(
 			app: app,
@@ -84,7 +77,7 @@ describe AppUserActivitiesController do
 
 		res = get_request(
 			"/v1/app/#{app.id}/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200
@@ -102,7 +95,6 @@ describe AppUserActivitiesController do
 	end
 
 	it "should get app user activities in the specified timeframe" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		app = apps(:cards)
 		start_timestamp = DateTime.parse("2019-06-09T00:00:00.000Z").to_i
 		end_timestamp = DateTime.parse("2019-06-12T00:00:00.000Z").to_i
@@ -111,7 +103,7 @@ describe AppUserActivitiesController do
 
 		res = get_request(
 			"/v1/app/#{app.id}/user_activities?start=#{start_timestamp}&end=#{end_timestamp}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200
