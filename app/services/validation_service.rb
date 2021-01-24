@@ -20,7 +20,7 @@ class ValidationService
 		sig != signature ? get_validation_hash(false, error_code, 401) : get_validation_hash
 	end
 
-	def self.get_session_from_token(token)
+	def self.get_session_from_token(token, check_renew = true)
 		session = Session.find_by(token: token)
 
 		if session.nil?
@@ -36,14 +36,14 @@ class ValidationService
 				session.destroy!
 				raise RuntimeError, [get_validation_hash(false, 1601, 403)].to_json
 			end
-		else
+		elsif check_renew
 			# Check if the session needs to be renewed
 			if (Time.now - session.updated_at) > 1.day
 				raise RuntimeError, [get_validation_hash(false, 1602, 401)].to_json
-			else
-				return session
 			end
 		end
+
+		return session
 	end
 
 	def self.validate_dev_is_first_dev(dev)

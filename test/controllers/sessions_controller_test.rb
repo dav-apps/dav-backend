@@ -736,6 +736,81 @@ describe SessionsController do
 		assert_equal(device_os, session.device_os)
 	end
 
+	# renew_session
+	it "should not renew session without access token" do
+		res = put_request("/v1/session/renew")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not renew session with access token of session that does not exist" do
+		res = put_request(
+			"/v1/session/renew",
+			{Authorization: "asdasdasdasd"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not renew session with old access token" do
+		session = sessions(:mattWebsiteSession)
+
+		res = put_request(
+			"/v1/session/renew",
+			{Authorization: session.old_token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CANNOT_USE_OLD_ACCESS_TOKEN, res["errors"][0]["code"])
+
+		# Check if the session was deleted
+		session = Session.find_by(id: session.id)
+		assert_nil(session)
+	end
+
+	it "should renew session" do
+		session = sessions(:mattWebsiteSession)
+		session.updated_at = Time.now - 3.days
+		session.save
+		old_token = session.token
+
+		res = put_request(
+			"/v1/session/renew",
+			{Authorization: session.token}
+		)
+
+		assert_response 200
+		assert_not_nil(res["access_token"])
+
+		session = Session.find_by(id: session.id)
+		assert_not_nil(session)
+		assert_equal(res["access_token"], session.token)
+		assert_equal(old_token, session.old_token)
+	end
+
+	it "should renew session that does not need to be renewed" do
+		session = sessions(:mattWebsiteSession)
+		old_token = session.token
+
+		res = put_request(
+			"/v1/session/renew",
+			{Authorization: session.token}
+		)
+
+		assert_response 200
+		assert_not_nil(res["access_token"])
+
+		session = Session.find_by(id: session.id)
+		assert_not_nil(session)
+		assert_equal(res["access_token"], session.token)
+		assert_equal(old_token, session.old_token)
+	end
+
 	# delete_session
 	it "should not delete session without access token" do
 		res = delete_request("/v1/session")

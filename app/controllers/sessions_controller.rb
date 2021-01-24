@@ -179,6 +179,29 @@ class SessionsController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def renew_session
+		access_token = get_auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token, false)
+
+		# Move the current token to old_token and generate a new token
+		session.old_token = session.token
+		session.token = Cuid.generate
+
+		ValidationService.raise_unexpected_error(!session.save)
+
+		# Return the new token
+		result = {
+			access_token: session.token
+		}
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def delete_session
 		access_token = get_auth
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
