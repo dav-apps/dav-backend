@@ -6,7 +6,7 @@ describe AppsController do
 	end
 
 	# create_app
-	it "should not create app without jwt" do
+	it "should not create app without access token" do
 		res = post_request("/v1/app")
 
 		assert_response 401
@@ -25,23 +25,21 @@ describe AppsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create app with invalid jwt" do
+	it "should not create app with access token for session that does not exist" do
 		res = post_request(
 			"/v1/app",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create app from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -50,11 +48,9 @@ describe AppsController do
 	end
 
 	it "should not create app without required properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -64,11 +60,9 @@ describe AppsController do
 	end
 
 	it "should not create app with properties with wrong types" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: true,
 				description: 1.2
@@ -82,11 +76,9 @@ describe AppsController do
 	end
 
 	it "should not create app with too short properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: "a",
 				description: "a"
@@ -100,11 +92,9 @@ describe AppsController do
 	end
 
 	it "should not create app with too long properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: "a" * 250,
 				description: "a" * 250
@@ -118,11 +108,9 @@ describe AppsController do
 	end
 
 	it "should not create app if the user is not a dev" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: "TestApp",
 				description: "This is a test app"
@@ -135,13 +123,12 @@ describe AppsController do
 	end
 
 	it "should create app" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		name = "TestApp"
 		description = "This is a test app"
 
 		res = post_request(
 			"/v1/app",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: name,
 				description: description
@@ -201,7 +188,7 @@ describe AppsController do
 	end
 
 	# get_app
-	it "should not get app without jwt" do
+	it "should not get app without access token" do
 		res = get_request("/v1/app/1")
 
 		assert_response 401
@@ -209,23 +196,21 @@ describe AppsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get app with invalid jwt" do
+	it "should not get app with access token for session that does not exist" do
 		res = get_request(
 			"/v1/app/1",
 			{Authorization: "sdaasdasdasdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get app from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/app/1",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -234,11 +219,9 @@ describe AppsController do
 	end
 
 	it "should not get app that does not exist" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = get_request(
 			"/v1/app/-123",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 404
@@ -247,11 +230,9 @@ describe AppsController do
 	end
 
 	it "should not get app that belongs to another dev" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = get_request(
 			"/v1/app/#{apps(:pocketlib).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -260,12 +241,11 @@ describe AppsController do
 	end
 
 	it "should get app" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
 		app = apps(:pocketlib)
 
 		res = get_request(
 			"/v1/app/#{app.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 200
@@ -295,7 +275,7 @@ describe AppsController do
 	end
 
 	# update_app
-	it "should not update app without jwt" do
+	it "should not update app without access token" do
 		res = put_request("/v1/app/1")
 
 		assert_response 401
@@ -314,23 +294,21 @@ describe AppsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not update app with invalid jwt" do
+	it "should not update app with access token for session that does not exist" do
 		res = put_request(
 			"/v1/app/1",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not update app from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/app/1",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -339,11 +317,9 @@ describe AppsController do
 	end
 
 	it "should not update app that does not exist" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/-123",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 404
@@ -352,11 +328,9 @@ describe AppsController do
 	end
 
 	it "should not update app that belongs to another dev" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/#{apps(:pocketlib).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 403
@@ -365,11 +339,9 @@ describe AppsController do
 	end
 
 	it "should not update app with properties with wrong types" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/#{apps(:cards).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: true,
 				description: 123,
@@ -391,11 +363,9 @@ describe AppsController do
 	end
 
 	it "should not update app with too short properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/#{apps(:cards).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: "a",
 				description: "a"
@@ -409,11 +379,9 @@ describe AppsController do
 	end
 
 	it "should not update app with too long properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/#{apps(:cards).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: "a" * 300,
 				description: "a" * 300,
@@ -433,11 +401,9 @@ describe AppsController do
 	end
 
 	it "should not update app with invalid properties" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
-
 		res = put_request(
 			"/v1/app/#{apps(:cards).id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				web_link: "aaaaaaa",
 				google_play_link: "aaaaaaa",
@@ -453,7 +419,6 @@ describe AppsController do
 	end
 
 	it "should update app" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		app = apps(:cards)
 		name = "Updated name"
 		description = "Updated description"
@@ -464,7 +429,7 @@ describe AppsController do
 
 		res = put_request(
 			"/v1/app/#{app.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				name: name,
 				description: description,
@@ -499,12 +464,11 @@ describe AppsController do
 	end
 
 	it "should update app and remove links with empty values" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		app = apps(:cards)
 
 		res = put_request(
 			"/v1/app/#{app.id}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				web_link: "",
 				google_play_link: "",
