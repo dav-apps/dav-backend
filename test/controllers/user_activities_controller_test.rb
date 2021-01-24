@@ -6,7 +6,7 @@ describe UserActivitiesController do
 	end
 
 	# get_user_activities
-	it "should not get user activities without jwt" do
+	it "should not get user activities without access token" do
 		res = get_request("/v1/user_activities")
 
 		assert_response 401
@@ -14,23 +14,21 @@ describe UserActivitiesController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get user activities with invalid jwt" do
+	it "should not get user activities with access token of session that does not exist" do
 		res = get_request(
 			"/v1/user_activities",
 			{Authorization: "asdasdasdasdads"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get user activities from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -39,11 +37,9 @@ describe UserActivitiesController do
 	end
 
 	it "should not get user activities with another dev than the first one" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = get_request(
 			"/v1/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -52,11 +48,9 @@ describe UserActivitiesController do
 	end
 
 	it "should not get user activities if the user is not a dev" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = get_request(
 			"/v1/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -65,7 +59,6 @@ describe UserActivitiesController do
 	end
 
 	it "should get user activities" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		first_user_activity = UserActivity.create(
 			time: (Time.now - 3.days).beginning_of_day,
 			count_daily: 3,
@@ -81,7 +74,7 @@ describe UserActivitiesController do
 
 		res = get_request(
 			"/v1/user_activities",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200
@@ -99,7 +92,6 @@ describe UserActivitiesController do
 	end
 
 	it "should get user activities in the specified timeframe" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		start_timestamp = DateTime.parse("2019-06-09T00:00:00.000Z").to_i
 		end_timestamp = DateTime.parse("2019-06-12T00:00:00.000Z").to_i
 		first_user_activity = user_activities(:first_user_activity)
@@ -107,7 +99,7 @@ describe UserActivitiesController do
 
 		res = get_request(
 			"/v1/user_activities?start=#{start_timestamp}&end=#{end_timestamp}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200

@@ -1,6 +1,6 @@
 class UserActivitiesController < ApplicationController
 	def get_user_activities
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
 		if params[:start].nil?
 			start_timestamp = (Time.now - 1.month).beginning_of_day
@@ -14,24 +14,16 @@ class UserActivitiesController < ApplicationController
 			end_timestamp = Time.at(params[:end].to_i)
 		end
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
-
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Make sure the user is the first dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(user.dev))
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(session.user.dev))
 
 		# Collect and return the data
 		days = Array.new
