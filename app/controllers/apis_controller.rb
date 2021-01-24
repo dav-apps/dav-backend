@@ -135,24 +135,16 @@ class ApisController < ApplicationController
 	end
 
 	def create_api
-		jwt, session_id = get_jwt
+		access_token = get_auth
 		
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -180,7 +172,7 @@ class ApisController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
 
 		# Make sure the user is the dev of the app
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, user.dev))
+		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
 
 		# Create the api
 		api = Api.new(
@@ -204,31 +196,23 @@ class ApisController < ApplicationController
 	end
 
 	def get_api
-		jwt, session_id = get_jwt
+		access_token = get_auth
 		id = params["id"]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(app))
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the api
 		api = Api.find_by(id: id)
 		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev of the user
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, user.dev))
+		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
 
 		# Return the data
 		endpoints = Array.new

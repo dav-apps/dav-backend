@@ -87,7 +87,7 @@ describe ApisController do
 	end
 
 	# create_api
-	it "should not create api without jwt" do
+	it "should not create api without access token" do
 		res = post_request("/v1/api")
 
 		assert_response 401
@@ -106,23 +106,21 @@ describe ApisController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create api with invalid jwt" do
+	it "should not create api with access token for session that does not exist " do
 		res = post_request(
 			"/v1/api",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create api without required properties" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -132,11 +130,9 @@ describe ApisController do
 	end
 
 	it "should not create api with properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: "4",
 				name: 15
@@ -150,11 +146,9 @@ describe ApisController do
 	end
 
 	it "should not create api for app that does not exist" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: -413,
 				name: "TestApi"
@@ -166,12 +160,10 @@ describe ApisController do
 		assert_equal(ErrorCodes::APP_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not create api with jwt for app that is not the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
+	it "should not create api from another app than the website" do
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:cards).id,
 				name: "TestApi"
@@ -184,11 +176,9 @@ describe ApisController do
 	end
 
 	it "should not create api for app of another dev" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
-
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: apps(:cards).id,
 				name: "TestApi"
@@ -201,13 +191,12 @@ describe ApisController do
 	end
 
 	it "should create api" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
 		app = apps(:testApp)
 		name = "TestApi"
 		
 		res = post_request(
 			"/v1/api",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				app_id: app.id,
 				name: "TestApi"
@@ -234,7 +223,7 @@ describe ApisController do
 	end
 
 	# get_api
-	it "should not get api without jwt" do
+	it "should not get api without access token" do
 		res = get_request("/v1/api/1")
 
 		assert_response 401
@@ -242,23 +231,21 @@ describe ApisController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get api with invalid jwt" do
+	it "should not get api with access token for session that does not exist" do
 		res = get_request(
 			"/v1/api/1",
 			{Authorization: "adsasdasasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get api from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/api/1",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -267,11 +254,9 @@ describe ApisController do
 	end
 
 	it "should not get api that does not exist" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = get_request(
 			"/v1/api/-123",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
 		assert_response 404
@@ -280,12 +265,11 @@ describe ApisController do
 	end
 
 	it "should not get api that belongs to the app of another dev" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		api = apis(:pocketlibApi)
 
 		res = get_request(
 			"/v1/api/#{apis(:pocketlibApi).id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -294,12 +278,11 @@ describe ApisController do
 	end
 
 	it "should get api" do
-		jwt = generate_jwt(sessions(:davWebsiteSession))
 		api = apis(:pocketlibApi)
 
 		res = get_request(
 			"/v1/api/#{api.id}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
 		assert_response 200
