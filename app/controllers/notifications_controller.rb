@@ -1,20 +1,12 @@
 class NotificationsController < ApplicationController
 	def create_notification
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		request_body = ValidationService.parse_json(request.body.string)
@@ -49,8 +41,8 @@ class NotificationsController < ApplicationController
 
 		# Create the notification
 		notification = Notification.new(
-			user: user,
-			app: app,
+			user: session.user,
+			app: session.app,
 			time: Time.at(time),
 			interval: interval,
 			title: title,
@@ -85,25 +77,17 @@ class NotificationsController < ApplicationController
 	end
 
 	def get_notifications
-		jwt, session_id = get_jwt
+		access_token = get_auth
 		
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the notifications
 		notifications = Array.new
 
-		Notification.where(user: user, app: app).each do |notification|
+		Notification.where(user: session.user, app: session.app).each do |notification|
 			notifications.push({
 				id: notification.id,
 				user_id: notification.user_id,
@@ -127,12 +111,14 @@ class NotificationsController < ApplicationController
 	end
 
 	def update_notification
-		jwt, session_id = get_jwt
-		uuid = params["uuid"]
+		access_token = get_auth
+		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the params from the body
 		request_body = ValidationService.parse_json(request.body.string)
@@ -155,21 +141,11 @@ class NotificationsController < ApplicationController
 		validations.push(ValidationService.validate_body_length(body)) if !body.nil?
 		ValidationService.raise_multiple_validation_errors(validations)
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
-
 		# Get the notification
 		notification = Notification.find_by(uuid: uuid)
 		ValidationService.raise_validation_error(ValidationService.validate_notification_existence(notification))
-		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_user(notification, user))
-		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_app(notification, app))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_user(notification, session.user))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_app(notification, session.app))
 
 		# Update the attributes of the notification
 		notification.time = Time.at(time) if !time.nil?
@@ -196,27 +172,19 @@ class NotificationsController < ApplicationController
 	end
 
 	def delete_notification
-		jwt, session_id = get_jwt
-		uuid = params["uuid"]
+		access_token = get_auth
+		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the payload data
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the notification
 		notification = Notification.find_by(uuid: uuid)
 		ValidationService.raise_validation_error(ValidationService.validate_notification_existence(notification))
-		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_user(notification, user))
-		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_app(notification, app))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_user(notification, session.user))
+		ValidationService.raise_validation_error(ValidationService.validate_notification_belongs_to_app(notification, session.app))
 
 		# Delete the notification
 		notification.destroy!

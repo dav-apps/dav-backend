@@ -6,7 +6,7 @@ describe NotificationsController do
 	end
 
 	# create_notification
-	it "should not create notification without jwt" do
+	it "should not create notification without access token" do
 		res = post_request("/v1/notification")
 
 		assert_response 401
@@ -25,23 +25,21 @@ describe NotificationsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not create notification with invalid jwt" do
+	it "should not create notification with access token for session that does not exist" do
 		res = post_request(
 			"/v1/notification",
 			{Authorization: "asdasdsad", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not create notification without required properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'}
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
@@ -53,11 +51,9 @@ describe NotificationsController do
 	end
 
 	it "should not create notification with properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				time: "hello",
 				interval: 12.5,
@@ -75,11 +71,9 @@ describe NotificationsController do
 	end
 
 	it "should not create notification with optional properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				uuid: false,
 				time: "hello",
@@ -99,11 +93,9 @@ describe NotificationsController do
 	end
 
 	it "should not create notification with too short properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				time: Time.now.to_i,
 				interval: 200000,
@@ -119,11 +111,9 @@ describe NotificationsController do
 	end
 
 	it "should not create notification with too long properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				time: Time.now.to_i,
 				interval: 200000,
@@ -139,12 +129,11 @@ describe NotificationsController do
 	end
 
 	it "should not create notification with uuid that is already in use" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				uuid: notification.uuid,
 				time: Time.now.to_i,
@@ -161,7 +150,6 @@ describe NotificationsController do
 
 	it "should create notification" do
 		session = sessions(:mattCardsSession)
-		jwt = generate_jwt(session)
 		time = (Time.now - 1.month).to_i
 		interval = 1.day.to_i
 		title = "Hello World"
@@ -169,7 +157,7 @@ describe NotificationsController do
 
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: session.token, 'Content-Type': 'application/json'},
 			{
 				time: time,
 				interval: interval,
@@ -203,7 +191,6 @@ describe NotificationsController do
 
 	it "should create notification with uuid" do
 		session = sessions(:mattCardsSession)
-		jwt = generate_jwt(session)
 		uuid = SecureRandom.uuid
 		time = (Time.now - 1.month).to_i
 		interval = 1.day.to_i
@@ -212,7 +199,7 @@ describe NotificationsController do
 
 		res = post_request(
 			"/v1/notification",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: session.token, 'Content-Type': 'application/json'},
 			{
 				uuid: uuid,
 				time: time,
@@ -246,7 +233,7 @@ describe NotificationsController do
 	end
 
 	# get_notifications
-	it "should not get notifications without jwt" do
+	it "should not get notifications without access token" do
 		res = get_request("/v1/notifications")
 
 		assert_response 401
@@ -254,25 +241,24 @@ describe NotificationsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get notifications with invalid jwt" do
+	it "should not get notifications with access token for session that does not exist" do
 		res = get_request(
 			"/v1/notifications",
 			{Authorization: "asdasdasdsadsda"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should get notifications" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		first_notification = notifications(:mattCardsFirstNotification)
 		second_notification = notifications(:mattCardsSecondNotification)
 
 		res = get_request(
 			"/v1/notifications",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 200
@@ -298,7 +284,7 @@ describe NotificationsController do
 	end
 
 	# update_notification
-	it "should not update notification without jwt" do
+	it "should not update notification without access token" do
 		res = put_request("/v1/notification/23234234")
 
 		assert_response 401
@@ -317,24 +303,23 @@ describe NotificationsController do
 		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
-	it "should not update notification with invalid jwt" do
+	it "should not update notification with access token with session that does not exist" do
 		res = put_request(
 			"/v1/notification/asdasdasd",
 			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not update notification with properties with wrong types" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				time: true,
 				interval: "Hello World",
@@ -352,12 +337,11 @@ describe NotificationsController do
 	end
 
 	it "should not update notification with too short properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				title: "a",
 				body: "a"
@@ -371,12 +355,11 @@ describe NotificationsController do
 	end
 
 	it "should not update notification with too long properties" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				title: "a" * 200,
 				body: "a" * 200
@@ -390,11 +373,9 @@ describe NotificationsController do
 	end
 
 	it "should not update notification that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = put_request(
 			"/v1/notification/ioahsd9h83q9dasd",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				interval: 0
 			}
@@ -406,12 +387,11 @@ describe NotificationsController do
 	end
 
 	it "should not update notification that does not belong to the user" do
-		jwt = generate_jwt(sessions(:davCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				interval: 0
 			}
@@ -423,12 +403,11 @@ describe NotificationsController do
 	end
 
 	it "should not update notification that does not belong to the app" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'application/json'},
 			{
 				interval: 0
 			}
@@ -440,7 +419,6 @@ describe NotificationsController do
 	end
 
 	it "should update notification" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 		time = Time.now.to_i
 		interval = 13123123
@@ -449,7 +427,7 @@ describe NotificationsController do
 
 		res = put_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt, 'Content-Type': 'application/json'},
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				time: time,
 				interval: interval,
@@ -482,7 +460,7 @@ describe NotificationsController do
 	end
 
 	# delete_notification
-	it "should not delete notification without jwt" do
+	it "should not delete notification without access token" do
 		res = delete_request("/v1/notification/asdasdsad")
 
 		assert_response 401
@@ -490,23 +468,21 @@ describe NotificationsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not delete notification with invalid jwt" do
+	it "should not delete notification with access token for session that does not exist" do
 		res = delete_request(
 			"/v1/notification/pjadpiasdjasd",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not delete notificaion that does not exist" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
-
 		res = delete_request(
 			"/v1/notification/asdasd234fdaf3r",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 404
@@ -515,12 +491,11 @@ describe NotificationsController do
 	end
 
 	it "should not delete notification that does not belong to the user" do
-		jwt = generate_jwt(sessions(:davCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:davCardsSession).token}
 		)
 
 		assert_response 403
@@ -529,12 +504,11 @@ describe NotificationsController do
 	end
 
 	it "should not delete notification that does not belong to the app" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
 		assert_response 403
@@ -543,12 +517,11 @@ describe NotificationsController do
 	end
 
 	it "should delete notification" do
-		jwt = generate_jwt(sessions(:mattCardsSession))
 		notification = notifications(:mattCardsFirstNotification)
 
 		res = delete_request(
 			"/v1/notification/#{notification.uuid}",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattCardsSession).token}
 		)
 
 		assert_response 204
