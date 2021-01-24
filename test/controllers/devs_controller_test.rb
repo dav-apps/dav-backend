@@ -6,7 +6,7 @@ describe DevsController do
 	end
 
 	# get_dev
-	it "should not get dev without jwt" do
+	it "should not get dev without access token" do
 		res = get_request("/v1/dev")
 
 		assert_response 401
@@ -14,23 +14,21 @@ describe DevsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get dev with invalid jwt" do
+	it "should not get dev with access token for session that does not exist" do
 		res = get_request(
 			"/v1/dev",
 			{Authorization: "adasdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
 	it "should not get dev from another app than the website" do
-		jwt = generate_jwt(sessions(:sherlockTestAppSession))
-
 		res = get_request(
 			"/v1/dev",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 403
@@ -39,11 +37,9 @@ describe DevsController do
 	end
 
 	it "should not get dev if the user is not a dev" do
-		jwt = generate_jwt(sessions(:mattWebsiteSession))
-
 		res = get_request(
 			"/v1/dev",
-			{Authorization: jwt}
+			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
 		assert_response 404
@@ -52,7 +48,6 @@ describe DevsController do
 	end
 
 	it "should get dev" do
-		jwt = generate_jwt(sessions(:sherlockWebsiteSession))
 		sherlock = devs(:sherlock)
 		notes = apps(:notes)
 		cards = apps(:cards)
@@ -60,7 +55,7 @@ describe DevsController do
 
 		res = get_request(
 			"/v1/dev",
-			{Authorization: jwt}
+			{Authorization: sessions(:sherlockWebsiteSession).token}
 		)
 
 		assert_response 200
