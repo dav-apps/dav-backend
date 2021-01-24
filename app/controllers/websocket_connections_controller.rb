@@ -1,24 +1,16 @@
 class WebsocketConnectionsController < ApplicationController
 	def create_websocket_connection
-		jwt, session_id = get_jwt
+		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(jwt))
-		payload = ValidationService.validate_jwt(jwt, session_id)
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
-		# Validate the user and dev
-		user = User.find_by(id: payload[:user_id])
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-
-		dev = Dev.find_by(id: payload[:dev_id])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
-
-		app = App.find_by(id: payload[:app_id])
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
 
 		# Create a WebsocketConnectionToken
 		connection = WebsocketConnection.new(
-			user: user,
-			app: app,
+			user: session.user,
+			app: session.app,
 			token: SecureRandom.hex(10)
 		)
 		ValidationService.raise_unexpected_error(!connection.save)

@@ -6,7 +6,7 @@ describe WebsocketConnectionsController do
 	end
 
 	# create_websocket_connection
-	it "should not create websocket connection without jwt" do
+	it "should not create websocket connection without access token" do
 		res = post_request("/v1/websocket_connection")
 
 		assert_response 401
@@ -14,24 +14,23 @@ describe WebsocketConnectionsController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not create websocket connection with invalid jwt" do
+	it "should not create websocket connection with access token of session that does not exist" do
 		res = post_request(
 			"/v1/websocket_connection",
 			{Authorization: "asdasdasd"}
 		)
 
-		assert_response 401
+		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::JWT_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should create a websocket connection" do
+	it "should create websocket connection" do
 		session = sessions(:mattCardsSession)
-		jwt = generate_jwt(session)
 
 		res = post_request(
 			"/v1/websocket_connection",
-			{Authorization: jwt}
+			{Authorization: session.token}
 		)
 
 		assert_response 201
