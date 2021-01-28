@@ -1,5 +1,4 @@
 require 'blurhash'
-require 'rmagick'
 
 class DavExpressionRunner
 	def run(props)
@@ -983,7 +982,7 @@ class DavExpressionRunner
 					image_data = execute_command(command[1], vars)
 
 					begin
-						image = Magick::ImageList.new
+						image = MiniMagick::ImageList.new
 		
 						if @request[:body].class == StringIO
 							image.from_blob(@request[:body].string)
@@ -1003,7 +1002,7 @@ class DavExpressionRunner
 					result = Hash.new
 
 					begin
-						image = Magick::ImageList.new
+						image = MiniMagick::ImageList.new
 
 						if @request[:body].class == StringIO
 							image.from_blob(@request[:body].string)
