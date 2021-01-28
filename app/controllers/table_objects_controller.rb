@@ -128,8 +128,8 @@ class TableObjectsController < ApplicationController
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session.id,
-			change: 0
+			change: 0,
+			access_token_md5: (Digest::MD5.new << session.token).hexdigest
 		)
 
 		# Return the data
@@ -326,8 +326,8 @@ class TableObjectsController < ApplicationController
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session.id,
-			change: 1
+			change: 1,
+			access_token_md5: (Digest::MD5.new << session.token).hexdigest
 		)
 
 		result = {
@@ -394,8 +394,8 @@ class TableObjectsController < ApplicationController
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session.id,
-			change: 2
+			change: 2,
+			access_token_md5: (Digest::MD5.new << session.token).hexdigest
 		)
 
 		head 204, content_type: "application/json"
@@ -498,8 +498,8 @@ class TableObjectsController < ApplicationController
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
-			session_id: session.id,
-			change: 1
+			change: 1,
+			access_token_md5: (Digest::MD5.new << session.token).hexdigest
 		)
 
 		# Return the data

@@ -39,7 +39,7 @@ class ValidationService
 		elsif check_renew
 			# Check if the session needs to be renewed
 			if (Time.now - session.updated_at) > 1.day
-				raise RuntimeError, [get_validation_hash(false, 1602, 401)].to_json
+				raise RuntimeError, [get_validation_hash(false, 1602, 403)].to_json
 			end
 		end
 

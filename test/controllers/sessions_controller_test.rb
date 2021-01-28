@@ -603,7 +603,7 @@ describe SessionsController do
 			}
 		)
 
-		assert_response 401
+		assert_response 403
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::ACCESS_TOKEN_MUST_BE_RENEWED, res["errors"][0]["code"])
 	end
