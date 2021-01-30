@@ -39,6 +39,14 @@ davCardsSession:
   device_type: Foldable
   device_os: Android
 
+davTestAppSession:
+  user: dav
+  app: testApp
+  token: "ckkabct9s0004tlw3aylkvw5s"
+  device_name: Samsung Galaxy A20
+  device_type: Smartphone
+  device_os: Android
+
 sherlockTestAppSession:
   user: sherlock
   app: testApp
@@ -55,10 +63,10 @@ sherlockWebsiteSession:
   device_type: Smartphone
   device_os: Android
 
-davTestAppSession:
-  user: dav
-  app: testApp
-  token: "ckkabct9s0004tlw3aylkvw5s"
-  device_name: Samsung Galaxy A20
-  device_type: Smartphone
-  device_os: Android
+catoWebsiteSession:
+  user: cato
+  app: website
+  token: "ckkjook0p0000p6w33j9vp8a2"
+  device_name: Surface Book
+  device_type: Laptop
+  device_os: Windows 10

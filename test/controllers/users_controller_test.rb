@@ -990,6 +990,164 @@ describe UsersController do
 		assert_not_nil(matt.password_confirmation_token)
 	end
 
+	# set_profile_image_of_user
+	it "should not set profile image of user without access token" do
+		res = put_request("/v1/user/profile_image")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user with not supported content type" do
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: "dafsgiosdfjposdf", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user with access token for session that does not exist" do
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: "sdsdjsdfsdfsdfsdf", 'Content-Type': 'image/png'}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user from another app than the website" do
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': 'image/png'}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user with invalid image" do
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
+			"Hello World",
+			false
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::IMAGE_FILE_INVALID, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user with content type that does not match the image type" do
+		file_content = File.open("test/fixtures/files/test.gif", "rb").read
+
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
+			file_content,
+			false
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_DOES_NOT_MATCH_FILE_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not set profile image of user with too large image file" do
+		file_content = File.open("test/fixtures/files/usb-logo.png", "rb").read
+
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
+			file_content,
+			false
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::IMAGE_FILE_TOO_LARGE, res["errors"][0]["code"])
+	end
+
+	it "should set profile image of user" do
+		matt = users(:matt)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'image/png'},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(matt.id, res["id"])
+		assert_equal(matt.email, res["email"])
+		assert_equal(matt.first_name, res["first_name"])
+		assert_equal(matt.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(matt.plan, matt.confirmed), res["total_storage"])
+		assert_equal(matt.used_storage, res["used_storage"])
+		assert_equal(matt.stripe_customer_id, res["stripe_customer_id"])
+		assert_equal(matt.plan, res["plan"])
+		assert_equal(matt.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(!res["dev"])
+		assert(!res["provider"])
+
+		# Check the UserProfileImage
+		user_profile_image = UserProfileImage.find_by(user_id: matt.id)
+		assert_not_nil(user_profile_image)
+		assert_equal(matt.id, user_profile_image.user_id)
+		assert_equal("png", user_profile_image.ext)
+		assert_equal("image/png", user_profile_image.mime_type)
+		assert_not_nil(user_profile_image.etag)
+	end
+
+	it "should set profile image of user and update existing UserProfileImage" do
+		cato = users(:cato)
+		user_profile_image = user_profile_images(:catoProfileImage)
+		old_etag = user_profile_image.etag
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:catoWebsiteSession).token, 'Content-Type': 'image/png'},
+			file_content,
+			false
+		)
+
+		assert_response 200
+
+		assert_equal(cato.id, res["id"])
+		assert_equal(cato.email, res["email"])
+		assert_equal(cato.first_name, res["first_name"])
+		assert_equal(cato.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(cato.plan, cato.confirmed), res["total_storage"])
+		assert_equal(cato.used_storage, res["used_storage"])
+		assert_nil(res["stripe_customer_id"])
+		assert_equal(cato.plan, res["plan"])
+		assert_equal(cato.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(!res["dev"])
+		assert(!res["provider"])
+
+		# Check the UserProfileImage
+		user_profile_image = UserProfileImage.find_by(id: user_profile_image.id)
+		assert_not_nil(user_profile_image)
+		assert_equal(cato.id, user_profile_image.user_id)
+		assert_equal("png", user_profile_image.ext)
+		assert_equal("image/png", user_profile_image.mime_type)
+		assert_not_nil(user_profile_image.etag)
+		assert_not_equal(old_etag, user_profile_image.etag)
+	end
+
 	# send_confirmation_email
 	it "should not send confirmation email without auth" do
 		res = post_request("/v1/user/1/send_confirmation_email")
