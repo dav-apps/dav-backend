@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_24_154815) do
+ActiveRecord::Schema.define(version: 2021_01_30_002723) do
 
   create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
@@ -218,6 +218,15 @@ ActiveRecord::Schema.define(version: 2020_12_24_154815) do
     t.integer "count_daily", default: 0
     t.integer "count_monthly", default: 0
     t.integer "count_yearly", default: 0
+  end
+
+  create_table "user_profile_images", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "ext"
+    t.string "mime_type"
+    t.string "etag"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
