@@ -298,6 +298,73 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def set_profile_image_of_user
+		access_token = get_auth
+		content_type = get_content_type
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_image(content_type))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Validate the file
+		begin
+			image = MiniMagick::Image.read(request.body)
+		rescue => e
+			ValidationService.raise_image_file_invalid
+		end
+
+		ValidationService.raise_validation_error(ValidationService.validate_content_type_matches_file_type(content_type, image.mime_type))
+
+		# Validate the file size
+		ValidationService.raise_validation_error(ValidationService.validate_image_size(UtilsService.get_file_size(request.body)))
+
+		# Get or create the UserProfileImage
+		user_profile_image = user.user_profile_image
+		user_profile_image = UserProfileImage.new(user: user) if user_profile_image.nil?
+
+		# Upload the file
+		begin
+			blob = BlobOperationsService.upload_profile_image(user, request.body)
+		rescue => e
+			ValidationService.raise_unexpected_error
+		end
+
+		etag = blob.properties[:etag]
+
+		user_profile_image.ext = image.type.downcase
+		user_profile_image.mime_type = image.mime_type
+		user_profile_image.etag = etag[1...etag.size - 1]
+
+		ValidationService.raise_unexpected_error(!user_profile_image.save)
+
+		# Return the data
+		result = {
+			id: user.id,
+			email: user.email,
+			first_name: user.first_name,
+			confirmed: user.confirmed,
+			total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
+			used_storage: user.used_storage,
+			stripe_customer_id: user.stripe_customer_id,
+			plan: user.plan,
+			subscription_status: user.subscription_status,
+			period_end: user.period_end,
+			dev: !Dev.find_by(user: user).nil?,
+			provider: !Provider.find_by(user: user).nil?
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def send_confirmation_email
 		auth = get_auth
 		id = params[:id]

@@ -38,4 +38,20 @@ class BlobOperationsService
 			"#{table_object.table.app.id}/#{table_object.id}"
 		)
 	end
+
+	def self.upload_profile_image(user, blob)
+		client = Azure::Storage::Blob::BlobService.create(
+			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
+			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+		)
+
+		# Read the file
+		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+
+		client.create_block_blob(
+			ENV["AZURE_AVATAR_CONTAINER_NAME"],
+			user.id.to_s,
+			contents
+		)
+	end
 end

@@ -86,9 +86,29 @@ class ValidationService
 		notification.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.raise_image_file_invalid
+		raise RuntimeError, [get_validation_hash(false, 1110, 400)].to_json
+	end
+
+	def self.validate_image_size(size)
+		error_code = 1111
+		size > (Rails.env.test? ? 1000 : 2000000) ? get_validation_hash(false, error_code, 400): get_validation_hash
+	end
+
+	def self.validate_content_type_matches_file_type(content_type, file_type)
+		error_code = 1112
+		!content_type.include?(file_type) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	def self.validate_content_type_json(content_type)
 		return get_validation_hash(false, 1402, 400) if content_type.nil?
 		return get_validation_hash(false, 1104, 415) if !content_type.include?("application/json")
+		get_validation_hash
+	end
+
+	def self.validate_content_type_image(content_type)
+		return get_validation_hash(false, 1402, 400) if content_type.nil?
+		return get_validation_hash(false, 1104, 415) if !content_type.include?("image/png") && !content_type.include?("image/jpeg")
 		get_validation_hash
 	end
 
@@ -937,6 +957,12 @@ class ValidationService
 			"Not sufficient storage available"
 		when 1109
 			"User is already confirmed"
+		when 1110
+			"Image file invalid"
+		when 1111
+			"Image file too large"
+		when 1112
+			"Content-Type header does not match the file type"
 		when 1201
 			"Password is incorrect"
 		when 1202

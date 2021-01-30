@@ -4,6 +4,7 @@ Rails.application.routes.draw do
 	match '/v1/users', to: 'users#get_users', via: :get
 	match '/v1/user', to: 'users#get_user', via: :get
 	match '/v1/user', to: 'users#update_user', via: :put
+	match '/v1/user/profile_image', to: 'users#set_profile_image_of_user', via: :put
 	match '/v1/user/:id/send_confirmation_email', to: 'users#send_confirmation_email', via: :post
 	match '/v1/user/:id/send_password_reset_email', to: 'users#send_password_reset_email', via: :post
 	match '/v1/user/:id/confirm', to: 'users#confirm_user', via: :post
