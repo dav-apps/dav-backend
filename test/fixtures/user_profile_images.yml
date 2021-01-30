@@ -1,3 +1,9 @@
+davProfileImage:
+  user: dav
+  ext: png
+  mime_type: image/png
+  etag: sklafosdsjfdlskdfksdkjb
+
 mattProfileImage:
   user: matt
   ext: jpg

@@ -816,7 +816,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(res["dev"])
 		assert(!res["provider"])
-		assert_nil(res["profile_image_etag"])
+		assert_equal(user_profile_images(:davProfileImage).etag, res["profile_image_etag"])
 
 		cards = apps(:cards)
 		assert_equal(1, res["apps"].length)
@@ -1147,6 +1147,65 @@ describe UsersController do
 		assert_not_nil(user_profile_image.etag)
 		assert_not_equal(old_etag, user_profile_image.etag)
 		assert_equal(user_profile_image.etag, res["profile_image_etag"])
+	end
+
+	# get_profile_image_of_user
+	it "should not get profile image of user without access token" do
+		res = get_request("/v1/user/profile_image")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get profile image of user with access token for session that does not exist" do
+		res = get_request(
+			"/v1/user/profile_image",
+			{Authorization: "psdfjsdsdfjsdf"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get profile image of user that has no user profile image" do
+		res = get_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:catoWebsiteSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_PROFILE_IMAGE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get profile image of user that has no uploaded profile image" do
+		res = get_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:davWebsiteSession).token}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_HAS_NO_PROFILE_IMAGE, res["errors"][0]["code"])
+	end
+
+	it "should get profile image of user" do
+		matt = users(:matt)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+
+		# Upload the profile image
+		upload_profile_image(matt, StringIO.new(file_content))
+
+		res = get_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:mattWebsiteSession).token},
+			false
+		)
+
+		assert_response 200
+		assert_equal(file_content, res)
 	end
 
 	# send_confirmation_email
