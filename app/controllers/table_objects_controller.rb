@@ -554,7 +554,7 @@ class TableObjectsController < ApplicationController
 		# Check if the table object is a file
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
 
-		# Get the file
+		# Download the file
 		begin
 			blob, content = BlobOperationsService.download_blob(table_object)
 		rescue => e

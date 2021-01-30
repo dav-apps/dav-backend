@@ -86,20 +86,6 @@ class ValidationService
 		notification.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
-	def self.raise_image_file_invalid
-		raise RuntimeError, [get_validation_hash(false, 1110, 400)].to_json
-	end
-
-	def self.validate_image_size(size)
-		error_code = 1111
-		size > (Rails.env.test? ? 1000 : 2000000) ? get_validation_hash(false, error_code, 400): get_validation_hash
-	end
-
-	def self.validate_content_type_matches_file_type(content_type, file_type)
-		error_code = 1112
-		!content_type.include?(file_type) ? get_validation_hash(false, error_code, 400) : get_validation_hash
-	end
-
 	def self.validate_content_type_json(content_type)
 		return get_validation_hash(false, 1402, 400) if content_type.nil?
 		return get_validation_hash(false, 1104, 415) if !content_type.include?("application/json")
@@ -144,6 +130,24 @@ class ValidationService
 	def self.validate_user_not_confirmed(user)
 		error_code = 1109
 		user.confirmed ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.raise_image_file_invalid
+		raise RuntimeError, [get_validation_hash(false, 1110, 400)].to_json
+	end
+
+	def self.validate_image_size(size)
+		error_code = 1111
+		size > (Rails.env.test? ? 1000 : 2000000) ? get_validation_hash(false, error_code, 400): get_validation_hash
+	end
+
+	def self.validate_content_type_matches_file_type(content_type, file_type)
+		error_code = 1112
+		!content_type.include?(file_type) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.raise_user_has_no_profile_image
+		raise RuntimeError, [get_validation_hash(false, 1113, 400)].to_json
 	end
 
 	def self.authenticate_user(user, password)
@@ -873,6 +877,11 @@ class ValidationService
 		api_endpoint.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_user_profile_image_existence(user_profile_image)
+		error_code = 2811
+		user_profile_image.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -963,6 +972,8 @@ class ValidationService
 			"Image file too large"
 		when 1112
 			"Content-Type header does not match the file type"
+		when 1113
+			"User has no profile image"
 		when 1201
 			"Password is incorrect"
 		when 1202
@@ -1243,6 +1254,8 @@ class ValidationService
 			"Resource does not exist: Api"
 		when 2810
 			"Resource does not exist: ApiEndpoint"
+		when 2811
+			"Resource does not exist: UserProfileImage"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		end
