@@ -1576,8 +1576,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1625,8 +1624,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1674,8 +1672,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1723,8 +1720,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1772,8 +1768,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1876,8 +1871,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1908,8 +1902,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1940,8 +1933,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.id}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1972,8 +1964,7 @@ describe TableObjectsController do
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}/file",
 			{Authorization: sessions(:sherlockTestAppSession).token, 'Content-Type': content_type},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200

@@ -28,8 +28,8 @@ class ActiveSupport::TestCase
 		json_response ? (response.body.length > 0 ? JSON.parse(response.body) : nil) : response.body
 	end
 
-	def put_request(url, headers = {}, body = {}, json = true)
-		put url, headers: headers, params: json ? body.to_json : body
+	def put_request(url, headers = {}, body = {})
+		put url, headers: headers, params: body.is_a?(Hash) ? body.to_json : body
 		response.body.length > 0 ? JSON.parse(response.body) : nil
 	end
 

@@ -193,6 +193,7 @@ class UsersController < ApplicationController
 		result[:period_end] = user.period_end if is_website
 		result[:dev] = !Dev.find_by(user: user).nil?
 		result[:provider] = !Provider.find_by(user: user).nil?
+		result[:profile_image_etag] = user.user_profile_image.nil? ? nil : user.user_profile_image.etag
 
 		if is_website
 			result[:apps] = Array.new
@@ -289,7 +290,8 @@ class UsersController < ApplicationController
 			subscription_status: user.subscription_status,
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
-			provider: !Provider.find_by(user: user).nil?
+			provider: !Provider.find_by(user: user).nil?,
+			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag
 		}
 
 		render json: result, status: 200
@@ -356,7 +358,8 @@ class UsersController < ApplicationController
 			subscription_status: user.subscription_status,
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
-			provider: !Provider.find_by(user: user).nil?
+			provider: !Provider.find_by(user: user).nil?,
+			profile_image_etag: user_profile_image.etag
 		}
 
 		render json: result, status: 200

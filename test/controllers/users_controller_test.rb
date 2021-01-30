@@ -787,6 +787,7 @@ describe UsersController do
 		assert_equal(matt.plan, res["plan"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal(user_profile_images(:mattProfileImage).etag, res["profile_image_etag"])
 
 		assert_nil(res["stripe_customer_id"])
 		assert_nil(res["subscription_status"])
@@ -815,6 +816,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(res["dev"])
 		assert(!res["provider"])
+		assert_nil(res["profile_image_etag"])
 
 		cards = apps(:cards)
 		assert_equal(1, res["apps"].length)
@@ -978,6 +980,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal(user_profile_images(:mattProfileImage).etag, res["profile_image_etag"])
 
 		# Check if the user was updated
 		matt = User.find_by(id: matt.id)
@@ -1036,8 +1039,7 @@ describe UsersController do
 		res = put_request(
 			"/v1/user/profile_image",
 			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
-			"Hello World",
-			false
+			"Hello World"
 		)
 
 		assert_response 400
@@ -1051,8 +1053,7 @@ describe UsersController do
 		res = put_request(
 			"/v1/user/profile_image",
 			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 400
@@ -1066,8 +1067,7 @@ describe UsersController do
 		res = put_request(
 			"/v1/user/profile_image",
 			{Authorization: sessions(:davWebsiteSession).token, 'Content-Type': 'image/png'},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 400
@@ -1076,51 +1076,13 @@ describe UsersController do
 	end
 
 	it "should set profile image of user" do
-		matt = users(:matt)
-		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
-
-		res = put_request(
-			"/v1/user/profile_image",
-			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'image/png'},
-			file_content,
-			false
-		)
-
-		assert_response 200
-
-		assert_equal(matt.id, res["id"])
-		assert_equal(matt.email, res["email"])
-		assert_equal(matt.first_name, res["first_name"])
-		assert_equal(matt.confirmed, res["confirmed"])
-		assert_equal(get_total_storage(matt.plan, matt.confirmed), res["total_storage"])
-		assert_equal(matt.used_storage, res["used_storage"])
-		assert_equal(matt.stripe_customer_id, res["stripe_customer_id"])
-		assert_equal(matt.plan, res["plan"])
-		assert_equal(matt.subscription_status, res["subscription_status"])
-		assert_nil(res["period_end"])
-		assert(!res["dev"])
-		assert(!res["provider"])
-
-		# Check the UserProfileImage
-		user_profile_image = UserProfileImage.find_by(user_id: matt.id)
-		assert_not_nil(user_profile_image)
-		assert_equal(matt.id, user_profile_image.user_id)
-		assert_equal("png", user_profile_image.ext)
-		assert_equal("image/png", user_profile_image.mime_type)
-		assert_not_nil(user_profile_image.etag)
-	end
-
-	it "should set profile image of user and update existing UserProfileImage" do
 		cato = users(:cato)
-		user_profile_image = user_profile_images(:catoProfileImage)
-		old_etag = user_profile_image.etag
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 
 		res = put_request(
 			"/v1/user/profile_image",
 			{Authorization: sessions(:catoWebsiteSession).token, 'Content-Type': 'image/png'},
-			file_content,
-			false
+			file_content
 		)
 
 		assert_response 200
@@ -1137,15 +1099,54 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_not_nil(res["profile_image_etag"])
 
 		# Check the UserProfileImage
-		user_profile_image = UserProfileImage.find_by(id: user_profile_image.id)
+		user_profile_image = UserProfileImage.find_by(user_id: cato.id)
 		assert_not_nil(user_profile_image)
 		assert_equal(cato.id, user_profile_image.user_id)
 		assert_equal("png", user_profile_image.ext)
 		assert_equal("image/png", user_profile_image.mime_type)
 		assert_not_nil(user_profile_image.etag)
+	end
+
+	it "should set profile image of user and update existing UserProfileImage" do
+		matt = users(:matt)
+		user_profile_image = user_profile_images(:mattProfileImage)
+		old_etag = user_profile_image.etag
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+
+		res = put_request(
+			"/v1/user/profile_image",
+			{Authorization: sessions(:mattWebsiteSession).token, 'Content-Type': 'image/png'},
+			file_content
+		)
+
+		assert_response 200
+
+		assert_equal(matt.id, res["id"])
+		assert_equal(matt.email, res["email"])
+		assert_equal(matt.first_name, res["first_name"])
+		assert_equal(matt.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(matt.plan, matt.confirmed), res["total_storage"])
+		assert_equal(matt.used_storage, res["used_storage"])
+		assert_equal(matt.stripe_customer_id, res["stripe_customer_id"])
+		assert_equal(matt.plan, res["plan"])
+		assert_equal(matt.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(!res["dev"])
+		assert(!res["provider"])
+		assert_not_nil(res["profile_image_etag"])
+
+		# Check the UserProfileImage
+		user_profile_image = UserProfileImage.find_by(id: user_profile_image.id)
+		assert_not_nil(user_profile_image)
+		assert_equal(matt.id, user_profile_image.user_id)
+		assert_equal("png", user_profile_image.ext)
+		assert_equal("image/png", user_profile_image.mime_type)
+		assert_not_nil(user_profile_image.etag)
 		assert_not_equal(old_etag, user_profile_image.etag)
+		assert_equal(user_profile_image.etag, res["profile_image_etag"])
 	end
 
 	# send_confirmation_email
