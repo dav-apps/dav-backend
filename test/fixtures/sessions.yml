@@ -1,7 +1,7 @@
 mattTestAppSession:
   user: matt
   app: testApp
-  token: "ckkabe3ni0005tlw3lrjyd6gq"
+  token: ckkabe3ni0005tlw3lrjyd6gq
   device_name: Fairphone
   device_type: Smartphone
   device_os: Android
@@ -9,7 +9,7 @@ mattTestAppSession:
 mattCardsSession:
   user: matt
   app: cards
-  token: "ckkabe9z10006tlw3o6zyil4t"
+  token: ckkabe9z10006tlw3o6zyil4t
   device_name: Surface Duo
   device_type: Dual-Screen
   device_os: Android
@@ -17,8 +17,8 @@ mattCardsSession:
 mattWebsiteSession:
   user: matt
   app: website
-  token: "ckkabeeb30007tlw3h717t138"
-  old_token: "ckkadpfw20000dsw3kmpx9vdw"
+  token: ckkabeeb30007tlw3h717t138
+  old_token: ckkadpfw20000dsw3kmpx9vdw
   device_name: Desktop
   device_type: PC
   device_os: Windows 10
@@ -26,7 +26,7 @@ mattWebsiteSession:
 davWebsiteSession:
   user: dav
   app: website
-  token: "ckkabc41t0000tlw3divsyrlr"
+  token: ckkabc41t0000tlw3divsyrlr
   device_name: Desktop
   device_type: PC
   device_os: Windows 10
@@ -34,7 +34,7 @@ davWebsiteSession:
 davCardsSession:
   user: dav
   app: cards
-  token: "ckkabcbkh0001tlw3s3orkhgx"
+  token: ckkabcbkh0001tlw3s3orkhgx
   device_name: Samsung Galaxy Z Flip
   device_type: Foldable
   device_os: Android
@@ -42,7 +42,7 @@ davCardsSession:
 davTestAppSession:
   user: dav
   app: testApp
-  token: "ckkabct9s0004tlw3aylkvw5s"
+  token: ckkabct9s0004tlw3aylkvw5s
   device_name: Samsung Galaxy A20
   device_type: Smartphone
   device_os: Android
@@ -50,7 +50,7 @@ davTestAppSession:
 sherlockTestAppSession:
   user: sherlock
   app: testApp
-  token: "ckkabchgf0002tlw3c5ujhsp9"
+  token: ckkabchgf0002tlw3c5ujhsp9
   device_name: iPhone X
   device_type: Smartphone
   device_os: iOS
@@ -58,7 +58,7 @@ sherlockTestAppSession:
 sherlockWebsiteSession:
   user: sherlock
   app: website
-  token: "ckkabcmz30003tlw3cdkkx9l7"
+  token: ckkabcmz30003tlw3cdkkx9l7
   device_name: Huawei Mate X
   device_type: Smartphone
   device_os: Android
@@ -66,7 +66,15 @@ sherlockWebsiteSession:
 catoWebsiteSession:
   user: cato
   app: website
-  token: "ckkjook0p0000p6w33j9vp8a2"
+  token: ckkjook0p0000p6w33j9vp8a2
   device_name: Surface Book
+  device_type: Laptop
+  device_os: Windows 10
+
+snicketWebsiteSession:
+  user: snicket
+  app: website
+  token: ckklfugma0000dbw3bk31y293
+  device_name: Surface Laptop
   device_type: Laptop
   device_os: Windows 10

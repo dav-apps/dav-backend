@@ -2089,7 +2089,7 @@ describe TableObjectsController do
 			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
-		assert_response 409
+		assert_response 422
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::TABLE_OBJECT_USER_ACCESS_ALREADY_EXISTS, res["errors"][0]["code"])
 	end

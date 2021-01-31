@@ -31,3 +31,10 @@ cato:
   old_email: oldcato@dav-apps.tech
   new_email: newcato@dav-apps.tech
   new_password: "$2a$12$DHEj3Iz9TmXBqnFeccLKfOQnhkq1gzuZv.zdl3NsPLNrHqf/VGjIC"      # 654321
+
+snicket:
+  first_name: Snicket
+  confirmed: true
+  email: snicket@dav-apps.tech
+  password_digest: "$2a$12$fbggCn90jFaZgmO4eN9ZqOX.U5j3E1SRtDM9R4EK4P/3eDYgSowXy"   # vfd
+  last_active: <%= DateTime.parse("2021-01-17T05:39:00.000Z").beginning_of_day.to_s(:db) %>
