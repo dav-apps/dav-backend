@@ -150,6 +150,15 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(false, 1113, 400)].to_json
 	end
 
+	def self.validate_country_supported(country)
+		error_code = 1114
+		![
+			"de",
+			"at",
+			"us"
+		].include?(country.downcase) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -306,6 +315,11 @@ class ValidationService
 	def self.validate_password_confirmation_token_presence(password_confirmation_token)
 		error_code = 2125
 		password_confirmation_token.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_country_presence(country)
+		error_code = 2126
+		country.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -529,6 +543,11 @@ class ValidationService
 	def self.validate_password_confirmation_token_type(password_confirmation_token)
 		error_code = 2242
 		!password_confirmation_token.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_country_type(country)
+		error_code = 2243
+		!country.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -885,7 +904,12 @@ class ValidationService
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
-		!access.nil? ? get_validation_hash(false, error_code, 409) : get_validation_hash
+		!access.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.validate_provider_nonexistence(provider)
+		error_code = 2902
+		!provider.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
 	end
 
 	# Utility methods
@@ -974,6 +998,8 @@ class ValidationService
 			"Content-Type header does not match the file type"
 		when 1113
 			"User has no profile image"
+		when 1114
+			"Country not supported"
 		when 1201
 			"Password is incorrect"
 		when 1202
@@ -1042,6 +1068,8 @@ class ValidationService
 			"Missing field: email_confirmation_token"
 		when 2125
 			"Missing field: password_confirmation_token"
+		when 2126
+			"Missing field: country"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -1126,6 +1154,8 @@ class ValidationService
 			"Field has wrong type: email_confirmation_token"
 		when 2242
 			"Field has wrong type: password_confirmation_token"
+		when 2243
+			"Field has wrong type: country"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -1258,6 +1288,8 @@ class ValidationService
 			"Resource does not exist: UserProfileImage"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
+		when 2902
+			"Resource already exists: Provider"
 		end
 	end
 end

@@ -23,6 +23,9 @@ Rails.application.routes.draw do
 	# DevsController
 	match '/v1/dev', to: 'devs#get_dev', via: :get
 
+	# ProvidersController
+	match '/v1/provider', to: 'providers#create_provider', via: :post
+
 	# AppsController
 	match '/v1/app', to: 'apps#create_app', via: :post
 	match '/v1/apps', to: 'apps#get_apps', via: :get
