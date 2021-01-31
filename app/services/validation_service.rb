@@ -901,6 +901,11 @@ class ValidationService
 		user_profile_image.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_provider_existence(provider)
+		error_code = 2812
+		provider.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -1286,6 +1291,8 @@ class ValidationService
 			"Resource does not exist: ApiEndpoint"
 		when 2811
 			"Resource does not exist: UserProfileImage"
+		when 2812
+			"Resource does not exist: Provider"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		when 2902

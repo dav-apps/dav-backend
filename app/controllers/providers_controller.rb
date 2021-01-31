@@ -60,4 +60,30 @@ class ProvidersController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def get_provider
+		access_token = get_auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Get the provider
+		provider = session.user.provider
+		ValidationService.raise_validation_error(ValidationService.validate_provider_existence(provider))
+
+		# Return the data
+		result = {
+			id: provider.id,
+			user_id: provider.user_id,
+			stripe_account_id: provider.stripe_account_id
+		}
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end
