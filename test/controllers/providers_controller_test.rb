@@ -133,4 +133,61 @@ describe ProvidersController do
 		# Delete the stripe account
 		Stripe::Account.delete(provider.stripe_account_id)
 	end
+
+	# get_provider
+	it "should not get provider without access token" do
+		res = get_request("/v1/provider")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get provider with access token for session that does not exist" do
+		res = get_request(
+			"/v1/provider",
+			{Authorization: "oijsdgiosdgiosgsdg"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get provider from another app than the website" do
+		res = get_request(
+			"/v1/provider",
+			{Authorization: sessions(:mattTestAppSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get provider of user that has no provider" do
+		res = get_request(
+			"/v1/provider",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PROVIDER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should get provider" do
+		snicket = users(:snicket)
+		provider = providers(:snicket)
+
+		res = get_request(
+			"/v1/provider",
+			{Authorization: sessions(:snicketWebsiteSession).token, 'Content-Type': 'application/json'}
+		)
+
+		assert_response 200
+		assert_equal(provider.id, res["id"])
+		assert_equal(provider.user_id, res["user_id"])
+		assert_equal(provider.stripe_account_id, res["stripe_account_id"])
+	end
 end
