@@ -28,9 +28,6 @@ gem 'rack-cors'
 # Password encryption
 gem 'bcrypt'
 
-# JWT
-gem 'jwt'
-
 # Bootstrap emails
 gem 'bootstrap-email'
 gem 'sassc'
@@ -49,6 +46,11 @@ gem 'mini_magick'
 
 # Generating CUIDs (Collision-resistant ids)
 gem 'cuid'
+
+# Stripe
+gem 'stripe'
+gem 'stripe_event'
+gem 'stripe-ruby-mock', :require => 'stripe_mock'
 
 group :development, :test do
 	gem 'dotenv-rails'
