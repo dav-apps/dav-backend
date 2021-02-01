@@ -159,6 +159,11 @@ class ValidationService
 		].include?(country.downcase) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_user_is_provider(user)
+		error_code = 1115
+		user.provider.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -320,6 +325,31 @@ class ValidationService
 	def self.validate_country_presence(country)
 		error_code = 2126
 		country.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_provider_name_presence(provider_name)
+		error_code = 2127
+		provider_name.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_provider_image_presence(provider_image)
+		error_code = 2128
+		provider_image.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_product_name_presence(product_name)
+		error_code = 2129
+		product_name.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_product_image_presence(product_image)
+		error_code = 2130
+		product_image.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_currency_presence(currency)
+		error_code = 2131
+		currency.nil? ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for type of fields
@@ -548,6 +578,31 @@ class ValidationService
 	def self.validate_country_type(country)
 		error_code = 2243
 		!country.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_provider_name_type(provider_name)
+		error_code = 2244
+		!provider_name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_provider_image_type(provider_image)
+		error_code = 2245
+		!provider_image.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_product_name_type(product_name)
+		error_code = 2246
+		!product_name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_product_image_type(product_image)
+		error_code = 2247
+		!product_image.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_currency_type(currency)
+		error_code = 2248
+		!currency.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
 	# Methods for length of fields
@@ -793,6 +848,46 @@ class ValidationService
 		end
 	end
 
+	def self.validate_provider_name_length(provider_name)
+		if provider_name.length < Constants::PROVIDER_NAME_MIN_LENGTH
+			get_validation_hash(false, 2324, 400)
+		elsif provider_name.length > Constants::PROVIDER_NAME_MAX_LENGTH
+			get_validation_hash(false, 2424, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_provider_image_length(provider_image)
+		if provider_image.length < Constants::PROVIDER_IMAGE_MIN_LENGTH
+			get_validation_hash(false, 2325, 400)
+		elsif provider_image.length > Constants::PROVIDER_IMAGE_MAX_LENGTH
+			get_validation_hash(false, 2425, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_product_name_length(product_name)
+		if product_name.length < Constants::PRODUCT_NAME_MIN_LENGTH
+			get_validation_hash(false, 2326, 400)
+		elsif product_name.length > Constants::PRODUCT_NAME_MAX_LENGTH
+			get_validation_hash(false, 2426, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_product_image_length(product_image)
+		if product_image.length < Constants::PRODUCT_IMAGE_MIN_LENGTH
+			get_validation_hash(false, 2327, 400)
+		elsif product_image.length > Constants::PRODUCT_IMAGE_MAX_LENGTH
+			get_validation_hash(false, 2427, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Methods for validity of fields
 	def self.validate_email_validity(email)
 		error_code = 2501
@@ -906,6 +1001,11 @@ class ValidationService
 		provider.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_table_object_price_existence(table_object_price)
+		error_code = 2813
+		table_object_price.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -915,6 +1015,11 @@ class ValidationService
 	def self.validate_provider_nonexistence(provider)
 		error_code = 2902
 		!provider.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.validate_purchase_nonexistence(purchase)
+		error_code = 2903
+		!purchase.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
 	end
 
 	# Utility methods
@@ -1005,6 +1110,8 @@ class ValidationService
 			"User has no profile image"
 		when 1114
 			"Country not supported"
+		when 1115
+			"User of the TableObject must be a provider"
 		when 1201
 			"Password is incorrect"
 		when 1202
@@ -1075,6 +1182,16 @@ class ValidationService
 			"Missing field: password_confirmation_token"
 		when 2126
 			"Missing field: country"
+		when 2127
+			"Missing field: provider_name"
+		when 2128
+			"Missing field: provider_image"
+		when 2129
+			"Missing field: product_name"
+		when 2130
+			"Missing field: product_image"
+		when 2131
+			"Missing field: currency"
 		when 2201
 			"Field has wrong type: email"
 		when 2202
@@ -1161,6 +1278,16 @@ class ValidationService
 			"Field has wrong type: password_confirmation_token"
 		when 2243
 			"Field has wrong type: country"
+		when 2244
+			"Field has wrong type: provider_name"
+		when 2245
+			"Field has wrong type: provider_image"
+		when 2246
+			"Field has wrong type: product_name"
+		when 2247
+			"Field has wrong type: product_image"
+		when 2248
+			"Field has wrong type: currency"
 		when 2301
 			"Field too short: first_name"
 		when 2302
@@ -1207,6 +1334,14 @@ class ValidationService
 			"Field too short: google_play_link"
 		when 2323
 			"Field too short: microsoft_store_link"
+		when 2324
+			"Field too short: provider_name"
+		when 2325
+			"Field too short: provider_image"
+		when 2326
+			"Field too short: product_name"
+		when 2327
+			"Field too short: product_image"
 		when 2401
 			"Field too long: first_name"
 		when 2402
@@ -1253,6 +1388,14 @@ class ValidationService
 			"Field too long: google_play_link"
 		when 2423
 			"Field too long: microsoft_store_link"
+		when 2424
+			"Field too long: provider_name"
+		when 2425
+			"Field too long: provider_image"
+		when 2426
+			"Field too long: product_name"
+		when 2427
+			"Field too long: product_image"
 		when 2501
 			"Field invalid: email"
 		when 2502
@@ -1293,10 +1436,14 @@ class ValidationService
 			"Resource does not exist: UserProfileImage"
 		when 2812
 			"Resource does not exist: Provider"
+		when 2813
+			"Resource does not exist: TableObjectPrice"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		when 2902
 			"Resource already exists: Provider"
+		when 2903
+			"Resource already exists: Purchase"
 		end
 	end
 end

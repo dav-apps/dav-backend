@@ -47,6 +47,9 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:id/access', to: 'table_objects#add_table_object', via: :post
 	match '/v1/table_object/:id/access', to: 'table_objects#remove_table_object', via: :delete
 
+	# PurchasesController
+	match '/v1/table_object/:uuid/purchase', to: 'purchases#create_purchase', via: :post
+
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
 
