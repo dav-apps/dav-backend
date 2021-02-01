@@ -1,0 +1,11 @@
+snicketFirstBookMattPurchase:
+  user: matt
+  table_object: snicketFirstBook
+  payment_intent_id: aiosoasidajisd
+  provider_name: Lemony Snicket
+  provider_image: https://api.pocketlib.app/author/asdasdasd/profile_image
+  product_name: A Series of Unfortunate Events - Book the First
+  product_image: https://api.pocketlib.app/store/book/sdfsdfsfddf/cover
+  price: 1313
+  currency: eur
+  completed: true

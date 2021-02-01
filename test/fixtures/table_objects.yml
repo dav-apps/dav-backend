@@ -49,3 +49,8 @@ davTestFile:
   table: testTable
   uuid: d27cbe01-9a28-4619-bb3a-1cf3ffdee172
   file: true
+
+snicketFirstBook:
+  user: snicket
+  table: storeBook
+  uuid: 3e833a86-da30-49c1-859e-411c7e812051

@@ -23,6 +23,14 @@ mattWebsiteSession:
   device_type: PC
   device_os: Windows 10
 
+mattPocketlibSession:
+  user: matt
+  app: pocketlib
+  token: ckkmztwiw0000shw3t4sdzlrj
+  device_name: Samsung Galaxy A11
+  device_type: Smartphone
+  device_os: Android
+
 davWebsiteSession:
   user: dav
   app: website
@@ -71,6 +79,14 @@ catoWebsiteSession:
   device_type: Laptop
   device_os: Windows 10
 
+catoPocketlibSession:
+  user: cato
+  app: pocketlib
+  token: ckkn0l9060000u9w3v3r8ci25
+  device_name: Samsung Galaxy S20
+  device_type: Smartphone
+  device_os: Android
+
 snicketWebsiteSession:
   user: snicket
   app: website
@@ -78,3 +94,11 @@ snicketWebsiteSession:
   device_name: Surface Laptop
   device_type: Laptop
   device_os: Windows 10
+
+snicketPocketlibSession:
+  user: snicket
+  app: pocketlib
+  token: ckkn1q9hu0000wpw3cj1v02cz
+  device_name: Samsung Galaxy S10
+  device_type: Smartphone
+  device_os: Android

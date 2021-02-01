@@ -11,7 +11,7 @@ note:
   name: Note
 
 storeBook:
-  app: PocketLib
+  app: pocketlib
   name: StoreBook
 
 testTable:
