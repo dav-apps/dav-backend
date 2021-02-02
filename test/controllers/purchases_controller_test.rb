@@ -326,4 +326,80 @@ describe PurchasesController do
 		assert_equal(0, res["price"])
 		assert_equal(purchase.currency, res["currency"])
 	end
+
+	# get_purchase
+	it "should not get purchase without access token" do
+		res = get_request("/v1/purchase/1")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get purchase with access token for session that does not exist" do
+		res = get_request(
+			"/v1/purchase/1",
+			{Authorization: "sdiosdfjiosdsfjiod"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get purchase from another app than the website" do
+		res = get_request(
+			"/v1/purchase/1",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get purchase that does not exist" do
+		res = get_request(
+			"/v1/purchase/-123",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PURCHASE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get purchase that belongs to another user" do
+		res = get_request(
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}",
+			{Authorization: sessions(:davWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should get purchase" do
+		purchase = purchases(:snicketFirstBookMattPurchase)
+
+		res = get_request(
+			"/v1/purchase/#{purchase.id}",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 200
+		
+		assert_equal(purchase.id, res["id"])
+		assert_equal(purchase.user_id, res["user_id"])
+		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
+		assert_equal(purchase.provider_name, res["provider_name"])
+		assert_equal(purchase.provider_image, res["provider_image"])
+		assert_equal(purchase.product_name, res["product_name"])
+		assert_equal(purchase.product_image, res["product_image"])
+		assert_equal(purchase.price, res["price"])
+		assert_equal(purchase.currency, res["currency"])
+		assert_equal(purchase.completed, res["completed"])
+	end
 end
