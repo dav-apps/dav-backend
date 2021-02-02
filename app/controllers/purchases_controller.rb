@@ -125,4 +125,43 @@ class PurchasesController < ApplicationController
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def get_purchase
+		access_token = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Get the purchase
+		purchase = Purchase.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_purchase_existence(purchase))
+
+		# Check if the purchase belongs to the user
+		ValidationService.raise_validation_error(ValidationService.validate_purchase_belongs_to_user(purchase, session.user))
+
+		# Return the data
+		result = {
+			id: purchase.id,
+			user_id: purchase.user_id,
+			table_object_id: purchase.table_object_id,
+			payment_intent_id: purchase.payment_intent_id,
+			provider_name: purchase.provider_name,
+			provider_image: purchase.provider_image,
+			product_name: purchase.product_name,
+			product_image: purchase.product_image,
+			price: purchase.price,
+			currency: purchase.currency,
+			completed: purchase.completed
+		}
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
 end

@@ -86,6 +86,11 @@ class ValidationService
 		notification.app != app ? get_validation_hash(false, error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_purchase_belongs_to_user(purchase, user)
+		error_code = 1103
+		purchase.user != user ? get_validation_hash(false, error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_content_type_json(content_type)
 		return get_validation_hash(false, 1402, 400) if content_type.nil?
 		return get_validation_hash(false, 1104, 415) if !content_type.include?("application/json")
@@ -1006,6 +1011,11 @@ class ValidationService
 		table_object_price.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_purchase_existence(purchase)
+		error_code = 2814
+		purchase.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
+	end
+
 	# Methods for non-existence of fields
 	def self.validate_table_object_user_access_nonexistence(access)
 		error_code = 2901
@@ -1438,6 +1448,8 @@ class ValidationService
 			"Resource does not exist: Provider"
 		when 2813
 			"Resource does not exist: TableObjectPrice"
+		when 2814
+			"Resource does not exist: Purchase"
 		when 2901
 			"Resource already exists: TableObjectUserAccess"
 		when 2902
