@@ -2,3 +2,8 @@ snicketFirstBookEur:
   table_object: snicketFirstBook
   price: 1313
   currency: eur
+
+snicketSecondBookEur:
+  table_object: snicketSecondBook
+  price: 1313
+  currency: eur

@@ -166,7 +166,7 @@ describe PurchasesController do
 
 		assert_response 422
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::PURCHASE_ALREADY_EXISTS, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::USER_ALREADY_PURCHASED_THIS_TABLE_OBJECT, res["errors"][0]["code"])
 	end
 
 	it "should not create purchase for table object that has no price for the given currency" do
@@ -401,5 +401,149 @@ describe PurchasesController do
 		assert_equal(purchase.price, res["price"])
 		assert_equal(purchase.currency, res["currency"])
 		assert_equal(purchase.completed, res["completed"])
+	end
+
+	# complete_purchase
+	it "should not complete purchase without access token" do
+		res = post_request("/v1/purchase/1/complete")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase with access token for session that does not exist" do
+		res = post_request(
+			"/v1/purchase/1/complete",
+			{Authorization: "asdasdasdasasd"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase from another app than the website" do
+		res = post_request(
+			"/v1/purchase/1/complete",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase that does not exist" do
+		res = post_request(
+			"/v1/purchase/-123/complete",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PURCHASE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase that belongs to another user" do
+		res = post_request(
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}/complete",
+			{Authorization: sessions(:davWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase that is already completed" do
+		res = post_request(
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}/complete",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PURCHASE_IS_ALREADY_COMPLETED, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase for table object that was already purchased" do
+		res = post_request(
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase2).id}/complete",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+	
+		assert_response 422
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_ALREADY_PURCHASED_THIS_TABLE_OBJECT, res["errors"][0]["code"])
+	end
+
+	it "should not complete purchase if the user has no stripe customer" do
+		res = post_request(
+			"/v1/purchase/#{purchases(:snicketFirstBookCatoPurchase).id}/complete",
+			{Authorization: sessions(:catoWebsiteSession).token}
+		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_HAS_NO_PAYMENT_INFORMATION, res["errors"][0]["code"])
+	end
+
+	it "should complete purchase" do
+		snicket_provider = providers(:snicket)
+		table_object = table_objects(:snicketSecondBook)
+		table_object_price = table_object_prices(:snicketSecondBookEur)
+		provider_name = "Lemony Snicket"
+		provider_image = "https://api.pocketlib.app/author/sadasdasd/profile_image"
+		product_name = "A Series of Unfortunate Events - Book the Second"
+		product_image = "https://api.pocketlib.app/store/book/dfgsdfsdf/cover"
+		currency = table_object_price.currency
+
+		# Create a purchase
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/purchase",
+			{Authorization: sessions(:mattPocketlibSession).token, 'Content-Type': 'application/json'},
+			{
+				provider_name: provider_name,
+				provider_image: provider_image,
+				product_name: product_name,
+				product_image: product_image,
+				currency: currency
+			}
+		)
+
+		assert_response 201
+
+		purchase = Purchase.find_by(id: res["id"])
+		payment_intent_id = res["payment_intent_id"]
+
+		res = post_request(
+			"/v1/purchase/#{purchase.id}/complete",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 200
+
+		assert_equal(purchase.id, res["id"])
+		assert_equal(purchase.user_id, res["user_id"])
+		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
+		assert_equal(purchase.provider_name, res["provider_name"])
+		assert_equal(purchase.provider_image, res["provider_image"])
+		assert_equal(purchase.product_name, res["product_name"])
+		assert_equal(purchase.product_image, res["product_image"])
+		assert_equal(purchase.price, res["price"])
+		assert_equal(purchase.currency, res["currency"])
+		assert(res["completed"])
+
+		# Check if the purchase was updated
+		purchase = Purchase.find_by(id: purchase.id)
+		assert_not_nil(purchase)
+		assert(purchase.completed)
+
+		# Get the payment intent
+		payment_intent = Stripe::PaymentIntent.retrieve(purchase.payment_intent_id)
+		assert_not_nil(payment_intent)
+		assert_equal("succeeded", payment_intent["status"])
 	end
 end

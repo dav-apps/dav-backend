@@ -262,7 +262,7 @@ describe AppsController do
 		i = 0
 		app.tables.each do |table|
 			assert_equal(table.id, res["tables"][i]["id"])
-			assert_equal(table.name, res["tables"[i]["name"]])
+			assert_equal(table.name, res["tables"][i]["name"])
 			i += 1
 		end
 
