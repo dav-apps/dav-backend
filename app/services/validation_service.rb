@@ -169,6 +169,26 @@ class ValidationService
 		user.provider.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
 	end
 
+	def self.validate_purchase_not_completed(purchase)
+		error_code = 1116
+		purchase.completed ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_table_object_already_purchased(user, table_object)
+		error_code = 1117
+		Purchase.exists?(user: user, table_object: table_object, completed: true) ? get_validation_hash(false, error_code, 422) : get_validation_hash
+	end
+
+	def self.validate_user_is_stripe_customer(user)
+		error_code = 1118
+		user.stripe_customer_id.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_user_has_payment_method(payment_methods)
+		error_code = 1118
+		payment_methods.data.size == 0 ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -1027,11 +1047,6 @@ class ValidationService
 		!provider.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
 	end
 
-	def self.validate_purchase_nonexistence(purchase)
-		error_code = 2903
-		!purchase.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
-	end
-
 	# Utility methods
 	def self.validate_email(email)
 		/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/.match?(email)
@@ -1122,6 +1137,12 @@ class ValidationService
 			"Country not supported"
 		when 1115
 			"User of the TableObject must be a provider"
+		when 1116
+			"Purchase is already completed"
+		when 1117
+			"The user already purchased this TableObject"
+		when 1118
+			"The user has no payment information"
 		when 1201
 			"Password is incorrect"
 		when 1202
@@ -1454,8 +1475,6 @@ class ValidationService
 			"Resource already exists: TableObjectUserAccess"
 		when 2902
 			"Resource already exists: Provider"
-		when 2903
-			"Resource already exists: Purchase"
 		end
 	end
 end

@@ -52,7 +52,7 @@ class PurchasesController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the user already purchased the table object
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_nonexistence(Purchase.find_by(user: user, table_object: table_object)))
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_already_purchased(session.user, table_object))
 
 		# Get the price of the table object in the specified currency
 		table_object_price = TableObjectPrice.find_by(table_object: table_object, currency: currency.downcase)
@@ -90,17 +90,21 @@ class PurchasesController < ApplicationController
 			end
 
 			# Create a payment intent
-			payment_intent = Stripe::PaymentIntent.create({
-				customer: user.stripe_customer_id,
-				amount: price,
-				currency: currency.downcase,
-				confirmation_method: 'manual',
-				application_fee_amount: (price * 0.2).round,
-				transfer_data: {
-					destination: table_object.user.provider.stripe_account_id
-				}
-			})
-
+			begin
+				payment_intent = Stripe::PaymentIntent.create({
+					customer: user.stripe_customer_id,
+					amount: price,
+					currency: currency.downcase,
+					confirmation_method: 'manual',
+					application_fee_amount: (price * 0.2).round,
+					transfer_data: {
+						destination: table_object.user.provider.stripe_account_id
+					}
+				})
+			rescue Stripe::CardError => e
+				ValidationService.raise_unexpected_error
+			end
+			
 			purchase.payment_intent_id = payment_intent.id
 		end
 		
@@ -144,6 +148,79 @@ class PurchasesController < ApplicationController
 
 		# Check if the purchase belongs to the user
 		ValidationService.raise_validation_error(ValidationService.validate_purchase_belongs_to_user(purchase, session.user))
+
+		# Return the data
+		result = {
+			id: purchase.id,
+			user_id: purchase.user_id,
+			table_object_id: purchase.table_object_id,
+			payment_intent_id: purchase.payment_intent_id,
+			provider_name: purchase.provider_name,
+			provider_image: purchase.provider_image,
+			product_name: purchase.product_name,
+			product_image: purchase.product_image,
+			price: purchase.price,
+			currency: purchase.currency,
+			completed: purchase.completed
+		}
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
+	def complete_purchase
+		access_token = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Get the purchase
+		purchase = Purchase.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_purchase_existence(purchase))
+
+		# Check if the purchase belongs to the user
+		ValidationService.raise_validation_error(ValidationService.validate_purchase_belongs_to_user(purchase, user))
+
+		# Check if the purchase is already completed
+		ValidationService.raise_validation_error(ValidationService.validate_purchase_not_completed(purchase))
+
+		# Check if the user already purchased the table object
+		ValidationService.raise_validation_error(ValidationService.validate_table_object_already_purchased(user, purchase.table_object))
+
+		# Check if the user has a stripe customer
+		ValidationService.raise_validation_error(ValidationService.validate_user_is_stripe_customer(user))
+
+		# Get the payment method of the user
+		payment_methods = Stripe::PaymentMethod.list({
+			customer: user.stripe_customer_id,
+			type: 'card'
+		})
+
+		ValidationService.raise_validation_error(ValidationService.validate_user_has_payment_method(payment_methods))
+
+		# Confirm the payment intent
+		begin
+			Stripe::PaymentIntent.confirm(
+				purchase.payment_intent_id,
+				{
+					payment_method: payment_methods.data[0].id
+				}
+			)
+		rescue Stripe::CardError => e
+			ValidationService.raise_unexpected_error
+		end
+
+		# Update the purchase
+		purchase.completed = true
+		ValidationService.raise_unexpected_error(!purchase.save)
 
 		# Return the data
 		result = {

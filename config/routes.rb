@@ -50,6 +50,7 @@ Rails.application.routes.draw do
 	# PurchasesController
 	match '/v1/table_object/:uuid/purchase', to: 'purchases#create_purchase', via: :post
 	match '/v1/purchase/:id', to: 'purchases#get_purchase', via: :get
+	match '/v1/purchase/:id/complete', to: 'purchases#complete_purchase', via: :post
 
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
