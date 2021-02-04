@@ -837,6 +837,95 @@ describe UsersController do
 		assert_equal(0, res["apps"][0]["used_storage"])
 	end
 
+	# get_user_by_id
+	it "should not get user by id without auth" do
+		res = get_request("/v1/user/1")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get user by id with dev that does not exist" do
+		res = get_request(
+			"/v1/user/1",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get user by id with invalid auth" do
+		res = get_request(
+			"/v1/user/1",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not get user by id with another dev than the first one" do
+		res = get_request(
+			"/v1/user/1",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get user by id that does not exist" do
+		res = get_request(
+			"/v1/user/-123",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should get user by id" do
+		dav = users(:dav)
+
+		res = get_request(
+			"/v1/user/#{dav.id}",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 200
+
+		assert_equal(dav.id, res["id"])
+		assert_equal(dav.email, res["email"])
+		assert_equal(dav.first_name, res["first_name"])
+		assert_equal(dav.confirmed, res["confirmed"])
+		assert_equal(get_total_storage(dav.plan, dav.confirmed), res["total_storage"])
+		assert_equal(dav.used_storage, res["used_storage"])
+		assert_nil(res["stripe_customer_id"])
+		assert_equal(dav.plan, res["plan"])
+		assert_equal(dav.subscription_status, res["subscription_status"])
+		assert_nil(res["period_end"])
+		assert(res["dev"])
+		assert(!res["provider"])
+		assert_equal(user_profile_images(:davProfileImage).etag, res["profile_image_etag"])
+
+		cards = apps(:cards)
+		assert_equal(1, res["apps"].length)
+		assert_equal(cards.id, res["apps"][0]["id"])
+		assert_equal(cards.name, res["apps"][0]["name"])
+		assert_equal(cards.description, res["apps"][0]["description"])
+		assert_equal(cards.published, res["apps"][0]["published"])
+		assert_equal(cards.web_link, res["apps"][0]["web_link"])
+		assert_equal(cards.google_play_link, res["apps"][0]["google_play_link"])
+		assert_equal(cards.microsoft_store_link, res["apps"][0]["microsoft_store_link"])
+		assert_equal(0, res["apps"][0]["used_storage"])
+	end
+
 	# update_user
 	it "should not update user without access token" do
 		res = put_request("/v1/user")

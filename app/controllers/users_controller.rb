@@ -255,8 +255,24 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
-			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag
+			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag,
+			apps: Array.new
 		}
+
+		user.app_users.each do |app_user|
+			app = app_user.app
+
+			result[:apps].push({
+				id: app.id,
+				name: app.name,
+				description: app.description,
+				published: app.published,
+				web_link: app.web_link,
+				google_play_link: app.google_play_link,
+				microsoft_store_link: app.microsoft_store_link,
+				used_storage: app_user.used_storage
+			})
+		end
 
 		render json: result, status: 200
 	rescue RuntimeError => e
