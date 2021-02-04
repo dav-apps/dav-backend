@@ -453,6 +453,34 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def create_stripe_customer_for_user
+		access_token = get_auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Check if the user already has a stripe customer
+		ValidationService.raise_validation_error(ValidationService.validate_user_has_no_stripe_customer(user))
+
+		# Create the customer
+		customer = Stripe::Customer.create(
+			email: user.email
+		)
+
+		user.stripe_customer_id = customer.id
+		ValidationService.raise_unexpected_error(!user.save)
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def send_confirmation_email
 		auth = get_auth
 		id = params[:id]

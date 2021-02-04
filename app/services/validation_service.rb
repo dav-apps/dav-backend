@@ -189,6 +189,11 @@ class ValidationService
 		payment_methods.data.size == 0 ? get_validation_hash(false, error_code, 412) : get_validation_hash
 	end
 
+	def self.validate_user_has_no_stripe_customer(user)
+		error_code = 1119
+		!user.stripe_customer_id.nil? ? get_validation_hash(false, error_code, 412) : get_validation_hash
+	end
+
 	def self.authenticate_user(user, password)
 		error_code = 1201
 		!user.authenticate(password) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -1143,6 +1148,8 @@ class ValidationService
 			"The user already purchased this TableObject"
 		when 1118
 			"The user has no payment information"
+		when 1119
+			"The user already has a stripe customer"
 		when 1201
 			"Password is incorrect"
 		when 1202
