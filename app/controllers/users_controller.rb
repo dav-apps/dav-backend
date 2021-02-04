@@ -475,7 +475,11 @@ class UsersController < ApplicationController
 		user.stripe_customer_id = customer.id
 		ValidationService.raise_unexpected_error(!user.save)
 
-		head 204, content_type: "application/json"
+		result = {
+			stripe_customer_id: user.stripe_customer_id
+		}
+
+		render json: result, status: 201
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]

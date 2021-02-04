@@ -1352,12 +1352,13 @@ describe UsersController do
 			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
-		assert_response 204
+		assert_response 201
 
 		# Get the stripe customer
 		dav = users(:dav)
 		stripe_customer_id = dav.stripe_customer_id
 		assert_not_nil(stripe_customer_id)
+		assert_equal(stripe_customer_id, res["stripe_customer_id"])
 
 		customer = Stripe::Customer.retrieve(stripe_customer_id)
 		assert_equal(customer.email, dav.email)
