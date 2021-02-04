@@ -221,6 +221,49 @@ class UsersController < ApplicationController
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
 
+	def get_user_by_id
+		auth = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+
+		# Return the data
+		result = {
+			id: user.id,
+			email: user.email,
+			first_name: user.first_name,
+			confirmed: user.confirmed,
+			total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
+			used_storage: user.used_storage,
+			stripe_customer_id: user.stripe_customer_id,
+			plan: user.plan,
+			subscription_status: user.subscription_status,
+			period_end: user.period_end,
+			dev: !Dev.find_by(user: user).nil?,
+			provider: !Provider.find_by(user: user).nil?,
+			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		validations = JSON.parse(e.message)
+		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+	end
+
 	def update_user
 		access_token = get_auth
 
