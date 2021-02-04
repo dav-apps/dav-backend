@@ -1304,6 +1304,68 @@ describe UsersController do
 		assert_equal(file_content, res)
 	end
 
+	# create_stripe_customer_for_user
+	it "should not create stripe customer for user without access token" do
+		res = post_request("/v1/user/stripe")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not create stripe customer for user with access token for session that does not exist" do
+		res = post_request(
+			"/v1/user/stripe",
+			{Authorization: "siodfsiodfhiosdf"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not create stripe customer for user from another app than the website" do
+		res = post_request(
+			"/v1/user/stripe",
+			{Authorization: sessions(:davCardsSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not create stripe customer for user that already has a stripe customer" do
+		res = post_request(
+			"/v1/user/stripe",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_ALREADY_HAS_STRIPE_CUSTOMER, res["errors"][0]["code"])
+	end
+
+	it "should create stripe customer for user" do
+		res = post_request(
+			"/v1/user/stripe",
+			{Authorization: sessions(:davWebsiteSession).token}
+		)
+
+		assert_response 204
+
+		# Get the stripe customer
+		dav = users(:dav)
+		stripe_customer_id = dav.stripe_customer_id
+		assert_not_nil(stripe_customer_id)
+
+		customer = Stripe::Customer.retrieve(stripe_customer_id)
+		assert_equal(customer.email, dav.email)
+
+		# Delete the customer
+		Stripe::Customer.delete(stripe_customer_id)
+	end
+
 	# send_confirmation_email
 	it "should not send confirmation email without auth" do
 		res = post_request("/v1/user/1/send_confirmation_email")
