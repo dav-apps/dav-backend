@@ -348,7 +348,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 		
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -398,7 +404,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -455,7 +467,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -518,7 +536,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -574,7 +598,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -637,7 +667,13 @@ describe UsersController do
 		assert(!res["user"]["confirmed"])
 		assert_equal(UtilsService.get_total_storage(res["user"]["plan"], res["user"]["confirmed"]), res["user"]["total_storage"])
 		assert_equal(0, res["user"]["used_storage"])
+		assert_nil(res["user"]["stripe_customer_id"])
 		assert_equal(0, res["user"]["plan"])
+		assert_equal(0, res["user"]["subscription_status"])
+		assert_nil(res["user"]["period_end"])
+		assert(!res["user"]["dev"])
+		assert(!res["user"]["provider"])
+		assert_nil(res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])

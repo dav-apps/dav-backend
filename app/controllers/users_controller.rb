@@ -103,7 +103,14 @@ class UsersController < ApplicationController
 				confirmed: user.confirmed,
 				total_storage: UtilsService.get_total_storage(user.plan, user.confirmed),
 				used_storage: user.used_storage,
-				plan: user.plan
+				stripe_customer_id: user.stripe_customer_id,
+				plan: user.plan,
+				subscription_status: user.subscription_status,
+				period_end: user.period_end,
+				dev: false,
+				provider: false,
+				profile_image_etag: nil,
+				apps: Array.new
 			},
 			access_token: session.token
 		}
