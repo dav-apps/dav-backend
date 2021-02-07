@@ -7,6 +7,8 @@ module Constants
 	ETAG_PROPERTY_NAME = "etag"
 	EXT_PROPERTY_NAME = "ext"
 
+	DEFAULT_PROFILE_IMAGE_ETAG = "0x8D7C9D1558903CA"
+
 	# Constants for field lengths
 	FIRST_NAME_MIN_LENGTH = 2
 	FIRST_NAME_MAX_LENGTH = 20

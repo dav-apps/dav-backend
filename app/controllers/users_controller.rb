@@ -109,7 +109,7 @@ class UsersController < ApplicationController
 				period_end: user.period_end,
 				dev: false,
 				provider: false,
-				profile_image_etag: nil,
+				profile_image_etag: Constants::DEFAULT_PROFILE_IMAGE_ETAG,
 				apps: Array.new
 			},
 			access_token: session.token
@@ -200,7 +200,7 @@ class UsersController < ApplicationController
 		result[:period_end] = user.period_end if is_website
 		result[:dev] = !Dev.find_by(user: user).nil?
 		result[:provider] = !Provider.find_by(user: user).nil?
-		result[:profile_image_etag] = user.user_profile_image.nil? ? nil : user.user_profile_image.etag
+		result[:profile_image_etag] = user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag
 
 		if is_website
 			result[:apps] = Array.new
@@ -262,7 +262,7 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
-			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag,
+			profile_image_etag: user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag,
 			apps: Array.new
 		}
 
@@ -357,7 +357,7 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
-			profile_image_etag: user.user_profile_image.nil? ? nil : user.user_profile_image.etag
+			profile_image_etag: user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag
 		}
 
 		render json: result, status: 200

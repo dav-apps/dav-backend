@@ -354,7 +354,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 		
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -410,7 +410,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -473,7 +473,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -542,7 +542,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -604,7 +604,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
@@ -673,7 +673,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
-		assert_nil(res["user"]["profile_image_etag"])
+		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
 		user = User.find_by(id: res["user"]["id"])
