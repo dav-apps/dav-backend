@@ -151,10 +151,6 @@ class ValidationService
 		!content_type.include?(file_type) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.raise_user_has_no_profile_image
-		raise RuntimeError, [get_validation_hash(false, 1113, 400)].to_json
-	end
-
 	def self.validate_country_supported(country)
 		error_code = 1114
 		![
@@ -1136,8 +1132,6 @@ class ValidationService
 			"Image file too large"
 		when 1112
 			"Content-Type header does not match the file type"
-		when 1113
-			"User has no profile image"
 		when 1114
 			"Country not supported"
 		when 1115

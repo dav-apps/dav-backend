@@ -443,18 +443,32 @@ class UsersController < ApplicationController
 
 		# Get the profile image
 		user_profile_image = session.user.user_profile_image
-		ValidationService.raise_validation_error(ValidationService.validate_user_profile_image_existence(user_profile_image))
 
-		# Download the file
-		begin
-			blob, content = BlobOperationsService.download_profile_image(session.user)
-		rescue => e
-			ValidationService.raise_user_has_no_profile_image
+		if !user_profile_image.nil?
+			# Download the file
+			begin
+				blob, content = BlobOperationsService.download_profile_image(session.user)
+			rescue => e
+			end
+		end
+		
+		# Download the default profile image
+		if content.nil? || content.length == 0
+			begin
+				blob, content = BlobOperationsService.download_default_profile_image
+			rescue => e
+				ValidationService.raise_unexpected_error
+			end
 		end
 
 		# Return the data
 		response.headers["Content-Length"] = content.nil? ? 0 : content.size.to_s
-		send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{session.user.id}.#{user_profile_image.ext}")
+
+		if user_profile_image.nil?
+			send_data(content, status: 200, type: "image/png", filename: "default.png")
+		else
+			send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{session.user.id}.#{user_profile_image.ext}")
+		end
 	rescue RuntimeError => e
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]

@@ -1301,26 +1301,30 @@ describe UsersController do
 		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not get profile image of user that has no user profile image" do
+	it "should get default profile image of user that has no user profile image" do
+		file_content = File.open("test/fixtures/files/default.png", "rb").read
+
 		res = get_request(
 			"/v1/user/profile_image",
-			{Authorization: sessions(:catoWebsiteSession).token}
+			{Authorization: sessions(:catoWebsiteSession).token},
+			false
 		)
 
-		assert_response 404
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_PROFILE_IMAGE_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_response 200
+		assert_equal(file_content, res)
 	end
 
-	it "should not get profile image of user that has no uploaded profile image" do
+	it "should get default profile image of user that has no uploaded profile image" do
+		file_content = File.open("test/fixtures/files/default.png", "rb").read
+
 		res = get_request(
 			"/v1/user/profile_image",
-			{Authorization: sessions(:davWebsiteSession).token}
+			{Authorization: sessions(:davWebsiteSession).token},
+			false
 		)
 
-		assert_response 400
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_HAS_NO_PROFILE_IMAGE, res["errors"][0]["code"])
+		assert_response 200
+		assert_equal(file_content, res)
 	end
 
 	it "should get profile image of user" do

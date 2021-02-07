@@ -66,4 +66,16 @@ class BlobOperationsService
 			"#{user.id}.png"
 		)
 	end
+
+	def self.download_default_profile_image
+		client = Azure::Storage::Blob::BlobService.create(
+			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
+			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+		)
+
+		client.get_blob(
+			ENV['AZURE_AVATAR_CONTAINER_NAME'],
+			"default.png"
+		)
+	end
 end
