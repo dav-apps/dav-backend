@@ -465,11 +465,6 @@ class ValidationService
 		!ext.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_table_alias_type(table_alias)
-		error_code = 2217
-		!table_alias.is_a?(Integer) ? get_validation_hash(false, error_code, 400) : get_validation_hash
-	end
-
 	def self.validate_endpoint_type(endpoint)
 		error_code = 2218
 		!endpoint.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
@@ -1038,11 +1033,6 @@ class ValidationService
 	end
 
 	# Methods for non-existence of fields
-	def self.validate_table_object_user_access_nonexistence(access)
-		error_code = 2901
-		!access.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
-	end
-
 	def self.validate_provider_nonexistence(provider)
 		error_code = 2902
 		!provider.nil? ? get_validation_hash(false, error_code, 422) : get_validation_hash
@@ -1256,8 +1246,6 @@ class ValidationService
 			"Field has wrong type: value (for TableObjectProperty)"
 		when 2216
 			"Field has wrong type: ext"
-		when 2217
-			"Field has wrong type: table_alias"
 		when 2218
 			"Field has wrong type: endpoint"
 		when 2219
@@ -1472,8 +1460,6 @@ class ValidationService
 			"Resource does not exist: TableObjectPrice"
 		when 2814
 			"Resource does not exist: Purchase"
-		when 2901
-			"Resource already exists: TableObjectUserAccess"
 		when 2902
 			"Resource already exists: Provider"
 		end
