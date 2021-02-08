@@ -151,7 +151,7 @@ class TableObjectsController < ApplicationController
 
 	def get_table_object
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		
@@ -159,11 +159,7 @@ class TableObjectsController < ApplicationController
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 
@@ -214,7 +210,7 @@ class TableObjectsController < ApplicationController
 
 	def update_table_object
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
@@ -233,11 +229,7 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_validation_error(ValidationService.validate_properties_type(properties))
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
@@ -354,7 +346,7 @@ class TableObjectsController < ApplicationController
 
 	def delete_table_object
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 
@@ -362,11 +354,7 @@ class TableObjectsController < ApplicationController
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
@@ -407,7 +395,7 @@ class TableObjectsController < ApplicationController
 	def set_table_object_file
 		access_token = get_auth
 		content_type = get_content_type
-		id = params[:id]
+		uuid = params[:uuid]
 		
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_supported(content_type))
@@ -416,11 +404,7 @@ class TableObjectsController < ApplicationController
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
@@ -527,7 +511,7 @@ class TableObjectsController < ApplicationController
 
 	def get_table_object_file
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		
@@ -535,11 +519,7 @@ class TableObjectsController < ApplicationController
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 
@@ -587,7 +567,7 @@ class TableObjectsController < ApplicationController
 
 	def add_table_object
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
@@ -605,11 +585,7 @@ class TableObjectsController < ApplicationController
 		end
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
@@ -669,7 +645,7 @@ class TableObjectsController < ApplicationController
 
 	def remove_table_object
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
 		
@@ -677,11 +653,7 @@ class TableObjectsController < ApplicationController
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Get the table object
-		if id.include?('-')
-			table_object = TableObject.find_by(uuid: id)
-		else
-			table_object = TableObject.find_by(id: id)
-		end
+		table_object = TableObject.find_by(uuid: uuid)
 
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
 		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))

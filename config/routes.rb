@@ -41,13 +41,13 @@ Rails.application.routes.draw do
 
 	# TableObjectsController
 	match '/v1/table_object', to: 'table_objects#create_table_object', via: :post
-	match '/v1/table_object/:id', to: 'table_objects#get_table_object', via: :get
-	match '/v1/table_object/:id', to: 'table_objects#update_table_object', via: :put
-	match '/v1/table_object/:id', to: 'table_objects#delete_table_object', via: :delete
-	match '/v1/table_object/:id/file', to: 'table_objects#set_table_object_file', via: :put
-	match '/v1/table_object/:id/file', to: 'table_objects#get_table_object_file', via: :get
-	match '/v1/table_object/:id/access', to: 'table_objects#add_table_object', via: :post
-	match '/v1/table_object/:id/access', to: 'table_objects#remove_table_object', via: :delete
+	match '/v1/table_object/:uuid', to: 'table_objects#get_table_object', via: :get
+	match '/v1/table_object/:uuid', to: 'table_objects#update_table_object', via: :put
+	match '/v1/table_object/:uuid', to: 'table_objects#delete_table_object', via: :delete
+	match '/v1/table_object/:uuid/file', to: 'table_objects#set_table_object_file', via: :put
+	match '/v1/table_object/:uuid/file', to: 'table_objects#get_table_object_file', via: :get
+	match '/v1/table_object/:uuid/access', to: 'table_objects#add_table_object', via: :post
+	match '/v1/table_object/:uuid/access', to: 'table_objects#remove_table_object', via: :delete
 
 	# PurchasesController
 	match '/v1/table_object/:uuid/purchase', to: 'purchases#create_purchase', via: :post
