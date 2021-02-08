@@ -1012,11 +1012,6 @@ class ValidationService
 		api_endpoint.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
 	end
 
-	def self.validate_user_profile_image_existence(user_profile_image)
-		error_code = 2811
-		user_profile_image.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
-	end
-
 	def self.validate_provider_existence(provider)
 		error_code = 2812
 		provider.nil? ? get_validation_hash(false, error_code, 404) : get_validation_hash
@@ -1452,8 +1447,6 @@ class ValidationService
 			"Resource does not exist: Api"
 		when 2810
 			"Resource does not exist: ApiEndpoint"
-		when 2811
-			"Resource does not exist: UserProfileImage"
 		when 2812
 			"Resource does not exist: Provider"
 		when 2813

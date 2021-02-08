@@ -109,18 +109,6 @@ ActiveRecord::Schema.define(version: 2021_02_01_230149) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "exception_events", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "app_id"
-    t.string "name"
-    t.string "message"
-    t.text "stack_trace"
-    t.string "app_version"
-    t.string "os_version"
-    t.string "device_family"
-    t.string "locale"
-    t.datetime "created_at", precision: 6, null: false
-  end
-
   create_table "notifications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
