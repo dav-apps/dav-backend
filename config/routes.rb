@@ -16,18 +16,18 @@ Rails.application.routes.draw do
 	match '/v1/user/:id/reset_email', to: 'users#reset_email', via: :post
 	match '/v1/user/:id/password', to: 'users#set_password', via: :put
 	
-	# SessionsController
-	match '/v1/session', to: 'sessions#create_session', via: :post
-	match '/v1/session/access_token', to: 'sessions#create_session_from_access_token', via: :post
-	match '/v1/session/renew', to: 'sessions#renew_session', via: :put
-	match '/v1/session', to: 'sessions#delete_session', via: :delete
-
 	# DevsController
 	match '/v1/dev', to: 'devs#get_dev', via: :get
 
 	# ProvidersController
 	match '/v1/provider', to: 'providers#create_provider', via: :post
 	match '/v1/provider', to: 'providers#get_provider', via: :get
+
+	# SessionsController
+	match '/v1/session', to: 'sessions#create_session', via: :post
+	match '/v1/session/access_token', to: 'sessions#create_session_from_access_token', via: :post
+	match '/v1/session/renew', to: 'sessions#renew_session', via: :put
+	match '/v1/session', to: 'sessions#delete_session', via: :delete
 
 	# AppsController
 	match '/v1/app', to: 'apps#create_app', via: :post
@@ -63,15 +63,6 @@ Rails.application.routes.draw do
 	match '/v1/notification/:uuid', to: 'notifications#update_notification', via: :put
 	match '/v1/notification/:uuid', to: 'notifications#delete_notification', via: :delete
 
-	# UserActivitiesController
-	match '/v1/user_activities', to: 'user_activities#get_user_activities', via: :get
-
-	# AppUserActivitiesController
-	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
-
-	# AppUsersController
-	match '/v1/app/:id/users', to: 'app_users#get_app_users', via: :get
-
 	# ApisController
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api', to: 'apis#create_api', via: :post
@@ -91,6 +82,15 @@ Rails.application.routes.draw do
 
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
+
+	# AppUsersController
+	match '/v1/app/:id/users', to: 'app_users#get_app_users', via: :get
+
+	# UserActivitiesController
+	match '/v1/user_activities', to: 'user_activities#get_user_activities', via: :get
+
+	# AppUserActivitiesController
+	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
 
 	# Websocket connections
 	mount ActionCable.server => '/v1/cable'
