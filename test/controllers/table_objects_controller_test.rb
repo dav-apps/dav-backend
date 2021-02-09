@@ -1388,7 +1388,7 @@ describe TableObjectsController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::NO_SUFFICIENT_STORAGE_AVAILABLE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::NOT_SUFFICIENT_STORAGE_AVAILABLE, res["errors"][0]["code"])
 	end
 
 	it "should set table object file" do

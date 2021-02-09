@@ -210,7 +210,7 @@ describe PurchasesController do
 
 		assert_response 412
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::USER_OF_TABLE_OBJECT_MUST_BE_PROVIDER, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::USER_OF_TABLE_OBJECT_MUST_HAVE_PROVIDER, res["errors"][0]["code"])
 	end
 
 	it "should create purchase" do
