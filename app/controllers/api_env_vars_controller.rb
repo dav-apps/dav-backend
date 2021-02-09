@@ -25,7 +25,10 @@ class ApiEnvVarsController < ApplicationController
 
 		# Validate the env vars
 		env_vars.each do |key, value|
-			ValidationService.raise_validation_error(ValidationService.validate_value_type(value))
+			ValidationService.raise_multiple_validation_errors([
+				ValidationService.validate_env_var_name_type(key),
+				ValidationService.validate_env_var_value_type(value)
+			])
 		end
 
 		# Get the api
@@ -44,7 +47,10 @@ class ApiEnvVarsController < ApplicationController
 			end
 
 			# Validate the length
-			ValidationService.raise_validation_error(ValidationService.validate_api_env_var_value_length(value))
+			ValidationService.raise_multiple_validation_errors([
+				ValidationService.validate_env_var_name_length(key),
+				ValidationService.validate_env_var_value_length(value)
+			])
 			
 			# Try to find the api env var
 			env_var = ApiEnvVar.find_by(api: api, name: key)

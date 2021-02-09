@@ -77,7 +77,43 @@ describe ApiEnvVarsController do
 		assert_equal(ErrorCodes::ENV_VAR_VALUE_WRONG_TYPE, res["errors"][0]["code"])
 	end
 
-	it "should not set api env vars with too short properties" do
+	it "should not set api env vars with too short property name" do
+		api = apis(:pocketlibApi)
+
+		res = put_request(
+			"/v1/api/#{api.id}/env_vars",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				env_vars: {
+					"": "Hello"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ENV_VAR_NAME_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not set api env vars with too long property name" do
+		api = apis(:pocketlibApi)
+
+		res = put_request(
+			"/v1/api/#{api.id}/env_vars",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				env_vars: {
+					"#{'a' * 200}": "Hello"
+				}
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ENV_VAR_NAME_TOO_LONG, res["errors"][0]["code"])
+	end
+
+	it "should not set api env vars with too short property value" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
@@ -95,7 +131,7 @@ describe ApiEnvVarsController do
 		assert_equal(ErrorCodes::ENV_VAR_VALUE_TOO_SHORT, res["errors"][0]["code"])
 	end
 
-	it "should not set api env vars with too long properties" do
+	it "should not set api env vars with too long property value" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(

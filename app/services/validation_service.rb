@@ -501,8 +501,13 @@ class ValidationService
 		!env_vars.is_a?(Hash) ? get_validation_hash(false, error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_value_type(value)
+	def self.validate_env_var_name_type(name)
 		error_code = 2246
+		!name.is_a?(String) ? get_validation_hash(false, error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_env_var_value_type(value)
+		error_code = 2247
 		return get_validation_hash if value.is_a?(TrueClass)
 		return get_validation_hash if value.is_a?(FalseClass)
 		return get_validation_hash if value.is_a?(String)
@@ -785,11 +790,21 @@ class ValidationService
 		end
 	end
 
-	def self.validate_api_env_var_value_length(value)
-		if value.length < Constants::API_ENV_VAR_VALUE_MIN_LENGTH
+	def self.validate_env_var_name_length(name)
+		if name.length < Constants::ENV_VAR_NAME_MIN_LENGTH
 			get_validation_hash(false, 2326, 400)
-		elsif value.length > Constants::API_ENV_VAR_VALUE_MAX_LENGTH
+		elsif name.length > Constants::ENV_VAR_NAME_MAX_LENGTH
 			get_validation_hash(false, 2426, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_env_var_value_length(value)
+		if value.length < Constants::ENV_VAR_VALUE_MIN_LENGTH
+			get_validation_hash(false, 2327, 400)
+		elsif value.length > Constants::ENV_VAR_VALUE_MAX_LENGTH
+			get_validation_hash(false, 2427, 400)
 		else
 			get_validation_hash
 		end
@@ -1278,7 +1293,9 @@ class ValidationService
 		when 2245
 			"Field has wrong type: env_vars"
 		when 2246
-			"Field has wrong type: value"
+			"Field has wrong type: env_var name"
+		when 2247
+			"Field has wrong type: env_var value"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1333,7 +1350,9 @@ class ValidationService
 		when 2325
 			"Field too short: message"
 		when 2326
-			"Field too short: value"
+			"Field too short: env_var name"
+		when 2327
+			"Field too short: env_var value"
 		# Too long fields
 		when 2400
 			"Field too long: first_name"
@@ -1388,7 +1407,9 @@ class ValidationService
 		when 2425
 			"Field too long: message"
 		when 2426
-			"Field too long: value"
+			"Field too long: env_var name"
+		when 2427
+			"Field too long: env_var value"
 		# Invalid fields
 		when 2500
 			"Field invalid: email"
