@@ -2,8 +2,8 @@ class UsersController < ApplicationController
 	def signup
 		auth = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -17,7 +17,7 @@ class UsersController < ApplicationController
 		device_os = body["device_os"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_email_presence(email),
 			ValidationService.validate_first_name_presence(first_name),
 			ValidationService.validate_password_presence(password),
@@ -38,7 +38,7 @@ class UsersController < ApplicationController
 		validations.push(ValidationService.validate_device_type_type(device_type)) if device_type != nil
 		validations.push(ValidationService.validate_device_os_type(device_os)) if device_os != nil
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
 		validations = [
@@ -50,30 +50,30 @@ class UsersController < ApplicationController
 		validations.push(ValidationService.validate_device_type_length(device_type)) if device_type != nil
 		validations.push(ValidationService.validate_device_os_length(device_os)) if device_os != nil
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the email
-		ValidationService.raise_validation_error(ValidationService.validate_email_availability(email))
-		ValidationService.raise_validation_error(ValidationService.validate_email_validity(email))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_availability(email))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_validity(email))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the app
 		app = App.find_by(id: app_id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Check if the app belongs to the dev with the api key
 		app_dev = Dev.find_by(api_key: dev_api_key)
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(app_dev))
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, app_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(app_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, app_dev))
 
 		# Create the user
 		user = User.new(
@@ -134,23 +134,22 @@ class UsersController < ApplicationController
 
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_users
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Make sure the user is the first dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(session.user.dev))
 
 		# Collect and return the data
 		users = Array.new
@@ -170,14 +169,13 @@ class UsersController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_user
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -224,29 +222,28 @@ class UsersController < ApplicationController
 		
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_user_by_id
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Return the data
 		result = {
@@ -283,22 +280,21 @@ class UsersController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def update_user
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 		user = session.user
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -311,17 +307,17 @@ class UsersController < ApplicationController
 		validations.push(ValidationService.validate_email_type(email)) if !email.nil?
 		validations.push(ValidationService.validate_first_name_type(first_name)) if !first_name.nil?
 		validations.push(ValidationService.validate_password_type(password)) if !password.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the email
-		ValidationService.raise_validation_error(ValidationService.validate_email_availability(email))
-		ValidationService.raise_validation_error(ValidationService.validate_email_validity(email)) if !email.nil?
+		ValidationService.raise_validation_errors(ValidationService.validate_email_availability(email))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_validity(email)) if !email.nil?
 
 		# Validate the length of the fields
 		validations = Array.new
 		validations.push(ValidationService.validate_first_name_length(first_name)) if !first_name.nil?
 		validations.push(ValidationService.validate_password_length(password)) if !password.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		if !email.nil?
 			user.new_email = email
@@ -362,23 +358,22 @@ class UsersController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def set_profile_image_of_user
 		access_token = get_auth
 		content_type = get_content_type
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_image(content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_image(content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 		user = session.user
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Validate the file
 		begin
@@ -387,10 +382,10 @@ class UsersController < ApplicationController
 			ValidationService.raise_image_file_invalid
 		end
 
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_matches_file_type(content_type, image.mime_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_matches_file_type(content_type, image.mime_type))
 
 		# Validate the file size
-		ValidationService.raise_validation_error(ValidationService.validate_image_size(UtilsService.get_file_size(request.body)))
+		ValidationService.raise_validation_errors(ValidationService.validate_image_size(UtilsService.get_file_size(request.body)))
 
 		# Get or create the UserProfileImage
 		user_profile_image = user.user_profile_image
@@ -430,13 +425,12 @@ class UsersController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_profile_image_of_user
 		access_token = get_auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -470,23 +464,22 @@ class UsersController < ApplicationController
 			send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{session.user.id}.#{user_profile_image.ext}")
 		end
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def create_stripe_customer_for_user
 		access_token = get_auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 		user = session.user
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Check if the user already has a stripe customer
-		ValidationService.raise_validation_error(ValidationService.validate_user_has_no_stripe_customer(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_has_no_stripe_customer(user))
 
 		# Create the customer
 		customer = Stripe::Customer.create(
@@ -502,29 +495,28 @@ class UsersController < ApplicationController
 
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def send_confirmation_email
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Generate the email confirmation token
 		user.email_confirmation_token = generate_token
@@ -535,29 +527,28 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def send_password_reset_email
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Generate the password confirmation token
 		user.password_confirmation_token = generate_token
@@ -568,44 +559,43 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def confirm_user
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		email_confirmation_token = body["email_confirmation_token"]
 
 		# Validate the email_confirmation_token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Check if the user is already confirmed
-		ValidationService.raise_validation_error(ValidationService.validate_user_not_confirmed(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_not_confirmed(user))
 
 		# Check the confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
 
 		# Reset the email confirmation token and confirm the user
 		user.email_confirmation_token = nil
@@ -614,44 +604,43 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def save_new_email
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		email_confirmation_token = body["email_confirmation_token"]
 
 		# Validate the email confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Check if the user has a new email
-		ValidationService.raise_validation_error(ValidationService.validate_new_email_of_user_not_empty(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_new_email_of_user_not_empty(user))
 
 		# Check the confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
 
 		# Reset the email confirmation token and set the new email
 		user.old_email = user.email
@@ -669,44 +658,43 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def save_new_password
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		password_confirmation_token = body["password_confirmation_token"]
 
 		# Validate the password confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_presence(password_confirmation_token))
-		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_type(password_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_password_confirmation_token_presence(password_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_password_confirmation_token_type(password_confirmation_token))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Check if the user has a new password
-		ValidationService.raise_validation_error(ValidationService.validate_new_password_of_user_not_empty(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_new_password_of_user_not_empty(user))
 
 		# Check the confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
 
 		# Reset the password confirmation token and set the new password
 		user.password_digest = user.new_password
@@ -717,44 +705,43 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def reset_email
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		email_confirmation_token = body["email_confirmation_token"]
 
 		# Validate the email confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_presence(email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_type(email_confirmation_token))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Check if the user has an old email
-		ValidationService.raise_validation_error(ValidationService.validate_old_email_of_user_not_empty(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_old_email_of_user_not_empty(user))
 
 		# Check the confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_email_confirmation_token_of_user(user, email_confirmation_token))
 
 		# Reset the email and clear the email confirmation token
 		user.email = user.old_email
@@ -768,16 +755,15 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def set_password
 		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -785,36 +771,36 @@ class UsersController < ApplicationController
 		password_confirmation_token = body["password_confirmation_token"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_password_presence(password),
 			ValidationService.validate_password_confirmation_token_presence(password_confirmation_token)
 		])
 
 		# Validate the types of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_password_type(password),
 			ValidationService.validate_password_confirmation_token_type(password_confirmation_token)
 		])
 
 		# Validate the password length
-		ValidationService.raise_validation_error(ValidationService.validate_password_length(password))
+		ValidationService.raise_validation_errors(ValidationService.validate_password_length(password))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
 		user = User.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Check the confirmation token
-		ValidationService.raise_validation_error(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_password_confirmation_token_of_user(user, password_confirmation_token))
 
 		# Update the user with the new password and clear the password confirmation token
 		user.password = password
@@ -824,8 +810,7 @@ class UsersController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	private

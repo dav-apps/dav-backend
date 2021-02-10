@@ -3,15 +3,15 @@ class ApiEndpointsController < ApplicationController
 		auth = get_auth
 		api_id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -21,7 +21,7 @@ class ApiEndpointsController < ApplicationController
 		caching = body["caching"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_path_presence(path),
 			ValidationService.validate_method_presence(method),
 			ValidationService.validate_commands_presence(commands)
@@ -33,23 +33,23 @@ class ApiEndpointsController < ApplicationController
 		validations.push(ValidationService.validate_method_type(method))
 		validations.push(ValidationService.validate_commands_type(commands))
 		validations.push(ValidationService.validate_caching_type(caching)) if !caching.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_path_length(path),
 			ValidationService.validate_commands_length(commands)
 		])
 
 		# Check if the method is valid
-		ValidationService.raise_validation_error(ValidationService.validate_method_validity(method))
+		ValidationService.raise_validation_errors(ValidationService.validate_method_validity(method))
 
 		# Get the api
 		api = Api.find_by(id: api_id)
-		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
 		# Try to find the api endpoint
 		endpoint = ApiEndpoint.find_by(api: api, path: path, method: method.upcase)
@@ -81,7 +81,6 @@ class ApiEndpointsController < ApplicationController
 		}
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

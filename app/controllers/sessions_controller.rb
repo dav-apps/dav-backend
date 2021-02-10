@@ -2,8 +2,8 @@ class SessionsController < ApplicationController
 	def create_session
 		auth = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -16,7 +16,7 @@ class SessionsController < ApplicationController
 		device_os = body["device_os"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_email_presence(email),
 			ValidationService.validate_password_presence(password),
 			ValidationService.validate_app_id_presence(app_id),
@@ -35,7 +35,7 @@ class SessionsController < ApplicationController
 		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
 		validations = []
@@ -44,31 +44,31 @@ class SessionsController < ApplicationController
 		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the app
 		app = App.find_by(id: app_id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Check if the app belongs to the dev with the api key
 		app_dev = Dev.find_by(api_key: dev_api_key)
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(app_dev))
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, app_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(app_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, app_dev))
 
 		# Get and validate the user
 		user = User.find_by(email: email)
-		ValidationService.raise_validation_error(ValidationService.validate_user_existence(user))
-		ValidationService.raise_validation_error(ValidationService.authenticate_user(user, password))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
+		ValidationService.raise_validation_errors(ValidationService.authenticate_user(user, password))
 
 		# Create the session
 		session = Session.new(
@@ -86,15 +86,14 @@ class SessionsController < ApplicationController
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def create_session_from_access_token
 		auth = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -106,7 +105,7 @@ class SessionsController < ApplicationController
 		device_os = body["device_os"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_access_token_presence(access_token),
 			ValidationService.validate_app_id_presence(app_id),
 			ValidationService.validate_api_key_presence(api_key)
@@ -123,7 +122,7 @@ class SessionsController < ApplicationController
 		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
 		validations = []
@@ -132,32 +131,32 @@ class SessionsController < ApplicationController
 		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
 
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Validate the dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_is_first_dev(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the session
 		website_session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure the session is for the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(website_session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(website_session.app))
 
 		# Get the app
 		app = App.find_by(id: app_id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Check if the app belongs to the dev with the api key
 		api_key_dev = Dev.find_by(api_key: api_key)
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(api_key_dev))
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, api_key_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(api_key_dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, api_key_dev))
 
 		# Create the session
 		session = Session.new(
@@ -175,13 +174,12 @@ class SessionsController < ApplicationController
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def renew_session
 		access_token = get_auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token, false)
@@ -204,7 +202,7 @@ class SessionsController < ApplicationController
 
 	def delete_session
 		access_token = get_auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -214,7 +212,6 @@ class SessionsController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

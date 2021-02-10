@@ -3,44 +3,44 @@ class ApiErrorsController < ApplicationController
 		auth = get_auth
 		api_id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		errors = body["errors"]
 
 		# Validate missing fields
-		ValidationService.raise_validation_error(ValidationService.validate_errors_presence(errors))
+		ValidationService.raise_validation_errors(ValidationService.validate_errors_presence(errors))
 
 		# Validate the types of the fields
-		ValidationService.raise_validation_error(ValidationService.validate_errors_type(errors))
+		ValidationService.raise_validation_errors(ValidationService.validate_errors_type(errors))
 
 		# Validate the errors
 		errors.each do |error|
-			ValidationService.raise_multiple_validation_errors([
+			ValidationService.raise_validation_errors([
 				ValidationService.validate_code_type(error["code"]),
 				ValidationService.validate_message_type(error["message"])
 			])
 		end
 
 		errors.each do |error|
-			ValidationService.raise_validation_error(ValidationService.validate_message_length(error["message"]))
+			ValidationService.raise_validation_errors(ValidationService.validate_message_length(error["message"]))
 		end
 
 		# Get the api
 		api = Api.find_by(id: api_id)
-		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
 		errors.each do |error|
 			# Try to find the api error
@@ -62,7 +62,6 @@ class ApiErrorsController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

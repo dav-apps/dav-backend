@@ -2,17 +2,17 @@ class DevsController < ApplicationController
 	def get_dev
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the dev of the user
 		dev = session.user.dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Return the data
 		apps = Array.new
@@ -36,7 +36,6 @@ class DevsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

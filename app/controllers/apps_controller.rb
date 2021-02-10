@@ -2,14 +2,14 @@ class AppsController < ApplicationController
 	def create_app
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -17,26 +17,26 @@ class AppsController < ApplicationController
 		description = body["description"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_name_presence(name),
 			ValidationService.validate_description_presence(description)
 		])
 
 		# Validate the types of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_name_type(name),
 			ValidationService.validate_description_type(description)
 		])
 
 		# Validate the length of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_name_length(name),
 			ValidationService.validate_description_length(description)
 		])
 
 		# Get the dev of the user
 		dev = session.user.dev
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Create the app
 		app = App.new(
@@ -60,8 +60,7 @@ class AppsController < ApplicationController
 
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 	
 	def get_apps
@@ -87,28 +86,27 @@ class AppsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_app
 		access_token = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the app
 		app = App.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Check if the app belongs to the dev of the user
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
 
 		# Return the data
 		tables = Array.new
@@ -142,22 +140,21 @@ class AppsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def update_app
 		access_token = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -176,7 +173,7 @@ class AppsController < ApplicationController
 		validations.push(ValidationService.validate_web_link_type(web_link)) if !web_link.nil?
 		validations.push(ValidationService.validate_google_play_link_type(google_play_link)) if !google_play_link.nil?
 		validations.push(ValidationService.validate_microsoft_store_link_type(microsoft_store_link)) if !microsoft_store_link.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
 		validations = Array.new
@@ -185,21 +182,21 @@ class AppsController < ApplicationController
 		validations.push(ValidationService.validate_web_link_length(web_link)) if !web_link.nil?
 		validations.push(ValidationService.validate_google_play_link_length(google_play_link)) if !google_play_link.nil?
 		validations.push(ValidationService.validate_microsoft_store_link_length(microsoft_store_link)) if !microsoft_store_link.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the links
 		validations = Array.new
 		validations.push(ValidationService.validate_web_link_validity(web_link)) if !web_link.nil?
 		validations.push(ValidationService.validate_google_play_link_validity(google_play_link)) if !google_play_link.nil?
 		validations.push(ValidationService.validate_microsoft_store_link_validity(microsoft_store_link)) if !microsoft_store_link.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Get the app
 		app = App.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Make sure the user is the dev of the app
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
 
 		# Update the app
 		app.name = name if !name.nil?
@@ -224,7 +221,6 @@ class AppsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

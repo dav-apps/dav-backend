@@ -3,29 +3,29 @@ class ApiEnvVarsController < ApplicationController
 		auth = get_auth
 		api_id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(auth))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
-		ValidationService.raise_validation_error(ValidationService.validate_dev_existence(dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
 		# Validate the auth
-		ValidationService.raise_validation_error(ValidationService.validate_auth(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
 		env_vars = body["env_vars"]
 
 		# Validate missing fields
-		ValidationService.raise_validation_error(ValidationService.validate_env_vars_presence(env_vars))
+		ValidationService.raise_validation_errors(ValidationService.validate_env_vars_presence(env_vars))
 
 		# Validate the types of the fields
-		ValidationService.raise_validation_error(ValidationService.validate_env_vars_type(env_vars))
+		ValidationService.raise_validation_errors(ValidationService.validate_env_vars_type(env_vars))
 
 		# Validate the env vars
 		env_vars.each do |key, value|
-			ValidationService.raise_multiple_validation_errors([
+			ValidationService.raise_validation_errors([
 				ValidationService.validate_env_var_name_type(key),
 				ValidationService.validate_env_var_value_type(value)
 			])
@@ -33,10 +33,10 @@ class ApiEnvVarsController < ApplicationController
 
 		# Get the api
 		api = Api.find_by(id: api_id)
-		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
 		env_vars.each do |key, value|
 			class_name = UtilsService.get_env_class_name(value)
@@ -47,7 +47,7 @@ class ApiEnvVarsController < ApplicationController
 			end
 
 			# Validate the length
-			ValidationService.raise_multiple_validation_errors([
+			ValidationService.raise_validation_errors([
 				ValidationService.validate_env_var_name_length(key),
 				ValidationService.validate_env_var_value_length(value)
 			])
@@ -74,7 +74,6 @@ class ApiEnvVarsController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

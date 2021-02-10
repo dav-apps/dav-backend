@@ -2,7 +2,7 @@ class WebsocketConnectionsController < ApplicationController
 	def create_websocket_connection
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -18,7 +18,6 @@ class WebsocketConnectionsController < ApplicationController
 		# Return the data
 		render json: {token: connection.token}, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

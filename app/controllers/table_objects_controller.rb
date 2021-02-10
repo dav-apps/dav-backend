@@ -2,8 +2,8 @@ class TableObjectsController < ApplicationController
 	def create_table_object
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -16,7 +16,7 @@ class TableObjectsController < ApplicationController
 		properties = body["properties"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_table_id_presence(table_id)
 		])
 
@@ -26,14 +26,14 @@ class TableObjectsController < ApplicationController
 		validations.push(ValidationService.validate_table_id_type(table_id))
 		validations.push(ValidationService.validate_file_type(file)) if !file.nil?
 		validations.push(ValidationService.validate_properties_type(properties)) if !properties.nil?
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Get the table
 		table = Table.find_by(id: table_id)
-		ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_existence(table))
 
 		# Check if the table belongs to the app
-		ValidationService.raise_validation_error(ValidationService.validate_table_belongs_to_app(table, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_belongs_to_app(table, session.app))
 
 		# Create the table object
 		table_object = TableObject.new(
@@ -46,7 +46,7 @@ class TableObjectsController < ApplicationController
 			table_object.uuid = SecureRandom.uuid
 		else
 			# Check if the uuid is already taken
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_uuid_availability(uuid))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_uuid_availability(uuid))
 			table_object.uuid = uuid
 		end
 
@@ -55,14 +55,14 @@ class TableObjectsController < ApplicationController
 		if !properties.nil? && !table_object.file
 			# Validate the properties
 			properties.each do |key, value|
-				ValidationService.raise_multiple_validation_errors([
+				ValidationService.raise_validation_errors([
 					ValidationService.validate_property_name_type(key),
 					ValidationService.validate_property_value_type(value)
 				])
 			end
 
 			properties.each do |key, value|
-				ValidationService.raise_multiple_validation_errors([
+				ValidationService.raise_validation_errors([
 					ValidationService.validate_property_name_length(key),
 					ValidationService.validate_property_value_length(value)
 				])
@@ -87,10 +87,10 @@ class TableObjectsController < ApplicationController
 
 			if !ext.nil?
 				# Validate the type
-				ValidationService.raise_validation_error(ValidationService.validate_ext_type(ext))
+				ValidationService.raise_validation_errors(ValidationService.validate_ext_type(ext))
 
 				# Validate the length
-				ValidationService.raise_validation_error(ValidationService.validate_ext_length(ext))
+				ValidationService.raise_validation_errors(ValidationService.validate_ext_length(ext))
 
 				ext_prop = TableObjectProperty.new(
 					table_object: table_object,
@@ -145,15 +145,14 @@ class TableObjectsController < ApplicationController
 
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_table_object
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -161,15 +160,15 @@ class TableObjectsController < ApplicationController
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
 
 		# Check if the user can access the table object
 		user_access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 		table_id = table_object.table_id
 
 		if user_access.nil?
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 		else
 			table_id = user_access.table_alias
 		end
@@ -204,16 +203,15 @@ class TableObjectsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def update_table_object
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -223,17 +221,17 @@ class TableObjectsController < ApplicationController
 		properties = body["properties"]
 
 		# Validate missing fields
-		ValidationService.raise_validation_error(ValidationService.validate_properties_presence(properties))
+		ValidationService.raise_validation_errors(ValidationService.validate_properties_presence(properties))
 
 		# Validate the type of the field
-		ValidationService.raise_validation_error(ValidationService.validate_properties_type(properties))
+		ValidationService.raise_validation_errors(ValidationService.validate_properties_type(properties))
 
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object is a file
 		if table_object.file
@@ -242,10 +240,10 @@ class TableObjectsController < ApplicationController
 
 			if !ext.nil?
 				# Validate the type
-				ValidationService.raise_validation_error(ValidationService.validate_ext_type(ext))
+				ValidationService.raise_validation_errors(ValidationService.validate_ext_type(ext))
 
 				# Validate the length
-				ValidationService.raise_validation_error(ValidationService.validate_ext_length(ext))
+				ValidationService.raise_validation_errors(ValidationService.validate_ext_length(ext))
 
 				ext_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
 
@@ -266,14 +264,14 @@ class TableObjectsController < ApplicationController
 		else
 			# Validate the properties
 			properties.each do |key, value|
-				ValidationService.raise_multiple_validation_errors([
+				ValidationService.raise_validation_errors([
 					ValidationService.validate_property_name_type(key),
 					ValidationService.validate_property_value_type(value)
 				])
 			end
 
 			properties.each do |key, value|
-				ValidationService.raise_multiple_validation_errors([
+				ValidationService.raise_validation_errors([
 					ValidationService.validate_property_name_length(key),
 					ValidationService.validate_property_value_length(value)
 				])
@@ -340,15 +338,14 @@ class TableObjectsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def delete_table_object
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -356,9 +353,9 @@ class TableObjectsController < ApplicationController
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Save that the user was active
 		session.user.update_column(:last_active, Time.now)
@@ -388,8 +385,7 @@ class TableObjectsController < ApplicationController
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def set_table_object_file
@@ -397,8 +393,8 @@ class TableObjectsController < ApplicationController
 		content_type = get_content_type
 		uuid = params[:uuid]
 		
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_supported(content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_supported(content_type))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -406,12 +402,12 @@ class TableObjectsController < ApplicationController
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object is a file
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_is_file(table_object))
 
 		# Get the size property
 		size_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
@@ -421,7 +417,7 @@ class TableObjectsController < ApplicationController
 		file_size = UtilsService.get_file_size(request.body)
 		free_storage = UtilsService.get_total_storage(session.user.plan, session.user.confirmed) - session.user.used_storage
 		file_size_diff = file_size - old_file_size
-		ValidationService.raise_validation_error(ValidationService.validate_sufficient_storage(free_storage, file_size_diff))
+		ValidationService.raise_validation_errors(ValidationService.validate_sufficient_storage(free_storage, file_size_diff))
 
 		# Upload the file
 		begin
@@ -505,15 +501,14 @@ class TableObjectsController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_table_object_file
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -521,18 +516,18 @@ class TableObjectsController < ApplicationController
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
 
 		# Check if the user can access the table object
 		user_access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 
 		if user_access.nil?
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
-			ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 		end
 
 		# Check if the table object is a file
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_is_file(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_is_file(table_object))
 
 		# Download the file
 		begin
@@ -561,15 +556,14 @@ class TableObjectsController < ApplicationController
 		response.headers["Content-Length"] = content.nil? ? 0 : content.size.to_s
 		send_data(content, status: 200, type: type, filename: filename)
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def remove_table_object
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 		
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -577,12 +571,12 @@ class TableObjectsController < ApplicationController
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
 
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the table object user access exists
 		access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_user_access_existence(access))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_user_access_existence(access))
 
 		# Save that the user was active
 		session.user.update_column(:last_active, Time.now)
@@ -595,7 +589,6 @@ class TableObjectsController < ApplicationController
 		
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

@@ -15,20 +15,20 @@ class AppUserActivitiesController < ApplicationController
 			end_timestamp = Time.at(params[:end].to_i)
 		end
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the app
 		app = App.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Make sure the app belongs to the dev of the user
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
 
 		# Collect and return the data
 		days = Array.new
@@ -47,7 +47,6 @@ class AppUserActivitiesController < ApplicationController
 
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

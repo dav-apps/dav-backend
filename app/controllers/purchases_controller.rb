@@ -3,8 +3,8 @@ class PurchasesController < ApplicationController
 		access_token = get_auth
 		uuid = params[:uuid]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -19,7 +19,7 @@ class PurchasesController < ApplicationController
 		currency = body["currency"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_provider_name_presence(provider_name),
 			ValidationService.validate_provider_image_presence(provider_image),
 			ValidationService.validate_product_name_presence(product_name),
@@ -28,7 +28,7 @@ class PurchasesController < ApplicationController
 		])
 
 		# Validate the types of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_provider_name_type(provider_name),
 			ValidationService.validate_provider_image_type(provider_image),
 			ValidationService.validate_product_name_type(product_name),
@@ -37,7 +37,7 @@ class PurchasesController < ApplicationController
 		])
 
 		# Validate the length of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_provider_name_length(provider_name),
 			ValidationService.validate_provider_image_length(provider_image),
 			ValidationService.validate_product_name_length(product_name),
@@ -46,17 +46,17 @@ class PurchasesController < ApplicationController
 
 		# Get the table object
 		table_object = TableObject.find_by(uuid: uuid)
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_existence(table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
 
 		# Check if the table object belongs to the app of the session
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 
 		# Check if the user already purchased the table object
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_already_purchased(session.user, table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_already_purchased(session.user, table_object))
 
 		# Get the price of the table object in the specified currency
 		table_object_price = TableObjectPrice.find_by(table_object: table_object, currency: currency.downcase)
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_price_existence(table_object_price))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_price_existence(table_object_price))
 		price = table_object_price.price
 
 		# If the object belongs to the user, set the price to 0
@@ -64,7 +64,7 @@ class PurchasesController < ApplicationController
 
 		if price > 0
 			# Check if the user of the table object has a provider
-			ValidationService.raise_validation_error(ValidationService.validate_user_is_provider(table_object.user))
+			ValidationService.raise_validation_errors(ValidationService.validate_user_is_provider(table_object.user))
 		end
 
 		# Create the purchase
@@ -126,28 +126,27 @@ class PurchasesController < ApplicationController
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_purchase
 		access_token = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the purchase
 		purchase = Purchase.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_existence(purchase))
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
 
 		# Check if the purchase belongs to the user
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_belongs_to_user(purchase, session.user))
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_belongs_to_user(purchase, session.user))
 
 		# Return the data
 		result = {
@@ -165,38 +164,37 @@ class PurchasesController < ApplicationController
 		}
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def complete_purchase
 		access_token = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 		user = session.user
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the purchase
 		purchase = Purchase.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_existence(purchase))
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
 
 		# Check if the purchase belongs to the user
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_belongs_to_user(purchase, user))
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_belongs_to_user(purchase, user))
 
 		# Check if the purchase is already completed
-		ValidationService.raise_validation_error(ValidationService.validate_purchase_not_completed(purchase))
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_not_completed(purchase))
 
 		# Check if the user already purchased the table object
-		ValidationService.raise_validation_error(ValidationService.validate_table_object_already_purchased(user, purchase.table_object))
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_already_purchased(user, purchase.table_object))
 
 		# Check if the user has a stripe customer
-		ValidationService.raise_validation_error(ValidationService.validate_user_is_stripe_customer(user))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_is_stripe_customer(user))
 
 		# Get the payment method of the user
 		payment_methods = Stripe::PaymentMethod.list({
@@ -204,7 +202,7 @@ class PurchasesController < ApplicationController
 			type: 'card'
 		})
 
-		ValidationService.raise_validation_error(ValidationService.validate_user_has_payment_method(payment_methods))
+		ValidationService.raise_validation_errors(ValidationService.validate_user_has_payment_method(payment_methods))
 
 		# Confirm the payment intent
 		begin
@@ -238,7 +236,6 @@ class PurchasesController < ApplicationController
 		}
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

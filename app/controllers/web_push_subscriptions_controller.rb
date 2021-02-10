@@ -2,8 +2,8 @@ class WebPushSubscriptionsController < ApplicationController
 	def create_web_push_subscription
 		access_token = get_auth
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
@@ -16,7 +16,7 @@ class WebPushSubscriptionsController < ApplicationController
 		auth = body["auth"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_endpoint_presence(endpoint),
 			ValidationService.validate_p256dh_presence(p256dh),
 			ValidationService.validate_auth_presence(auth)
@@ -28,10 +28,10 @@ class WebPushSubscriptionsController < ApplicationController
 		validations.push(ValidationService.validate_endpoint_type(endpoint))
 		validations.push(ValidationService.validate_p256dh_type(p256dh))
 		validations.push(ValidationService.validate_auth_type(auth))
-		ValidationService.raise_multiple_validation_errors(validations)
+		ValidationService.raise_validation_errors(validations)
 
 		# Validate the length of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_endpoint_length(endpoint),
 			ValidationService.validate_p256dh_length(p256dh),
 			ValidationService.validate_auth_length(auth)
@@ -49,7 +49,7 @@ class WebPushSubscriptionsController < ApplicationController
 			subscription.uuid = SecureRandom.uuid
 		else
 			# Check if there is already a web push subscription with the uuid
-			ValidationService.raise_validation_error(ValidationService.validate_web_push_subscription_uuid_availability(uuid))
+			ValidationService.raise_validation_errors(ValidationService.validate_web_push_subscription_uuid_availability(uuid))
 			subscription.uuid = uuid
 		end
 
@@ -66,7 +66,6 @@ class WebPushSubscriptionsController < ApplicationController
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end

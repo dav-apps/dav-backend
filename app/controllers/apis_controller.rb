@@ -5,7 +5,7 @@ class ApisController < ApplicationController
 
 		# Get the api
 		api = Api.find_by(id: api_id)
-		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Find the appropriate api endpoint
 		api_endpoint = ApiEndpoint.find_by(api: api, method: request.method, path: path)
@@ -47,7 +47,7 @@ class ApisController < ApplicationController
 			end
 		end
 
-		ValidationService.raise_validation_error(ValidationService.validate_api_endpoint_existence(api_endpoint))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_endpoint_existence(api_endpoint))
 
 		# Get the url params
 		request.query_parameters.each do |key, value|
@@ -130,21 +130,20 @@ class ApisController < ApplicationController
 			render json: result[:data], status: result[:status]
 		end
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def create_api
 		access_token = get_auth
 		
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
-		ValidationService.raise_validation_error(ValidationService.validate_content_type_json(get_content_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
@@ -152,27 +151,27 @@ class ApisController < ApplicationController
 		name = body["name"]
 
 		# Validate missing fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_app_id_presence(app_id),
 			ValidationService.validate_name_presence(name)
 		])
 
 		# Validate the types of the fields
-		ValidationService.raise_multiple_validation_errors([
+		ValidationService.raise_validation_errors([
 			ValidationService.validate_app_id_type(app_id),
 			ValidationService.validate_name_type(name)
 		])
 
 		# Validate the name
-		ValidationService.raise_validation_error(ValidationService.validate_name_length(name))
-		ValidationService.raise_validation_error(ValidationService.validate_name_validity(name))
+		ValidationService.raise_validation_errors(ValidationService.validate_name_length(name))
+		ValidationService.raise_validation_errors(ValidationService.validate_name_validity(name))
 
 		# Get the app
 		app = App.find_by(id: app_id)
-		ValidationService.raise_validation_error(ValidationService.validate_app_existence(app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
 
 		# Make sure the user is the dev of the app
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
 
 		# Create the api
 		api = Api.new(
@@ -191,28 +190,27 @@ class ApisController < ApplicationController
 		}
 		render json: result, status: 201
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 
 	def get_api
 		access_token = get_auth
 		id = params["id"]
 
-		ValidationService.raise_validation_error(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
 		# Make sure this was called from the website
-		ValidationService.raise_validation_error(ValidationService.validate_app_is_dav_app(session.app))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the api
 		api = Api.find_by(id: id)
-		ValidationService.raise_validation_error(ValidationService.validate_api_existence(api))
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev of the user
-		ValidationService.raise_validation_error(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
 
 		# Return the data
 		endpoints = Array.new
@@ -254,7 +252,6 @@ class ApisController < ApplicationController
 		
 		render json: result, status: 200
 	rescue RuntimeError => e
-		validations = JSON.parse(e.message)
-		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
+		render_errors(e)
 	end
 end
