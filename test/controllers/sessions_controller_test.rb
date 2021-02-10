@@ -262,7 +262,7 @@ describe SessionsController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_PASSWORD, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_PASSWORD, res["errors"][0]["code"])
 	end
 
 	it "should create session" do

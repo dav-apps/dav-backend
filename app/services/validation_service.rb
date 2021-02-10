@@ -946,24 +946,24 @@ class ValidationService
 	end
 
 	# Errors for values already in use
-	def self.validate_email_availability(email)
-		error_code = 3400
-		User.exists?(email: email) ? get_validation_hash(error_code, 409) : get_validation_hash
-	end
-
 	def self.validate_table_object_uuid_availability(uuid)
-		error_code = 3401
+		error_code = 3400
 		TableObject.exists?(uuid: uuid) ? get_validation_hash(error_code, 409) : get_validation_hash
 	end
 
 	def self.validate_web_push_subscription_uuid_availability(uuid)
-		error_code = 3401
+		error_code = 3400
 		WebPushSubscription.exists?(uuid: uuid) ? get_validation_hash(error_code, 409) : get_validation_hash
 	end
 
 	def self.validate_notification_uuid_availability(uuid)
-		error_code = 3401
+		error_code = 3400
 		Notification.exists?(uuid: uuid) ? get_validation_hash(error_code, 409) : get_validation_hash
+	end
+
+	def self.validate_email_availability(email)
+		error_code = 3401
+		User.exists?(email: email) ? get_validation_hash(error_code, 409) : get_validation_hash
 	end
 
 	# Errors for empty values in User
@@ -1455,9 +1455,9 @@ class ValidationService
 			"Value not supported: country"
 		# Errors for values already in use
 		when 3400
-			"Value already in use: email"
-		when 3401
 			"Value already in use: uuid"
+		when 3401
+			"Value already in use: email"
 		# Errors for empty values in User
 		when 3500
 			"User.old_email is empty"

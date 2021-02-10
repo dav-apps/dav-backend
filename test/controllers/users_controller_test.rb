@@ -193,7 +193,7 @@ describe UsersController do
 
 		assert_response 409
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::EMAIL_ALREADY_IN_USE, res["errors"][0]["code"])
 	end
 
 	it "should not signup with invalid email" do
@@ -1033,7 +1033,7 @@ describe UsersController do
 
 		assert_response 409
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::EMAIL_ALREADY_TAKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::EMAIL_ALREADY_IN_USE, res["errors"][0]["code"])
 	end
 
 	it "should not update user with invalid email" do
@@ -1671,7 +1671,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
 	end
 
 	it "should confirm user" do
@@ -1821,7 +1821,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
 	end
 
 	it "should save new email" do
@@ -1977,7 +1977,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
 	end
 
 	it "should save new password" do
@@ -2133,7 +2133,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_EMAIL_CONFIRMATION_TOKEN, res["errors"][0]["code"])
 	end
 
 	it "should reset email" do
@@ -2309,7 +2309,7 @@ describe UsersController do
 
 		assert_response 400
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::WRONG_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::INCORRECT_PASSWORD_CONFIRMATION_TOKEN, res["errors"][0]["code"])
 	end
 
 	it "should set password" do
