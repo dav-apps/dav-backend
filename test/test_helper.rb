@@ -16,6 +16,7 @@ class ActiveSupport::TestCase
 		# Set the table_alias of the TableObjectUserAccesses
 		table_object_user_accesses(:mattAccessDavFirstCard).update_column(:table_alias, tables(:card).id)
 		table_object_user_accesses(:mattAccessDavSecondCard).update_column(:table_alias, tables(:card).id)
+		table_object_user_accesses(:klausAccessSnicketFirstBook).update_column(:table_alias, tables(:storeBook).id)
 	end
 
 	def post_request(url, headers = {}, body = {})

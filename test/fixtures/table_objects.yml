@@ -59,3 +59,8 @@ snicketSecondBook:
   user: snicket
   table: storeBook
   uuid: 064a9c95-a43f-429e-b19f-c860a8d8bb40
+
+hindenburgFirstBook:
+  user: hindenburg
+  table: storeBook
+  uuid: 94846dab-b596-43e0-a517-e337c8579866

@@ -9,3 +9,7 @@ sherlockTestApp:
 davCards:
   user: dav
   app: cards
+
+klausPocketlib:
+  user: klaus
+  app: pocketlib

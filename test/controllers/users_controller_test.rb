@@ -749,7 +749,10 @@ describe UsersController do
 	it "should get users" do
 		sherlock = users(:sherlock)
 		snicket = users(:snicket)
+		klaus = users(:klaus)
+		torera = users(:torera)
 		cato = users(:cato)
+		hindenburg = users(:hindenburg)
 		dav = users(:dav)
 		matt = users(:matt)
 
@@ -759,7 +762,7 @@ describe UsersController do
 		)
 
 		assert_response 200
-		assert_equal(5, res["users"].length)
+		assert_equal(8, res["users"].length)
 
 		assert_equal(sherlock.id, res["users"][0]["id"])
 		assert_equal(sherlock.confirmed, res["users"][0]["confirmed"])
@@ -773,23 +776,41 @@ describe UsersController do
 		assert_equal(snicket.plan, res["users"][1]["plan"])
 		assert_equal(snicket.created_at.to_i, DateTime.parse(res["users"][1]["created_at"]).to_i)
 
-		assert_equal(cato.id, res["users"][2]["id"])
-		assert_equal(cato.confirmed, res["users"][2]["confirmed"])
-		assert_equal(cato.last_active, res["users"][2]["last_active"])
-		assert_equal(cato.plan, res["users"][2]["plan"])
-		assert_equal(cato.created_at.to_i, DateTime.parse(res["users"][2]["created_at"]).to_i)
+		assert_equal(klaus.id, res["users"][2]["id"])
+		assert_equal(klaus.confirmed, res["users"][2]["confirmed"])
+		assert_equal(klaus.last_active, res["users"][2]["last_active"])
+		assert_equal(klaus.plan, res["users"][2]["plan"])
+		assert_equal(klaus.created_at.to_i, DateTime.parse(res["users"][2]["created_at"]).to_i)
 
-		assert_equal(dav.id, res["users"][3]["id"])
-		assert_equal(dav.confirmed, res["users"][3]["confirmed"])
-		assert_equal(dav.last_active, res["users"][3]["last_active"])
-		assert_equal(dav.plan, res["users"][3]["plan"])
-		assert_equal(dav.created_at.to_i, DateTime.parse(res["users"][3]["created_at"]).to_i)
+		assert_equal(torera.id, res["users"][3]["id"])
+		assert_equal(torera.confirmed, res["users"][3]["confirmed"])
+		assert_equal(torera.last_active, res["users"][3]["last_active"])
+		assert_equal(torera.plan, res["users"][3]["plan"])
+		assert_equal(torera.created_at.to_i, DateTime.parse(res["users"][3]["created_at"]).to_i)
 
-		assert_equal(matt.id, res["users"][4]["id"])
-		assert_equal(matt.confirmed, res["users"][4]["confirmed"])
-		assert_equal(matt.last_active, res["users"][4]["last_active"])
-		assert_equal(matt.plan, res["users"][4]["plan"])
-		assert_equal(matt.created_at.to_i, DateTime.parse(res["users"][4]["created_at"]).to_i)
+		assert_equal(cato.id, res["users"][4]["id"])
+		assert_equal(cato.confirmed, res["users"][4]["confirmed"])
+		assert_equal(cato.last_active, res["users"][4]["last_active"])
+		assert_equal(cato.plan, res["users"][4]["plan"])
+		assert_equal(cato.created_at.to_i, DateTime.parse(res["users"][4]["created_at"]).to_i)
+
+		assert_equal(hindenburg.id, res["users"][5]["id"])
+		assert_equal(hindenburg.confirmed, res["users"][5]["confirmed"])
+		assert_equal(hindenburg.last_active, res["users"][5]["last_active"])
+		assert_equal(hindenburg.plan, res["users"][5]["plan"])
+		assert_equal(hindenburg.created_at.to_i, DateTime.parse(res["users"][5]["created_at"]).to_i)
+
+		assert_equal(dav.id, res["users"][6]["id"])
+		assert_equal(dav.confirmed, res["users"][6]["confirmed"])
+		assert_equal(dav.last_active, res["users"][6]["last_active"])
+		assert_equal(dav.plan, res["users"][6]["plan"])
+		assert_equal(dav.created_at.to_i, DateTime.parse(res["users"][6]["created_at"]).to_i)
+
+		assert_equal(matt.id, res["users"][7]["id"])
+		assert_equal(matt.confirmed, res["users"][7]["confirmed"])
+		assert_equal(matt.last_active, res["users"][7]["last_active"])
+		assert_equal(matt.plan, res["users"][7]["plan"])
+		assert_equal(matt.created_at.to_i, DateTime.parse(res["users"][7]["created_at"]).to_i)
 	end
 
 	# get_user

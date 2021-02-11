@@ -32,9 +32,32 @@ cato:
   new_email: newcato@dav-apps.tech
   new_password: "$2a$12$DHEj3Iz9TmXBqnFeccLKfOQnhkq1gzuZv.zdl3NsPLNrHqf/VGjIC"      # 654321
 
+torera:
+  first_name: Torera
+  confirmed: true
+  password_digest: "$2a$12$Bb9BMzwBjNMizAnYLcSMMOSrZCr1RbJ3h4PAawT1buCDMnm/HJQci"   # Geld
+  email: torera@dav-apps.tech
+  stripe_customer_id: cus_FGV94HqakLuIpc
+  last_active: <%= DateTime.parse("2021-02-05T10:28:00.000Z").beginning_of_day.to_s(:db) %>
+
 snicket:
   first_name: Snicket
   confirmed: true
   email: snicket@dav-apps.tech
   password_digest: "$2a$12$fbggCn90jFaZgmO4eN9ZqOX.U5j3E1SRtDM9R4EK4P/3eDYgSowXy"   # vfd
   last_active: <%= DateTime.parse("2021-01-17T05:39:00.000Z").beginning_of_day.to_s(:db) %>
+
+hindenburg:
+  first_name: Paul
+  confirmed: true
+  email: hindenburg@dav-apps.tech
+  password_digest: "$2a$12$fIROQ1fdAZ7FFeJNAVwCWeAn8uqESU31W.DMxbZccbYlqX/TtmUk2"   # ludendorff
+  last_active: <%= DateTime.parse("2021-02-02T19:28:00.000Z").beginning_of_day.to_s(:db) %>
+
+klaus:
+  first_name: Klaus
+  confirmed: true
+  email: klaus.baudelaire@dav-apps.tech
+  password_digest: "$2a$12$g4r3bVR1LEUmfOrfS1C9m.4oqPigfgEmruFsu9Nmh4oBP5flYT1ri"   # isadora
+  stripe_customer_id: cus_H2NhsO2V8Lp2vp
+  last_active: <%= DateTime.parse("2021-02-17T08:45:00.000Z").beginning_of_day.to_s(:db) %>
