@@ -50,4 +50,14 @@ class UserNotifierMailer < ApplicationMailer
 			subject: "Your email address was changed"
 		)
 	end
+
+	def payment_failed(user)
+		@user = user
+		@link = "#{ENV['BASE_URL']}/login?redirect=user%23plans"
+
+		make_bootstrap_mail(
+			to: @user.email,
+			subject: "Subscription renewal not possible"
+		)
+	end
 end
