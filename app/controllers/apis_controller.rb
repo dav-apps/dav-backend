@@ -164,7 +164,6 @@ class ApisController < ApplicationController
 
 		# Validate the name
 		ValidationService.raise_validation_errors(ValidationService.validate_name_length(name))
-		ValidationService.raise_validation_errors(ValidationService.validate_name_validity(name))
 
 		# Get the app
 		app = App.find_by(id: app_id)

@@ -135,7 +135,7 @@ describe TableObjectsController do
 
 		assert_response 409
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::UUID_ALREADY_TAKEN, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::UUID_ALREADY_IN_USE, res["errors"][0]["code"])
 	end
 
 	it "should not create table object as file with ext with wrong type" do

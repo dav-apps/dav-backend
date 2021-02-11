@@ -442,6 +442,7 @@ class UsersController < ApplicationController
 			# Download the file
 			begin
 				blob, content = BlobOperationsService.download_profile_image(session.user)
+				default_profile_image = false
 			rescue => e
 			end
 		end
@@ -450,6 +451,7 @@ class UsersController < ApplicationController
 		if content.nil? || content.length == 0
 			begin
 				blob, content = BlobOperationsService.download_default_profile_image
+				default_profile_image = true
 			rescue => e
 				ValidationService.raise_unexpected_error
 			end
@@ -458,7 +460,7 @@ class UsersController < ApplicationController
 		# Return the data
 		response.headers["Content-Length"] = content.nil? ? 0 : content.size.to_s
 
-		if user_profile_image.nil?
+		if default_profile_image
 			send_data(content, status: 200, type: "image/png", filename: "default.png")
 		else
 			send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{session.user.id}.#{user_profile_image.ext}")

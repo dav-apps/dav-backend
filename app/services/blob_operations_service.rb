@@ -6,7 +6,7 @@ class BlobOperationsService
 		)
 
 		# Read the file
-		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
 		client.create_block_blob(
 			ENV['AZURE_FILES_CONTAINER_NAME'],
@@ -46,7 +46,7 @@ class BlobOperationsService
 		)
 
 		# Read the file
-		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
 		client.create_block_blob(
 			ENV["AZURE_AVATAR_CONTAINER_NAME"],
