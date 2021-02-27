@@ -280,6 +280,7 @@ class TableObjectsController < ApplicationController
 			properties.each do |key, value|
 				# Try to find the property
 				prop = TableObjectProperty.find_by(table_object: table_object, name: key)
+				value = nil if value.to_s.length == 0
 
 				if prop.nil? && !value.nil?
 					# Create a new property

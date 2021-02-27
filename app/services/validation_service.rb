@@ -911,7 +911,7 @@ class ValidationService
 			end
 		elsif check_renew
 			# Check if the session needs to be renewed
-			if (Time.now - session.updated_at) > 1.day
+			if !Rails.env.development? && (Time.now - session.updated_at) > 1.day
 				raise RuntimeError, [get_validation_hash(3101, 403)].to_json
 			end
 		end
