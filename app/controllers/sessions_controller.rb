@@ -84,6 +84,22 @@ class SessionsController < ApplicationController
 		result = {
 			access_token: session.token
 		}
+
+		if app.id != ENV["DAV_APPS_APP_ID"].to_i
+			# If the session is for another app than the website, create a session for the website
+			website_session = Session.new(
+				user: user,
+				app: App.find_by(id: ENV["DAV_APPS_APP_ID"]),
+				token: Cuid.generate,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			)
+			ValidationService.raise_unexpected_error(!website_session.save)
+
+			result["website_access_token"] = website_session.token
+		end
+
 		render json: result, status: 201
 	rescue RuntimeError => e
 		render_errors(e)

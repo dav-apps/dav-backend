@@ -116,7 +116,7 @@ class UsersController < ApplicationController
 		}
 
 		if app_id != ENV["DAV_APPS_APP_ID"].to_i
-			# If the session is for another app than the website, create another session for the website
+			# If the session is for another app than the website, create a session for the website
 			website_session = Session.new(
 				user: user,
 				app: App.find_by(id: ENV["DAV_APPS_APP_ID"]),

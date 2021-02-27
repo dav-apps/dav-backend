@@ -282,6 +282,7 @@ describe SessionsController do
 
 		assert_response 201
 		assert_not_nil(res["access_token"])
+		assert_not_nil(res["website_access_token"])
 
 		# Check the session
 		session = Session.find_by(token: res["access_token"])
@@ -291,6 +292,15 @@ describe SessionsController do
 		assert_nil(session.device_name)
 		assert_nil(session.device_type)
 		assert_nil(session.device_os)
+
+		# Check the website session
+		website_session = Session.find_by(token: res["website_access_token"])
+		assert_not_nil(website_session)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_nil(website_session.device_name)
+		assert_nil(website_session.device_type)
+		assert_nil(website_session.device_os)
 	end
 
 	it "should create session with device info" do
@@ -316,6 +326,80 @@ describe SessionsController do
 
 		assert_response 201
 		assert_not_nil(res["access_token"])
+		assert_not_nil(res["website_access_token"])
+
+		# Check the session
+		session = Session.find_by(token: res["access_token"])
+		assert_not_nil(session)
+		assert_equal(user, session.user)
+		assert_equal(app, session.app)
+		assert_equal(device_name, session.device_name)
+		assert_equal(device_type, session.device_type)
+		assert_equal(device_os, session.device_os)
+
+		# Check the website session
+		website_session = Session.find_by(token: res["website_access_token"])
+		assert_not_nil(website_session)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_equal(device_name, website_session.device_name)
+		assert_equal(device_type, website_session.device_type)
+		assert_equal(device_os, website_session.device_os)
+	end
+
+	it "should create session for the website" do
+		user = users(:matt)
+		app = apps(:website)
+
+		res = post_request(
+			"/v1/session",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: user.email,
+				password: Constants::MATT_PASSWORD,
+				app_id: app.id,
+				api_key: devs(:sherlock).api_key
+			}
+		)
+
+		assert_response 201
+		assert_not_nil(res["access_token"])
+		assert_nil(res["website_access_token"])
+
+		# Check the session
+		session = Session.find_by(token: res["access_token"])
+		assert_not_nil(session)
+		assert_equal(user, session.user)
+		assert_equal(app, session.app)
+		assert_nil(session.device_name)
+		assert_nil(session.device_type)
+		assert_nil(session.device_os)
+	end
+
+	it "should create session with device info for the website" do
+		user = users(:matt)
+		app = apps(:website)
+		device_name = "Surface Phone"
+		device_type = "Dual-Screen"
+		device_os = "Andromeda"
+
+		res = post_request(
+			"/v1/session",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: user.email,
+				password: Constants::MATT_PASSWORD,
+				app_id: app.id,
+				api_key: devs(:sherlock).api_key,
+				device_name: device_name,
+				device_type: device_type,
+				device_os: device_os
+			}
+		)
+
+		assert_response 201
+		assert_not_nil(res["access_token"])
+		assert_nil(res["website_access_token"])
 
 		# Check the session
 		session = Session.find_by(token: res["access_token"])
@@ -344,6 +428,7 @@ describe SessionsController do
 
 		assert_response 201
 		assert_not_nil(res["access_token"])
+		assert_not_nil(res["website_access_token"])
 
 		# Check the session
 		session = Session.find_by(token: res["access_token"])
@@ -353,6 +438,15 @@ describe SessionsController do
 		assert_nil(session.device_name)
 		assert_nil(session.device_type)
 		assert_nil(session.device_os)
+
+		# Check the website session
+		website_session = Session.find_by(token: res["website_access_token"])
+		assert_not_nil(website_session)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_nil(website_session.device_name)
+		assert_nil(website_session.device_type)
+		assert_nil(website_session.device_os)
 	end
 
 	it "should create session with device info for the app of another dev" do
@@ -378,6 +472,7 @@ describe SessionsController do
 
 		assert_response 201
 		assert_not_nil(res["access_token"])
+		assert_not_nil(res["website_access_token"])
 
 		# Check the session
 		session = Session.find_by(token: res["access_token"])
@@ -387,6 +482,15 @@ describe SessionsController do
 		assert_equal(device_name, session.device_name)
 		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
+
+		# Check the website session
+		website_session = Session.find_by(token: res["website_access_token"])
+		assert_not_nil(website_session)
+		assert_equal(user, website_session.user)
+		assert_equal(apps(:website), website_session.app)
+		assert_equal(device_name, website_session.device_name)
+		assert_equal(device_type, website_session.device_type)
+		assert_equal(device_os, website_session.device_os)
 	end
 
 	# create_session_from_access_token
@@ -598,8 +702,8 @@ describe SessionsController do
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
 				access_token: session.token,
-				app_id: 1,
-				api_key: "asdasdasdasd"
+				app_id: apps(:website).id,
+				api_key: devs(:sherlock).api_key
 			}
 		)
 
