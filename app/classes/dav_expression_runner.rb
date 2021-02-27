@@ -1,4 +1,5 @@
 require 'blurhash'
+require 'rmagick'
 
 class DavExpressionRunner
 	def run(props)
@@ -265,7 +266,7 @@ class DavExpressionRunner
 					return @request[:body]
 				end
 			when :get_error
-				error = ApiError.find_by(api: @api, code: command[1])
+				error = ApiError.find_by(api: @api, code: execute_command(command[1], vars))
 
 				if !error.nil?
 					result = Hash.new
@@ -368,6 +369,40 @@ class DavExpressionRunner
 					return nil
 				when "User.get"		# id
 					return User.find_by(id: execute_command(command[1], vars).to_i)
+				when "Session.get"	# access_token
+					token = execute_command(command[1], vars)
+					session = Session.find_by(token: token)
+
+					if session.nil?
+						# Check if there is a session with old_token = token
+						session = Session.find_by(old_token: token)
+
+						if session.nil?
+							# Session does not exist
+							error = Hash.new
+							error["code"] = 0
+							@errors.push(error)
+							return @errors
+						else
+							# The old token was used
+							# Delete the session, as the token may be stolen
+							session.destroy!
+							error = Hash.new
+							error["code"] = 1
+							@errors.push(error)
+							return @errors
+						end
+					else
+						# Check if the session needs to be renewed
+						if Rails.env.production? && (Time.now - session.updated_at) > 1.day
+							error = Hash.new
+							error["code"] = 2
+							@errors.push(error)
+							return @errors
+						end
+					end
+
+					return session
 				when "Table.get"		# id
 					table = Table.find_by(id: execute_command(command[1], vars).to_i)
 
@@ -614,11 +649,11 @@ class DavExpressionRunner
 							if prop.nil?
 								# Create the property
 								new_prop = TableObjectProperty.new(name: key, value: value, table_object: obj)
-								ValidationService.raise_validation_error(ValidationService.validate_unknown_validation_error(new_prop.save))
+								ValidationService.raise_validation_errors(ValidationService.raise_unexpected_error(!new_prop.save))
 							else
 								# Update the property
 								prop.value = value
-								ValidationService.raise_validation_error(ValidationService.validate_unknown_validation_error(prop.save))
+								ValidationService.raise_validation_errors(ValidationService.raise_unexpected_error(!prop.save))
 							end
 						elsif !prop.nil?
 							# Delete the property
@@ -982,7 +1017,7 @@ class DavExpressionRunner
 					image_data = execute_command(command[1], vars)
 
 					begin
-						image = MiniMagick::ImageList.new
+						image = Magick::ImageList.new
 		
 						if @request[:body].class == StringIO
 							image.from_blob(@request[:body].string)
@@ -1002,7 +1037,7 @@ class DavExpressionRunner
 					result = Hash.new
 
 					begin
-						image = MiniMagick::ImageList.new
+						image = Magick::ImageList.new
 
 						if @request[:body].class == StringIO
 							image.from_blob(@request[:body].string)
@@ -1129,6 +1164,12 @@ class DavExpressionRunner
 					return var.table_objects.to_a
 				else
 					return var[last_part]
+				end
+			elsif var.class == Session
+				if last_part == "user_id"
+					return var.user_id
+				elsif last_part == "app_id"
+					return var.app_id
 				end
 			elsif var.class == TableObject
 				if last_part == "properties"
