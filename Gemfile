@@ -42,6 +42,7 @@ gem 'sexpistol', git: 'https://github.com/dav-apps/sexpistol'
 gem 'blurhash'
 
 # Image processing
+gem 'rmagick'
 gem 'mini_magick'
 
 # Generating CUIDs (Collision-resistant ids)

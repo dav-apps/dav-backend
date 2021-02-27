@@ -185,6 +185,7 @@ GEM
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     redis (4.2.5)
+    rmagick (4.2.1)
     ruby2_keywords (0.0.2)
     sassc (2.4.0)
       ffi (~> 1.9)
@@ -236,6 +237,7 @@ DEPENDENCIES
   rack-cors
   rails (~> 6.0.3, >= 6.0.3.4)
   redis
+  rmagick
   sassc
   sexpistol!
   spring
