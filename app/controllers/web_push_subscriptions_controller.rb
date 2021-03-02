@@ -98,4 +98,28 @@ class WebPushSubscriptionsController < ApplicationController
 	rescue RuntimeError => e
 		render_errors(e)
 	end
+
+	def delete_web_push_subscription
+		access_token = get_auth
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+
+		# Get the WebPushSubscription
+		subscription = WebPushSubscription.find_by(uuid: uuid)
+		ValidationService.raise_validation_errors(ValidationService.validate_web_push_subscription_existence(subscription))
+
+		# Check if the WebPushSubscription belongs to the session
+		ValidationService.raise_validation_errors(ValidationService.validate_web_push_subscription_belongs_to_session(subscription, session))
+
+		# Delete the WebPushSubscription
+		subscription.destroy!
+
+		head 204, content_type: "application/json"
+	rescue RuntimeError => e
+		render_errors(e)
+	end
 end

@@ -57,6 +57,7 @@ Rails.application.routes.draw do
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
 	match '/v1/web_push_subscription/:uuid', to: 'web_push_subscriptions#get_web_push_subscription', via: :get
+	match '/v1/web_push_subscription/:uuid', to: 'web_push_subscriptions#delete_web_push_subscription', via: :delete
 
 	# NotificationsController
 	match '/v1/notification', to: 'notifications#create_notification', via: :post

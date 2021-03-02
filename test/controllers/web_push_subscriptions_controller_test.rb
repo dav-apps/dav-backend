@@ -272,4 +272,58 @@ describe WebPushSubscriptionsController do
 		assert_equal(subscription.p256dh, res["p256dh"])
 		assert_equal(subscription.auth, res["auth"])
 	end
+
+	# delete_web_push_subscription
+	it "should not delete web push subscription without access token" do
+		res = delete_request("/v1/web_push_subscription/odfohisdf")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not delete web push subscription with access token for session that does not exist" do
+		res = delete_request(
+			"/v1/web_push_subscription/#{web_push_subscriptions(:mattCardsWebPushSubscription).uuid}",
+			{Authorization: "siodhiosdhiosdho"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not delete web push subscription that does not exist" do
+		res = delete_request(
+			"/v1/web_push_subscription/dssjdfsdf",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WEB_PUSH_SUBSCRIPTION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not delete web push subscription that does not belong to the session" do
+		res = delete_request(
+			"/v1/web_push_subscription/#{web_push_subscriptions(:mattCardsWebPushSubscription).uuid}",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should delete web push subscription" do
+		subscription = web_push_subscriptions(:mattCardsWebPushSubscription)
+
+		res = delete_request(
+			"/v1/web_push_subscription/#{subscription.uuid}",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 204
+		assert_nil(WebPushSubscription.find_by(id: subscription.id))
+	end
 end
