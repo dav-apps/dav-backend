@@ -55,6 +55,11 @@ class ValidationService
 		purchase.user != user ? get_validation_hash(error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_web_push_subscription_belongs_to_session(web_push_subscription, session)
+		error_code = 1002
+		web_push_subscription.session != session ? get_validation_hash(error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_notification_belongs_to_user(notification, user)
 		error_code = 1002
 		notification.user != user ? get_validation_hash(error_code, 403) : get_validation_hash
@@ -1031,6 +1036,11 @@ class ValidationService
 	def self.validate_purchase_existence(purchase)
 		error_code = 3609
 		purchase.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
+	end
+
+	def self.validate_web_push_subscription_existence(web_push_subscription)
+		error_code = 3610
+		web_push_subscription.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
 	end
 
 	def self.validate_notification_existence(notification)
