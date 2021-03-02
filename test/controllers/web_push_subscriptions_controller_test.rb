@@ -213,4 +213,63 @@ describe WebPushSubscriptionsController do
 		assert_equal(subscription.p256dh, res["p256dh"])
 		assert_equal(subscription.auth, res["auth"])
 	end
+
+	# get_web_push_subscription
+	it "should not get web push subscription without access token" do
+		res = get_request("/v1/web_push_subscription/odfohisdf")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get web push subscription with access token for session that does not exist" do
+		res = get_request(
+			"/v1/web_push_subscription/#{web_push_subscriptions(:mattCardsWebPushSubscription).uuid}",
+			{Authorization: "siodhiosdhiosdho"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get web push subscription that does not exist" do
+		res = get_request(
+			"/v1/web_push_subscription/dssjdfsdf",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::WEB_PUSH_SUBSCRIPTION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get web push subscription that does not belong to the session" do
+		res = get_request(
+			"/v1/web_push_subscription/#{web_push_subscriptions(:mattCardsWebPushSubscription).uuid}",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should get web push subscription" do
+		subscription = web_push_subscriptions(:mattCardsWebPushSubscription)
+
+		res = get_request(
+			"/v1/web_push_subscription/#{subscription.uuid}",
+			{Authorization: sessions(:mattCardsSession).token}
+		)
+
+		assert_response 200
+		assert_equal(subscription.id, res["id"])
+		assert_equal(subscription.session_id, res["session_id"])
+		assert_equal(subscription.uuid, res["uuid"])
+		assert_equal(subscription.endpoint, res["endpoint"])
+		assert_equal(subscription.p256dh, res["p256dh"])
+		assert_equal(subscription.auth, res["auth"])
+	end
 end
