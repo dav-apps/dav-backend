@@ -366,7 +366,9 @@ class TableObjectsController < ApplicationController
 
 		# Delete the file if there is one
 		if table_object.file
-			BlobOperationsService.delete_blob(table_object)
+			begin
+				BlobOperationsService.delete_blob(table_object)
+			rescue => e
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)

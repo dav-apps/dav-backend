@@ -192,24 +192,6 @@ describe TableObjectsController do
 		assert_equal(ErrorCodes::PROPERTY_NAME_TOO_LONG, res["errors"][0]["code"])
 	end
 
-	it "should not create table object with too short property value" do
-		res = post_request(
-			"/v1/table_object",
-			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
-			{
-				table_id: tables(:card).id,
-				properties: {
-					"page1": "",
-					"page2": "Hello World"
-				}
-			}
-		)
-
-		assert_response 400
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_SHORT, res["errors"][0]["code"])
-	end
-
 	it "should not create table object with too long property value" do
 		res = post_request(
 			"/v1/table_object",
@@ -942,23 +924,6 @@ describe TableObjectsController do
 		assert_response 400
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::PROPERTY_NAME_TOO_LONG, res["errors"][0]["code"])
-	end
-
-	it "should not update table object with too short property value" do
-		res = put_request(
-			"/v1/table_object/#{table_objects(:mattSecondCard).uuid}",
-			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
-			{
-				properties: {
-					test1: "Test",
-					test2: ""
-				}
-			}
-		)
-
-		assert_response 400
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::PROPERTY_VALUE_TOO_SHORT, res["errors"][0]["code"])
 	end
 
 	it "should not update table object with too long property value" do
