@@ -369,6 +369,7 @@ class TableObjectsController < ApplicationController
 			begin
 				BlobOperationsService.delete_blob(table_object)
 			rescue => e
+			end
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
