@@ -28,6 +28,9 @@ gem 'rack-cors'
 # Sidekiq for asynchronous workers
 gem 'sidekiq'
 
+# Sending emails
+gem 'sendgrid-ruby'
+
 # Password encryption
 gem 'bcrypt'
 
