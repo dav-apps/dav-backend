@@ -77,8 +77,8 @@ class ValidationService
 	end
 
 	def self.validate_content_type_json(content_type)
-		return get_validation_hash( 1101, 400) if content_type.nil?
-		return get_validation_hash( 1003, 415) if !content_type.include?("application/json")
+		return get_validation_hash(1101, 400) if content_type.nil?
+		return get_validation_hash(1003, 415) if !content_type.include?("application/json")
 		get_validation_hash
 	end
 
