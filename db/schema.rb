@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_02_01_230149) do
+ActiveRecord::Schema.define(version: 2021_03_13_195621) do
 
   create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
@@ -154,6 +154,8 @@ ActiveRecord::Schema.define(version: 2021_02_01_230149) do
     t.string "device_os"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.string "secret"
+    t.datetime "exp"
     t.index ["old_token"], name: "index_sessions_on_old_token", unique: true
     t.index ["token"], name: "index_sessions_on_token", unique: true
   end
