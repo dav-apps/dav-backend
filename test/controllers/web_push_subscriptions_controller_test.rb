@@ -110,7 +110,7 @@ describe WebPushSubscriptionsController do
 			"/v1/web_push_subscription",
 			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
 			{
-				endpoint: "a" * 300,
+				endpoint: "a" * 12000,
 				p256dh: "a" * 300,
 				auth: "a" * 300
 			}
@@ -144,7 +144,7 @@ describe WebPushSubscriptionsController do
 
 	it "should create web push subscription" do
 		session = sessions(:mattCardsSession)
-		endpoint = "https://fcm.google.com/..."
+		endpoint = "https://fcm.google.com/#{'a' * 5000}"
 		p256dh = "asdasdasdasd"
 		auth = "oshdfuhw9ehuosfd"
 
@@ -180,7 +180,7 @@ describe WebPushSubscriptionsController do
 	it "should create web push subscription with uuid" do
 		session = sessions(:mattCardsSession)
 		uuid = SecureRandom.uuid
-		endpoint = "https://fcm.google.com/..."
+		endpoint = "https://fcm.google.com/#{'a' * 5000}"
 		p256dh = "asdasdasdasd"
 		auth = "oshdfuhw9ehuosfd"
 

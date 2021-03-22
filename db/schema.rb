@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_03_13_195621) do
+ActiveRecord::Schema.define(version: 2021_03_22_225106) do
 
   create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
@@ -248,7 +248,7 @@ ActiveRecord::Schema.define(version: 2021_03_13_195621) do
   create_table "web_push_subscriptions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "session_id"
     t.string "uuid"
-    t.string "endpoint"
+    t.text "endpoint"
     t.string "p256dh"
     t.string "auth"
     t.datetime "created_at", precision: 6, null: false
