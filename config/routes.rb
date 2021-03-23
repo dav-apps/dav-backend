@@ -94,6 +94,9 @@ Rails.application.routes.draw do
 	# AppUserActivitiesController
 	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
 
+	# TasksController
+	match '/v1/tasks/send_notifications', to: 'tasks#send_notifications', via: :put
+
 	# Websocket connections
 	mount ActionCable.server => '/v1/cable'
 end
