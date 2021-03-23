@@ -31,6 +31,9 @@ gem 'sidekiq'
 # Sending emails
 gem 'sendgrid-ruby'
 
+# Sending notifications
+gem 'webpush'
+
 # Password encryption
 gem 'bcrypt'
 
