@@ -1,7 +1,6 @@
 class TasksController < ApplicationController
 	def send_notifications
 		Notification.where("time <= ?", DateTime.now).each do |notification|
-			puts notification.id
 			if notification.title.nil? || notification.body.nil?
 				# Delete the notification
 				notification.destroy!

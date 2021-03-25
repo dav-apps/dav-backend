@@ -38,8 +38,7 @@ gem 'webpush'
 gem 'bcrypt'
 
 # Bootstrap emails
-gem 'bootstrap-email'
-gem 'sassc'
+gem 'bootstrap-email', ">= 1.0.0.alpha"
 
 # Azure Blob Storage
 gem 'azure-storage-blob'
