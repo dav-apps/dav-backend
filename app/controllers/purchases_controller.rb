@@ -130,23 +130,24 @@ class PurchasesController < ApplicationController
 	end
 
 	def get_purchase
-		access_token = get_auth
+		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 
-		# Get the session
-		session = ValidationService.get_session_from_token(access_token)
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
-		# Make sure this was called from the website
-		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the purchase
 		purchase = Purchase.find_by(id: id)
 		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
-
-		# Check if the purchase belongs to the user
-		ValidationService.raise_validation_errors(ValidationService.validate_purchase_belongs_to_user(purchase, session.user))
 
 		# Return the data
 		result = {

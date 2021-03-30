@@ -328,7 +328,7 @@ describe PurchasesController do
 	end
 
 	# get_purchase
-	it "should not get purchase without access token" do
+	it "should not get purchase without auth" do
 		res = get_request("/v1/purchase/1")
 
 		assert_response 401
@@ -336,21 +336,32 @@ describe PurchasesController do
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
-	it "should not get purchase with access token for session that does not exist" do
+	it "should not get purchase with dev that does not exist" do
 		res = get_request(
 			"/v1/purchase/1",
-			{Authorization: "sdiosdfjiosdsfjiod"}
+			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
 		)
 
 		assert_response 404
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not get purchase from another app than the website" do
+	it "should not get purchase with invalid auth" do
 		res = get_request(
 			"/v1/purchase/1",
-			{Authorization: sessions(:mattCardsSession).token}
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not get purchase with another dev than the first one" do
+		res = get_request(
+			"/v1/purchase/1",
+			{Authorization: generate_auth(devs(:dav))}
 		)
 
 		assert_response 403
@@ -361,7 +372,7 @@ describe PurchasesController do
 	it "should not get purchase that does not exist" do
 		res = get_request(
 			"/v1/purchase/-123",
-			{Authorization: sessions(:mattWebsiteSession).token}
+			{Authorization: generate_auth(devs(:sherlock))}
 		)
 
 		assert_response 404
@@ -369,23 +380,12 @@ describe PurchasesController do
 		assert_equal(ErrorCodes::PURCHASE_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not get purchase that belongs to another user" do
-		res = get_request(
-			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}",
-			{Authorization: sessions(:davWebsiteSession).token}
-		)
-
-		assert_response 403
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
-	end
-
 	it "should get purchase" do
 		purchase = purchases(:snicketFirstBookMattPurchase)
 
 		res = get_request(
 			"/v1/purchase/#{purchase.id}",
-			{Authorization: sessions(:mattWebsiteSession).token}
+			{Authorization: generate_auth(devs(:sherlock))}
 		)
 
 		assert_response 200
