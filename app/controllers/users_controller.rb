@@ -580,9 +580,19 @@ class UsersController < ApplicationController
 
 	def send_password_reset_email
 		auth = get_auth
-		id = params[:id]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		email = body["email"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors(ValidationService.validate_email_presence(email))
+
+		# Validate the types of the fields
+		ValidationService.raise_validation_errors(ValidationService.validate_email_type(email))
 
 		# Get the dev
 		dev = Dev.find_by(api_key: auth.split(',')[0])
@@ -595,7 +605,7 @@ class UsersController < ApplicationController
 		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the user
-		user = User.find_by(id: id)
+		user = User.find_by(email: email)
 		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
 
 		# Generate the password confirmation token

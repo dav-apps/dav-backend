@@ -10,7 +10,7 @@ Rails.application.routes.draw do
 	match '/v1/user/stripe', to: 'users#create_stripe_customer_for_user', via: :post
 	match '/v1/user/:id', to: 'users#get_user_by_id', via: :get
 	match '/v1/user/:id/send_confirmation_email', to: 'users#send_confirmation_email', via: :post
-	match '/v1/user/:id/send_password_reset_email', to: 'users#send_password_reset_email', via: :post
+	match '/v1/user/send_password_reset_email', to: 'users#send_password_reset_email', via: :post
 	match '/v1/user/:id/confirm', to: 'users#confirm_user', via: :post
 	match '/v1/user/:id/save_new_email', to: 'users#save_new_email', via: :post
 	match '/v1/user/:id/save_new_password', to: 'users#save_new_password', via: :post

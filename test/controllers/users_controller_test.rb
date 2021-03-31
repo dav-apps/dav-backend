@@ -1565,17 +1565,56 @@ describe UsersController do
 
 	# send_password_reset_email
 	it "should not send password reset email without auth" do
-		res = post_request("/v1/user/1/send_password_reset_email")
+		res = post_request("/v1/user/send_password_reset_email")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
 		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
 	end
 
+	it "should not send password reset email without Content-Type json" do
+		res = post_request(
+			"/v1/user/send_password_reset_email",
+			{Authorization: "asdasdsadasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email without required properties" do
+		res = post_request(
+			"/v1/user/send_password_reset_email",
+			{Authorization: "asdasdasd", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not send password reset email with properties with wrong types" do
+		res = post_request(
+			"/v1/user/send_password_reset_email",
+			{Authorization: "asdasdasd", 'Content-Type': 'application/json'},
+			{
+				email: 1234
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
 	it "should not send password reset email with dev that does not exist" do
 		res = post_request(
-			"/v1/user/1/send_password_reset_email",
-			{Authorization: "asdasdasd,asdwfqfwafasf"}
+			"/v1/user/send_password_reset_email",
+			{Authorization: "asdasdasd,asdwfqfwafasf", 'Content-Type': 'application/json'},
+			{
+				email: users(:dav).email
+			}
 		)
 
 		assert_response 404
@@ -1585,8 +1624,11 @@ describe UsersController do
 
 	it "should not send password reset email with invalid auth" do
 		res = post_request(
-			"/v1/user/1/send_password_reset_email",
-			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+			"/v1/user/send_password_reset_email",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'},
+			{
+				email: users(:dav).email
+			}
 		)
 
 		assert_response 401
@@ -1596,8 +1638,11 @@ describe UsersController do
 
 	it "should not send password reset email with another dev than the first one" do
 		res = post_request(
-			"/v1/user/1/send_password_reset_email",
-			{Authorization: generate_auth(devs(:dav))}
+			"/v1/user/send_password_reset_email",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				email: users(:dav).email
+			}
 		)
 
 		assert_response 403
@@ -1607,8 +1652,11 @@ describe UsersController do
 
 	it "should not send password reset email for user that does not exist" do
 		res = post_request(
-			"/v1/user/1/send_password_reset_email",
-			{Authorization: generate_auth(devs(:sherlock))}
+			"/v1/user/send_password_reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: "bla@example.com"
+			}
 		)
 
 		assert_response 404
@@ -1620,8 +1668,11 @@ describe UsersController do
 		matt = users(:matt)
 
 		res = post_request(
-			"/v1/user/#{matt.id}/send_password_reset_email",
-			{Authorization: generate_auth(devs(:sherlock))}
+			"/v1/user/send_password_reset_email",
+			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
+			{
+				email: matt.email
+			}
 		)
 
 		assert_response 204
