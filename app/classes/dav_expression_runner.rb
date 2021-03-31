@@ -758,6 +758,49 @@ class DavExpressionRunner
 					end
 
 					return TableObjectHolder.new(obj)
+				when "TableObject.set_price"	# uuid, price, currency
+					uuid = execute_command(command[1], vars)
+					price = execute_command(command[2], vars)
+					currency = execute_command(command[3], vars)
+
+					# Get the table object
+					obj = TableObject.find_by(uuid: uuid)
+					error = Hash.new
+
+					# Check if the table object exists
+					if obj.nil?
+						error["code"] = 0
+						@errors.push(error)
+						return @errors
+					end
+
+					# Check if the table of the table object belongs to the same app as the api
+					if obj.table.app != @api.app
+						error["code"] = 1
+						@errors.push(error)
+						return @errors
+					end
+
+					# Try to get the price of the table object with the currency
+					obj_price = obj.table_object_prices.find_by(currency: currency)
+
+					if obj_price.nil?
+						# Create a new price
+						obj_price = TableObjectPrice.new(
+							table_object: obj,
+							price: price,
+							currency: currency
+						)
+					else
+						# Update the price
+						obj_price.price = price
+					end
+
+					if !obj_price.save
+						error["code"] = 2
+						@errors.push(error)
+						return @errors
+					end
 				when "TableObjectUserAccess.create"	# table_object_id, user_id, table_alias
 					# Check if there is already an TableObjectUserAccess object
 					error = Hash.new

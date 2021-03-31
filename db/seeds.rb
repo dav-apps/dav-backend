@@ -36,8 +36,8 @@ tables = Table.create([
    {name: "Appointment", app: apps[2]},
 	# PocketLib tables
 	{name: "Book", app: apps[3]},
-   {name: "BookFile", app: apps[3]},
-   {name: "EpubBookmark", app: apps[3]},
+	{name: "BookFile", app: apps[3]},
+	{name: "EpubBookmark", app: apps[3]},
 	{name: "Settings", app: apps[3]},
 	{name: "Author", app: apps[3]},
 	{name: "AuthorBio", app: apps[3]},
@@ -68,5 +68,5 @@ sessions = Session.create([
 ])
 
 apis = Api.create([
-	{app: apps[5], name: "PocketLib API v1"}
+	{app: apps[3], name: "PocketLib API v1"}
 ])
