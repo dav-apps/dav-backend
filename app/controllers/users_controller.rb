@@ -109,6 +109,7 @@ class UsersController < ApplicationController
 				period_end: user.period_end,
 				dev: false,
 				provider: false,
+				profile_image: "#{ENV['BASE_URL']}/user/#{user.id}/profile_image",
 				profile_image_etag: Constants::DEFAULT_PROFILE_IMAGE_ETAG,
 				apps: Array.new
 			},
@@ -198,6 +199,7 @@ class UsersController < ApplicationController
 		result[:period_end] = user.period_end if is_website
 		result[:dev] = !Dev.find_by(user: user).nil?
 		result[:provider] = !Provider.find_by(user: user).nil?
+		result[:profile_image] = "#{ENV['BASE_URL']}/user/#{user.id}/profile_image"
 		result[:profile_image_etag] = user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag
 
 		if is_website
@@ -259,6 +261,7 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
+			profile_image: "#{ENV['BASE_URL']}/user/#{user.id}/profile_image",
 			profile_image_etag: user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag,
 			apps: Array.new
 		}
@@ -353,6 +356,7 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
+			profile_image: "#{ENV['BASE_URL']}/user/#{user.id}/profile_image",
 			profile_image_etag: user.user_profile_image.nil? ? Constants::DEFAULT_PROFILE_IMAGE_ETAG : user.user_profile_image.etag
 		}
 
@@ -420,6 +424,7 @@ class UsersController < ApplicationController
 			period_end: user.period_end,
 			dev: !Dev.find_by(user: user).nil?,
 			provider: !Provider.find_by(user: user).nil?,
+			profile_image: "#{ENV['BASE_URL']}/user/#{user.id}/profile_image",
 			profile_image_etag: user_profile_image.etag
 		}
 

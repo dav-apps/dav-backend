@@ -3,7 +3,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def email_confirmation(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/email-link?type=confirmUser&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=confirmUser&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.email,
@@ -13,7 +13,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def password_reset(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/reset-password?userId=#{@user.id}&passwordConfirmationToken=#{@user.password_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/reset-password?userId=#{@user.id}&passwordConfirmationToken=#{@user.password_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.email,
@@ -23,7 +23,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def change_email(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/email-link?type=change-email&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=change-email&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.new_email,
@@ -33,7 +33,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def change_password(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/email-link?type=changePassword&userId=#{@user.id}&passwordConfirmationToken=#{@user.password_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=changePassword&userId=#{@user.id}&passwordConfirmationToken=#{@user.password_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.email,
@@ -43,7 +43,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def reset_email(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/email-link?type=resetEmail&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=resetEmail&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.old_email,
@@ -53,7 +53,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def payment_failed(user)
 		@user = user
-		@link = "#{ENV['BASE_URL']}/login?redirect=user%23plans"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/login?redirect=user%23plans"
 
 		make_bootstrap_mail(
 			to: @user.email,

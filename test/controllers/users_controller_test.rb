@@ -354,6 +354,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 		
 		# Check the user
@@ -410,6 +411,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
@@ -473,6 +475,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
@@ -542,6 +545,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
@@ -604,6 +608,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
@@ -673,6 +678,7 @@ describe UsersController do
 		assert_nil(res["user"]["period_end"])
 		assert(!res["user"]["dev"])
 		assert(!res["user"]["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{res['user']['id']}/profile_image", res["user"]["profile_image"])
 		assert_equal(Constants::DEFAULT_PROFILE_IMAGE_ETAG, res["user"]["profile_image_etag"])
 
 		# Check the user
@@ -851,6 +857,7 @@ describe UsersController do
 		assert_equal(matt.plan, res["plan"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{matt.id}/profile_image", res["profile_image"])
 		assert_equal(user_profile_images(:mattProfileImage).etag, res["profile_image_etag"])
 
 		assert_nil(res["stripe_customer_id"])
@@ -880,6 +887,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{dav.id}/profile_image", res["profile_image"])
 		assert_equal(user_profile_images(:davProfileImage).etag, res["profile_image_etag"])
 
 		cards = apps(:cards)
@@ -969,6 +977,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{dav.id}/profile_image", res["profile_image"])
 		assert_equal(user_profile_images(:davProfileImage).etag, res["profile_image_etag"])
 
 		cards = apps(:cards)
@@ -1133,6 +1142,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{matt.id}/profile_image", res["profile_image"])
 		assert_equal(user_profile_images(:mattProfileImage).etag, res["profile_image_etag"])
 
 		# Check if the user was updated
@@ -1252,6 +1262,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{cato.id}/profile_image", res["profile_image"])
 		assert_not_nil(res["profile_image_etag"])
 
 		# Check the UserProfileImage
@@ -1289,6 +1300,7 @@ describe UsersController do
 		assert_nil(res["period_end"])
 		assert(!res["dev"])
 		assert(!res["provider"])
+		assert_equal("#{ENV['BASE_URL']}/user/#{matt.id}/profile_image", res["profile_image"])
 		assert_not_nil(res["profile_image_etag"])
 
 		# Check the UserProfileImage
