@@ -458,12 +458,53 @@ class UsersController < ApplicationController
 		end
 
 		# Return the data
-		response.headers["Content-Length"] = content.nil? ? 0 : content.size.to_s
+		response.headers["Content-Length"] = content.nil? ? 0 : content.size
 
 		if default_profile_image
 			send_data(content, status: 200, type: "image/png", filename: "default.png")
 		else
 			send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{session.user.id}.#{user_profile_image.ext}")
+		end
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
+	def get_profile_image_of_user_by_id
+		id = params[:id]
+
+		# Get the user
+		user = User.find_by(id: id)
+		ValidationService.raise_validation_errors(ValidationService.validate_user_existence(user))
+
+		# Get the profile image
+		user_profile_image = user.user_profile_image
+
+		if !user_profile_image.nil?
+			# Download the file
+			begin
+				blob, content = BlobOperationsService.download_profile_image(user)
+				default_profile_image = false
+			rescue => e
+			end
+		end
+
+		# Download the default profile image
+		if content.nil? || content.length == 0
+			begin
+				blob, content = BlobOperationsService.download_default_profile_image
+				default_profile_image = true
+			rescue => e
+				ValidationService.raise_unexpected_error
+			end
+		end
+
+		# Return the data
+		response.headers["Content-Length"] = content.nil? ? 0 : content.size
+
+		if default_profile_image
+			send_data(content, status: 200, type: "image/png", filename: "default.png")
+		else
+			send_data(content, status: 200, type: user_profile_image.mime_type, filename: "#{user.id}.#{user_profile_image.ext}")
 		end
 	rescue RuntimeError => e
 		render_errors(e)

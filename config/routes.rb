@@ -6,6 +6,7 @@ Rails.application.routes.draw do
 	match '/v1/user', to: 'users#update_user', via: :put
 	match '/v1/user/profile_image', to: 'users#set_profile_image_of_user', via: :put
 	match '/v1/user/profile_image', to: 'users#get_profile_image_of_user', via: :get
+	match '/v1/user/:id/profile_image', to: 'users#get_profile_image_of_user_by_id', via: :get
 	match '/v1/user/stripe', to: 'users#create_stripe_customer_for_user', via: :post
 	match '/v1/user/:id', to: 'users#get_user_by_id', via: :get
 	match '/v1/user/:id/send_confirmation_email', to: 'users#send_confirmation_email', via: :post
@@ -96,6 +97,9 @@ Rails.application.routes.draw do
 
 	# TasksController
 	match '/v1/tasks/send_notifications', to: 'tasks#send_notifications', via: :put
+
+	# Stripe Webhooks
+	mount StripeEvent::Engine, at: '/v1/stripe'
 
 	# Websocket connections
 	mount ActionCable.server => '/v1/cable'

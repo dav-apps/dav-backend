@@ -1365,6 +1365,61 @@ describe UsersController do
 		assert_equal(file_content, res)
 	end
 
+	# get_profile_image_of_user_by_id
+	it "should not get profile image of user by id that does not exist" do
+		res = get_request(
+			"/v1/user/-123/profile_image",
+			{}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::USER_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should get default profile image of user by id that has no user profile image" do
+		file_content = File.open("test/fixtures/files/default.png", "rb").read
+
+		res = get_request(
+			"/v1/user/#{users(:cato).id}/profile_image",
+			{},
+			false
+		)
+
+		assert_response 200
+		assert_equal(file_content, res)
+	end
+
+	it "should get default profile image of user by id that has no uploaded profile image" do
+		file_content = File.open("test/fixtures/files/default.png", "rb").read
+
+		res = get_request(
+			"/v1/user/#{users(:dav).id}/profile_image",
+			{},
+			false
+		)
+
+		assert_response 200
+		assert_equal(file_content, res)
+	end
+
+	it "should get profile image of user by id" do
+		matt = users(:matt)
+		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
+
+		# Upload the profile image
+		upload_profile_image(matt, StringIO.new(file_content))
+
+		res = get_request(
+			"/v1/user/#{matt.id}/profile_image",
+			{},
+			false
+		)
+
+		assert_response 200
+		assert_equal(file_content, res)
+	end
+
 	# create_stripe_customer_for_user
 	it "should not create stripe customer for user without access token" do
 		res = post_request("/v1/user/stripe")
