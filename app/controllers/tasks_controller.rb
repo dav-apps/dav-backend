@@ -47,8 +47,20 @@ class TasksController < ApplicationController
 	end
 
 	def delete_sessions
+		# Delete sessions which were not used in the last 3 months
 		Session.all.where("updated_at < ?", DateTime.now - 3.months).each do |session|
 			session.destroy!
+		end
+
+		head 204, content_type: "application/json"
+	end
+
+	def delete_purchases
+		# Delete not completed purchases which are older than one day
+		Purchase.where(completed: false).where("created_at < ?", DateTime.now - 1.day).each do |purchase|
+			# Delete the PaymentIntent
+			Stripe::PaymentIntent.cancel(purchase.payment_intent_id)
+			purchase.destroy!
 		end
 
 		head 204, content_type: "application/json"
