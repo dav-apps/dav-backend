@@ -97,6 +97,7 @@ Rails.application.routes.draw do
 
 	# TasksController
 	match '/v1/tasks/send_notifications', to: 'tasks#send_notifications', via: :put
+	match '/v1/tasks/delete_sessions', to: 'tasks#delete_sessions', via: :put
 
 	# Stripe Webhooks
 	mount StripeEvent::Engine, at: '/v1/stripe'

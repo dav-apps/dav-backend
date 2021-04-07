@@ -45,4 +45,12 @@ class TasksController < ApplicationController
 
 		head 204, content_type: "application/json"
 	end
+
+	def delete_sessions
+		Session.all.where("updated_at < ?", DateTime.now - 3.months).each do |session|
+			session.destroy!
+		end
+
+		head 204, content_type: "application/json"
+	end
 end
