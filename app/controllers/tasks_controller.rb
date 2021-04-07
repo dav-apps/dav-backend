@@ -7,6 +7,49 @@ class TasksController < ApplicationController
 		App.all.each do |app|
 			create_user_activity(AppUser.where(app: app), app)
 		end
+
+		head 204, content_type: "application/json"
+	end
+
+	def update_api_caches
+		Api.all.each do |api|
+			api.api_endpoints.where(caching: true).each do |api_endpoint|
+				# Get the environment variables of the api
+				env_vars = Hash.new
+				api.api_env_vars.each do |env_var|
+					env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+				end
+
+				api_endpoint.api_endpoint_request_caches.each do |cache|
+					vars = Hash.new
+					vars["env"] = env_vars
+
+					# Get the params
+					cache.api_endpoint_request_cache_params.each do |param|
+						vars[param.name] = param.value
+					end
+
+					runner = DavExpressionRunner.new
+					result = runner.run({
+						api: api,
+						vars: vars,
+						commands: api_endpoint.commands,
+						request: {
+							headers: Hash.new,
+							body: nil
+						}
+					})
+
+					if result[:status] == 200 && !result[:file]
+						# Update the cache
+						cache.response = result[:data].to_json
+						cache.save
+					end
+				end
+			end
+		end
+
+		head 204, content_type: "application/json"
 	end
 	
 	def send_notifications
