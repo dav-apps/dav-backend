@@ -96,6 +96,7 @@ Rails.application.routes.draw do
 	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
 
 	# TasksController
+	match '/v1/tasks/create_user_activities', to: 'tasks#create_user_activities', via: :put
 	match '/v1/tasks/send_notifications', to: 'tasks#send_notifications', via: :put
 	match '/v1/tasks/delete_sessions', to: 'tasks#delete_sessions', via: :put
 	match '/v1/tasks/delete_purchases', to: 'tasks#delete_purchases', via: :put
