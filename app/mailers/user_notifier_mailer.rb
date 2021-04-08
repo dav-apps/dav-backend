@@ -23,7 +23,7 @@ class UserNotifierMailer < ApplicationMailer
 
 	def change_email(user)
 		@user = user
-		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=change-email&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
+		@link = "#{ENV['WEBSITE_BASE_URL']}/email-link?type=changeEmail&userId=#{@user.id}&emailConfirmationToken=#{@user.email_confirmation_token}"
 
 		make_bootstrap_mail(
 			to: @user.new_email,
