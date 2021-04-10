@@ -71,6 +71,7 @@ class PurchasesController < ApplicationController
 		purchase = Purchase.new(
 			user: user,
 			table_object: table_object,
+			uuid: SecureRandom.uuid,
 			provider_name: provider_name,
 			provider_image: provider_image,
 			product_name: product_name,
@@ -115,6 +116,7 @@ class PurchasesController < ApplicationController
 			id: purchase.id,
 			user_id: purchase.user_id,
 			table_object_id: purchase.table_object_id,
+			uuid: purchase.uuid,
 			payment_intent_id: purchase.payment_intent_id,
 			provider_name: purchase.provider_name,
 			provider_image: purchase.provider_image,
@@ -131,7 +133,7 @@ class PurchasesController < ApplicationController
 
 	def get_purchase
 		auth = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 
@@ -146,7 +148,7 @@ class PurchasesController < ApplicationController
 		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
 
 		# Get the purchase
-		purchase = Purchase.find_by(id: id)
+		purchase = Purchase.find_by(uuid: uuid)
 		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
 
 		# Return the data
@@ -154,6 +156,7 @@ class PurchasesController < ApplicationController
 			id: purchase.id,
 			user_id: purchase.user_id,
 			table_object_id: purchase.table_object_id,
+			uuid: purchase.uuid,
 			payment_intent_id: purchase.payment_intent_id,
 			provider_name: purchase.provider_name,
 			provider_image: purchase.provider_image,
@@ -170,7 +173,7 @@ class PurchasesController < ApplicationController
 
 	def complete_purchase
 		access_token = get_auth
-		id = params[:id]
+		uuid = params[:uuid]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
@@ -182,7 +185,7 @@ class PurchasesController < ApplicationController
 		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
 		# Get the purchase
-		purchase = Purchase.find_by(id: id)
+		purchase = Purchase.find_by(uuid: uuid)
 		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
 
 		# Check if the purchase belongs to the user
@@ -226,6 +229,7 @@ class PurchasesController < ApplicationController
 			id: purchase.id,
 			user_id: purchase.user_id,
 			table_object_id: purchase.table_object_id,
+			uuid: purchase.uuid,
 			payment_intent_id: purchase.payment_intent_id,
 			provider_name: purchase.provider_name,
 			provider_image: purchase.provider_image,
