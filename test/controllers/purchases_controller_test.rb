@@ -242,6 +242,7 @@ describe PurchasesController do
 		assert_not_nil(res["id"])
 		assert_equal(cato.id, res["user_id"])
 		assert_equal(table_object.id, res["table_object_id"])
+		assert_not_nil(res["uuid"])
 		assert_not_nil(res["payment_intent_id"])
 		assert_equal(provider_name, res["provider_name"])
 		assert_equal(provider_image, res["provider_image"])
@@ -255,6 +256,7 @@ describe PurchasesController do
 		assert_not_nil(purchase)
 		assert_equal(purchase.user_id, res["user_id"])
 		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
 		assert_equal(purchase.provider_image, res["provider_image"])
@@ -305,6 +307,7 @@ describe PurchasesController do
 		assert_not_nil(res["id"])
 		assert_equal(snicket.id, res["user_id"])
 		assert_equal(table_object.id, res["table_object_id"])
+		assert_not_nil(res["uuid"])
 		assert_nil(res["payment_intent_id"])
 		assert_equal(provider_name, res["provider_name"])
 		assert_equal(provider_image, res["provider_image"])
@@ -318,6 +321,7 @@ describe PurchasesController do
 		assert_not_nil(purchase)
 		assert_equal(purchase.user_id, res["user_id"])
 		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.uuid, res["uuid"])
 		assert_nil(res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
 		assert_equal(purchase.provider_image, res["provider_image"])
@@ -329,7 +333,7 @@ describe PurchasesController do
 
 	# get_purchase
 	it "should not get purchase without auth" do
-		res = get_request("/v1/purchase/1")
+		res = get_request("/v1/purchase/sadsaasd")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
@@ -338,7 +342,7 @@ describe PurchasesController do
 
 	it "should not get purchase with dev that does not exist" do
 		res = get_request(
-			"/v1/purchase/1",
+			"/v1/purchase/asdasdasdsda",
 			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
 		)
 
@@ -349,7 +353,7 @@ describe PurchasesController do
 
 	it "should not get purchase with invalid auth" do
 		res = get_request(
-			"/v1/purchase/1",
+			"/v1/purchase/sadasdsasda",
 			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
 		)
 
@@ -360,7 +364,7 @@ describe PurchasesController do
 
 	it "should not get purchase with another dev than the first one" do
 		res = get_request(
-			"/v1/purchase/1",
+			"/v1/purchase/asdasasda",
 			{Authorization: generate_auth(devs(:dav))}
 		)
 
@@ -371,7 +375,7 @@ describe PurchasesController do
 
 	it "should not get purchase that does not exist" do
 		res = get_request(
-			"/v1/purchase/-123",
+			"/v1/purchase/ohahasfhoasfosfa",
 			{Authorization: generate_auth(devs(:sherlock))}
 		)
 
@@ -384,7 +388,7 @@ describe PurchasesController do
 		purchase = purchases(:snicketFirstBookMattPurchase)
 
 		res = get_request(
-			"/v1/purchase/#{purchase.id}",
+			"/v1/purchase/#{purchase.uuid}",
 			{Authorization: generate_auth(devs(:sherlock))}
 		)
 
@@ -393,6 +397,7 @@ describe PurchasesController do
 		assert_equal(purchase.id, res["id"])
 		assert_equal(purchase.user_id, res["user_id"])
 		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
 		assert_equal(purchase.provider_image, res["provider_image"])
@@ -405,7 +410,7 @@ describe PurchasesController do
 
 	# complete_purchase
 	it "should not complete purchase without access token" do
-		res = post_request("/v1/purchase/1/complete")
+		res = post_request("/v1/purchase/sdoshidf/complete")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
@@ -414,7 +419,7 @@ describe PurchasesController do
 
 	it "should not complete purchase with access token for session that does not exist" do
 		res = post_request(
-			"/v1/purchase/1/complete",
+			"/v1/purchase/sjklsdsfld/complete",
 			{Authorization: "asdasdasdasasd"}
 		)
 
@@ -425,7 +430,7 @@ describe PurchasesController do
 
 	it "should not complete purchase from another app than the website" do
 		res = post_request(
-			"/v1/purchase/1/complete",
+			"/v1/purchase/sdfsdfsdf/complete",
 			{Authorization: sessions(:mattCardsSession).token}
 		)
 
@@ -436,7 +441,7 @@ describe PurchasesController do
 
 	it "should not complete purchase that does not exist" do
 		res = post_request(
-			"/v1/purchase/-123/complete",
+			"/v1/purchase/sdfsdsfdfd/complete",
 			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
@@ -447,7 +452,7 @@ describe PurchasesController do
 
 	it "should not complete purchase that belongs to another user" do
 		res = post_request(
-			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}/complete",
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).uuid}/complete",
 			{Authorization: sessions(:davWebsiteSession).token}
 		)
 
@@ -458,7 +463,7 @@ describe PurchasesController do
 
 	it "should not complete purchase that is already completed" do
 		res = post_request(
-			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).id}/complete",
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase).uuid}/complete",
 			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
@@ -469,7 +474,7 @@ describe PurchasesController do
 
 	it "should not complete purchase for table object that was already purchased" do
 		res = post_request(
-			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase2).id}/complete",
+			"/v1/purchase/#{purchases(:snicketFirstBookMattPurchase2).uuid}/complete",
 			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 	
@@ -480,7 +485,7 @@ describe PurchasesController do
 
 	it "should not complete purchase if the user has no stripe customer" do
 		res = post_request(
-			"/v1/purchase/#{purchases(:snicketFirstBookCatoPurchase).id}/complete",
+			"/v1/purchase/#{purchases(:snicketFirstBookCatoPurchase).uuid}/complete",
 			{Authorization: sessions(:catoWebsiteSession).token}
 		)
 
@@ -518,7 +523,7 @@ describe PurchasesController do
 		payment_intent_id = res["payment_intent_id"]
 
 		res = post_request(
-			"/v1/purchase/#{purchase.id}/complete",
+			"/v1/purchase/#{purchase.uuid}/complete",
 			{Authorization: sessions(:mattWebsiteSession).token}
 		)
 
@@ -527,6 +532,7 @@ describe PurchasesController do
 		assert_equal(purchase.id, res["id"])
 		assert_equal(purchase.user_id, res["user_id"])
 		assert_equal(purchase.table_object_id, res["table_object_id"])
+		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
 		assert_equal(purchase.provider_image, res["provider_image"])

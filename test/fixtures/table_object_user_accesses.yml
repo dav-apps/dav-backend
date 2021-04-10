@@ -6,6 +6,10 @@ mattAccessDavSecondCard:
   user: matt
   table_object: davSecondCard
 
+mattAccessSnicketFirstBook:
+  user: matt
+  table_object: snicketFirstBook
+
 klausAccessSnicketFirstBook:
   user: klaus
   table_object: snicketFirstBook
