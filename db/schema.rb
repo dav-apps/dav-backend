@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_09_215831) do
+ActiveRecord::Schema.define(version: 2021_04_10_174049) do
 
   create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
@@ -131,7 +131,6 @@ ActiveRecord::Schema.define(version: 2021_04_09_215831) do
 
   create_table "purchases", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "user_id"
-    t.bigint "table_object_id"
     t.string "payment_intent_id"
     t.string "provider_name"
     t.string "provider_image"
@@ -178,6 +177,12 @@ ActiveRecord::Schema.define(version: 2021_04_09_215831) do
     t.bigint "table_object_id"
     t.string "name"
     t.text "value"
+  end
+
+  create_table "table_object_purchases", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+    t.bigint "table_object_id"
+    t.bigint "purchase_id"
+    t.datetime "created_at", precision: 6, null: false
   end
 
   create_table "table_object_user_accesses", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
