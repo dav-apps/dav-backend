@@ -1,3 +1,8 @@
+sherlockTestFileEur:
+  table_object: sherlockTestFile
+  price: 0
+  currency: eur
+
 snicketFirstBookEur:
   table_object: snicketFirstBook
   price: 1313
