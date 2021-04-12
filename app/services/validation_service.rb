@@ -118,6 +118,11 @@ class ValidationService
 		raise RuntimeError, [get_validation_hash(error_code, 400)].to_json
 	end
 
+	def self.validate_table_objects_count(table_objects)
+		error_code = 2001
+		table_objects.count == 0 ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Missing fields
 	def self.validate_access_token_presence(access_token)
 		error_code = 2100
@@ -267,6 +272,11 @@ class ValidationService
 	def self.validate_env_vars_presence(env_vars)
 		error_code = 2129
 		env_vars.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_table_objects_presence(table_objects)
+		error_code = 2130
+		table_objects.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Fields with wrong type
@@ -520,6 +530,16 @@ class ValidationService
 		return get_validation_hash if value.is_a?(Float)
 		return get_validation_hash if value.is_a?(Array)
 		get_validation_hash(error_code, 400)
+	end
+
+	def self.validate_table_objects_type(table_objects)
+		error_code = 2248
+		return get_validation_hash(error_code, 400) if !table_objects.is_a?(Array)
+		table_objects.each do |obj|
+			return get_validation_hash(error_code, 400) if !obj.is_a?(String)
+		end
+
+		get_validation_hash
 	end
 
 	# Too short & too long fields
@@ -857,9 +877,15 @@ class ValidationService
 		user.provider.nil? ? get_validation_hash(error_code, 412) : get_validation_hash
 	end
 
-	def self.validate_table_object_already_purchased(user, table_object)
+	def self.validate_table_objects_already_purchased(user, table_objects)
 		error_code = 3002
-		Purchase.exists?(user: user, table_object: table_object, completed: true) ? get_validation_hash(error_code, 422) : get_validation_hash
+
+		table_objects.each do |obj|
+			# Check if the table object was already purchased by the user
+			return get_validation_hash(error_code, 422) if !user.purchases.find { |p| p.table_objects.include?(obj) && p.completed }.nil?
+		end
+
+		get_validation_hash
 	end
 
 	def self.validate_user_is_stripe_customer(user)
@@ -895,6 +921,11 @@ class ValidationService
 	def self.validate_purchase_not_completed(purchase)
 		error_code = 3008
 		purchase.completed ? get_validation_hash(error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_table_object_belongs_to_user(user, table_object)
+		error_code = 3009
+		table_object.user != user ? get_validation_hash(error_code, 412) : get_validation_hash
 	end
 
 	# Access token errors
@@ -1144,6 +1175,8 @@ class ValidationService
 		# Generic request body errors
 		when 2000
 			"Invalid body"
+		when 2001
+			"Purchase requires at least one table object"
 		# Missing fields
 		when 2100
 			"Missing field: access_token"
@@ -1205,6 +1238,8 @@ class ValidationService
 			"Missing field: errors"
 		when 2129
 			"Missing field: env_vars"
+		when 2130
+			"Missing field: table_objects"
 		# Fields with wrong type
 		when 2200
 			"Field has wrong type: access_token"
@@ -1302,6 +1337,8 @@ class ValidationService
 			"Field has wrong type: env_var name"
 		when 2247
 			"Field has wrong type: env_var value"
+		when 2248
+			"Field has wrong type: table_objects"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1435,7 +1472,7 @@ class ValidationService
 		when 3001
 			"The user of the TableObject must have a Provider"
 		when 3002
-			"The user already purchased this TableObject"
+			"The user already purchased one of the TableObjects"
 		when 3003
 			"The user has no payment information"
 		when 3004
@@ -1448,6 +1485,8 @@ class ValidationService
 			"Not sufficient storage available"
 		when 3008
 			"The purchase is already completed"
+		when 3009
+			"The table objects need to belong to the same user"
 		# Access token errors
 		when 3100
 			"Can't use old access token"
