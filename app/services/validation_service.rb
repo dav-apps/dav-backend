@@ -55,6 +55,11 @@ class ValidationService
 		purchase.user != user ? get_validation_hash(error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_purchase_belongs_to_app(purchase, app)
+		error_code = 1002
+		purchase.table_objects.first.table.app != app ? get_validation_hash(error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_web_push_subscription_belongs_to_session(web_push_subscription, session)
 		error_code = 1002
 		web_push_subscription.session != session ? get_validation_hash(error_code, 403) : get_validation_hash
@@ -928,6 +933,11 @@ class ValidationService
 		table_object.user != user ? get_validation_hash(error_code, 412) : get_validation_hash
 	end
 
+	def self.validate_purchase_can_be_deleted(purchase)
+		error_code = 3010
+		purchase.price > 0 && purchase.completed ? get_validation_hash(error_code, 412) : get_validation_hash
+	end
+
 	# Access token errors
 	def self.get_session_from_token(token, check_renew = true)
 		session = Session.find_by(token: token)
@@ -1487,6 +1497,8 @@ class ValidationService
 			"The purchase is already completed"
 		when 3009
 			"The table objects need to belong to the same user"
+		when 3010
+			"The purchase cannot be deleted"
 		# Access token errors
 		when 3100
 			"Can't use old access token"

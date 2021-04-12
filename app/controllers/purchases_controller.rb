@@ -269,4 +269,40 @@ class PurchasesController < ApplicationController
 	rescue RuntimeError => e
 		render_errors(e)
 	end
+
+	def delete_purchase
+		access_token = get_auth
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+		user = session.user
+
+		# Get the purchase
+		purchase = Purchase.find_by(uuid: uuid)
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_existence(purchase))
+
+		# Check if the purchase belongs to the user
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_belongs_to_user(purchase, user))
+
+		# Check if the purchase belongs to the app of the session
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_belongs_to_app(purchase, session.app))
+
+		# Check if the purchase can be deleted
+		ValidationService.raise_validation_errors(ValidationService.validate_purchase_can_be_deleted(purchase))
+
+		# Cancel the payment intent
+		if purchase.price > 0
+			Stripe::PaymentIntent.cancel(purchase.payment_intent_id)
+		end
+
+		# Delete the purchase
+		purchase.destroy!
+
+		head 204, content_type: "application/json"
+	rescue => e
+		render_errors(e)
+	end
 end
