@@ -928,9 +928,19 @@ class ValidationService
 		purchase.completed ? get_validation_hash(error_code, 412) : get_validation_hash
 	end
 
-	def self.validate_table_object_belongs_to_user(user, table_object)
+	def self.validate_table_objects_belong_to_same_user(table_objects)
 		error_code = 3009
-		table_object.user != user ? get_validation_hash(error_code, 412) : get_validation_hash
+		return get_validation_hash if table_objects.count == 0
+
+		obj_user = table_objects.first.user
+		i = 1
+
+		while i < table_objects.count
+			return get_validation_hash(error_code, 412) if table_objects[i].user != obj_user
+			i += 1
+		end
+
+		get_validation_hash
 	end
 
 	def self.validate_purchase_can_be_deleted(purchase)

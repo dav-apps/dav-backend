@@ -63,15 +63,7 @@ class PurchasesController < ApplicationController
 
 		# Check if the table objects belong to the same user
 		obj_user = table_objects.first.user
-		i = 1
-
-		while i < table_objects.count
-			if table_objects[i].user != obj_user
-				ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(user, table_objects[i]))
-			end
-
-			i += 1
-		end
+		ValidationService.raise_validation_errors(ValidationService.validate_table_objects_belong_to_same_user(table_objects))
 
 		# Check if the user already purchased one of the table objects
 		ValidationService.raise_validation_errors(ValidationService.validate_table_objects_already_purchased(session.user, table_objects))
