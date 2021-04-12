@@ -7,7 +7,7 @@ describe PurchasesController do
 
 	# create_purchase
 	it "should not create purchase without access token" do
-		res = post_request("/v1/table_object/asd/purchase")
+		res = post_request("/v1/purchase")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
@@ -16,7 +16,7 @@ describe PurchasesController do
 
 	it "should not create purchase without Content-Type json" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: "iojsdjiosdfjiosdf"}
 		)
 
@@ -27,7 +27,7 @@ describe PurchasesController do
 
 	it "should not create purchase with access token for session that does not exist" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: "ioafhiosdfiosfd", 'Content-Type': 'application/json'}
 		)
 
@@ -38,51 +38,55 @@ describe PurchasesController do
 
 	it "should not create purchase without required properties" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'}
 		)
 
 		assert_response 400
-		assert_equal(5, res["errors"].length)
+		assert_equal(6, res["errors"].length)
 		assert_equal(ErrorCodes::PROVIDER_NAME_MISSING, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PROVIDER_IMAGE_MISSING, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::PRODUCT_NAME_MISSING, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::PRODUCT_IMAGE_MISSING, res["errors"][3]["code"])
 		assert_equal(ErrorCodes::CURRENCY_MISSING, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::TABLE_OBJECTS_MISSING, res["errors"][5]["code"])
 	end
 
 	it "should not create purchase with properties with wrong types" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: true,
 				provider_image: false,
 				product_name: 12,
 				product_image: 52.3,
-				currency: 40
+				currency: 40,
+				table_objects: "test"
 			}
 		)
 
 		assert_response 400
-		assert_equal(5, res["errors"].length)
+		assert_equal(6, res["errors"].length)
 		assert_equal(ErrorCodes::PROVIDER_NAME_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PROVIDER_IMAGE_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::PRODUCT_NAME_WRONG_TYPE, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::PRODUCT_IMAGE_WRONG_TYPE, res["errors"][3]["code"])
 		assert_equal(ErrorCodes::CURRENCY_WRONG_TYPE, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::TABLE_OBJECTS_WRONG_TYPE, res["errors"][5]["code"])
 	end
 
 	it "should not create purchase with too short properties" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "a",
 				provider_image: "a",
 				product_name: "a",
 				product_image: "a",
-				currency: "eur"
+				currency: "eur",
+				table_objects: ["asdasd"]
 			}
 		)
 
@@ -96,14 +100,15 @@ describe PurchasesController do
 
 	it "should not create purchase with too long properties" do
 		res = post_request(
-			"/v1/table_object/asd/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "a" * 300,
 				provider_image: "a" * 300,
 				product_name: "a" * 300,
 				product_image: "a" * 300,
-				currency: "eur"
+				currency: "eur",
+				table_objects: ["asdasd"]
 			}
 		)
 
@@ -115,16 +120,36 @@ describe PurchasesController do
 		assert_equal(ErrorCodes::PRODUCT_IMAGE_TOO_LONG, res["errors"][3]["code"])
 	end
 
-	it "should not create purchase for table object that does not exist" do
+	it "should not create purchase without table objects" do
 		res = post_request(
-			"/v1/table_object/asdasdasdasd/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "Lemony Snicket",
 				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
 				product_name: "A Series of Unfortunate Events - Book the First",
 				product_image: "https://api.pocketlib.app/store/book/asd/cover",
-				currency: "eur"
+				currency: "eur",
+				table_objects: []
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::PURCHASE_REQUIRES_AT_LEAST_ONE_TABLE_OBJECT, res["errors"][0]["code"])
+	end
+
+	it "should not create purchase for table objects that do not exist" do
+		res = post_request(
+			"/v1/purchase",
+			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
+			{
+				provider_name: "Lemony Snicket",
+				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
+				product_name: "A Series of Unfortunate Events - Book the First",
+				product_image: "https://api.pocketlib.app/store/book/asd/cover",
+				currency: "eur",
+				table_objects: ["sdofshodfosidf"]
 			}
 		)
 
@@ -133,16 +158,17 @@ describe PurchasesController do
 		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
-	it "should not create purchase for table object that belongs to another app" do
+	it "should not create purchase for table objects that belong to another app" do
 		res = post_request(
-			"/v1/table_object/#{table_objects(:sherlockTestData).uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "Lemony Snicket",
 				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
 				product_name: "A Series of Unfortunate Events - Book the First",
 				product_image: "https://api.pocketlib.app/store/book/asd/cover",
-				currency: "eur"
+				currency: "eur",
+				table_objects: [table_objects(:sherlockTestData).uuid]
 			}
 		)
 
@@ -151,16 +177,35 @@ describe PurchasesController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should not create purchase for table object that is already purchased" do
+	it "should not create purchase for table objects that belong to different users" do
 		res = post_request(
-			"/v1/table_object/#{table_objects(:snicketFirstBook).uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:mattPocketlibSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "Lemony Snicket",
 				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
 				product_name: "A Series of Unfortunate Events - Book the First",
 				product_image: "https://api.pocketlib.app/store/book/asd/cover",
-				currency: "eur"
+				currency: "eur",
+				table_objects: [
+					table_objects(:snicketSecondBook).uuid,
+					table_objects(:hindenburgFirstBook).uuid
+				]
+			}
+		)
+	end
+
+	it "should not create purchase for table object that is already purchased" do
+		res = post_request(
+			"/v1/purchase",
+			{Authorization: sessions(:mattPocketlibSession).token, 'Content-Type': 'application/json'},
+			{
+				provider_name: "Lemony Snicket",
+				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
+				product_name: "A Series of Unfortunate Events - Book the First",
+				product_image: "https://api.pocketlib.app/store/book/asd/cover",
+				currency: "eur",
+				table_objects: [table_objects(:snicketFirstBook).uuid]
 			}
 		)
 
@@ -171,14 +216,15 @@ describe PurchasesController do
 
 	it "should not create purchase for table object that has no price for the given currency" do
 		res = post_request(
-			"/v1/table_object/#{table_objects(:snicketFirstBook).uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:catoPocketlibSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "Lemony Snicket",
 				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
 				product_name: "A Series of Unfortunate Events - Book the First",
 				product_image: "https://api.pocketlib.app/store/book/asd/cover",
-				currency: "usd"
+				currency: "usd",
+				table_objects: [table_objects(:snicketFirstBook).uuid]
 			}
 		)
 
@@ -197,14 +243,15 @@ describe PurchasesController do
 		)
 
 		res = post_request(
-			"/v1/table_object/#{table_object.uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:davCardsSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: "Lemony Snicket",
 				provider_image: "https://api.pocketlib.app/author/asd/profile_image",
 				product_name: "A Series of Unfortunate Events - Book the First",
 				product_image: "https://api.pocketlib.app/store/book/asd/cover",
-				currency: "eur"
+				currency: "eur",
+				table_objects: [table_object.uuid]
 			}
 		)
 
@@ -216,7 +263,8 @@ describe PurchasesController do
 	it "should create purchase" do
 		cato = users(:cato)
 		snicket_provider = providers(:snicket)
-		table_object = table_objects(:snicketFirstBook)
+		first_table_object = table_objects(:snicketFirstBook)
+		second_table_object = table_objects(:snicketSecondBook)
 		table_object_price = table_object_prices(:snicketFirstBookEur)
 		provider_name = "Lemony Snicket"
 		provider_image = "https://api.pocketlib.app/author/sadasdasd/profile_image"
@@ -226,14 +274,18 @@ describe PurchasesController do
 		currency = table_object_price.currency
 		
 		res = post_request(
-			"/v1/table_object/#{table_object.uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:catoPocketlibSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: provider_name,
 				provider_image: provider_image,
 				product_name: product_name,
 				product_image: product_image,
-				currency: currency
+				currency: currency,
+				table_objects: [
+					first_table_object.uuid,
+					second_table_object.uuid
+				]
 			}
 		)
 
@@ -241,7 +293,6 @@ describe PurchasesController do
 		
 		assert_not_nil(res["id"])
 		assert_equal(cato.id, res["user_id"])
-		assert_equal(table_object.id, res["table_object_id"])
 		assert_not_nil(res["uuid"])
 		assert_not_nil(res["payment_intent_id"])
 		assert_equal(provider_name, res["provider_name"])
@@ -255,7 +306,6 @@ describe PurchasesController do
 		purchase = Purchase.find_by(id: res["id"])
 		assert_not_nil(purchase)
 		assert_equal(purchase.user_id, res["user_id"])
-		assert_equal(purchase.table_object_id, res["table_object_id"])
 		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
@@ -264,6 +314,16 @@ describe PurchasesController do
 		assert_equal(purchase.product_image, res["product_image"])
 		assert_equal(purchase.price, res["price"])
 		assert_equal(purchase.currency, res["currency"])
+
+		first_table_object_purchase = TableObjectPurchase.find_by(purchase: purchase, table_object: first_table_object)
+		assert_not_nil(first_table_object_purchase)
+		assert_equal(first_table_object_purchase.purchase_id, purchase.id)
+		assert_equal(first_table_object_purchase.table_object_id, first_table_object.id)
+
+		second_table_object_purchase = TableObjectPurchase.find_by(purchase: purchase, table_object: second_table_object)
+		assert_not_nil(second_table_object_purchase)
+		assert_equal(second_table_object_purchase.purchase_id, purchase.id)
+		assert_equal(second_table_object_purchase.table_object_id, second_table_object.id)
 
 		# Get the payment intent
 		payment_intent = Stripe::PaymentIntent.retrieve(purchase.payment_intent_id)
@@ -291,14 +351,15 @@ describe PurchasesController do
 		currency = table_object_price.currency
 
 		res = post_request(
-			"/v1/table_object/#{table_object.uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:snicketPocketlibSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: provider_name,
 				provider_image: provider_image,
 				product_name: product_name,
 				product_image: product_image,
-				currency: currency
+				currency: currency,
+				table_objects: [table_object.uuid]
 			}
 		)
 
@@ -306,7 +367,6 @@ describe PurchasesController do
 
 		assert_not_nil(res["id"])
 		assert_equal(snicket.id, res["user_id"])
-		assert_equal(table_object.id, res["table_object_id"])
 		assert_not_nil(res["uuid"])
 		assert_nil(res["payment_intent_id"])
 		assert_equal(provider_name, res["provider_name"])
@@ -320,7 +380,6 @@ describe PurchasesController do
 		purchase = Purchase.find_by(id: res["id"])
 		assert_not_nil(purchase)
 		assert_equal(purchase.user_id, res["user_id"])
-		assert_equal(purchase.table_object_id, res["table_object_id"])
 		assert_equal(purchase.uuid, res["uuid"])
 		assert_nil(res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
@@ -329,6 +388,11 @@ describe PurchasesController do
 		assert_equal(purchase.product_image, res["product_image"])
 		assert_equal(0, res["price"])
 		assert_equal(purchase.currency, res["currency"])
+
+		table_object_purchase = TableObjectPurchase.find_by(purchase: purchase, table_object: table_object)
+		assert_not_nil(table_object_purchase)
+		assert_equal(table_object_purchase.purchase_id, purchase.id)
+		assert_equal(table_object_purchase.table_object_id, table_object.id)
 	end
 
 	# get_purchase
@@ -396,7 +460,6 @@ describe PurchasesController do
 		
 		assert_equal(purchase.id, res["id"])
 		assert_equal(purchase.user_id, res["user_id"])
-		assert_equal(purchase.table_object_id, res["table_object_id"])
 		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])
@@ -506,14 +569,15 @@ describe PurchasesController do
 
 		# Create a purchase
 		res = post_request(
-			"/v1/table_object/#{table_object.uuid}/purchase",
+			"/v1/purchase",
 			{Authorization: sessions(:mattPocketlibSession).token, 'Content-Type': 'application/json'},
 			{
 				provider_name: provider_name,
 				provider_image: provider_image,
 				product_name: product_name,
 				product_image: product_image,
-				currency: currency
+				currency: currency,
+				table_objects: [table_object.uuid]
 			}
 		)
 
@@ -531,7 +595,6 @@ describe PurchasesController do
 
 		assert_equal(purchase.id, res["id"])
 		assert_equal(purchase.user_id, res["user_id"])
-		assert_equal(purchase.table_object_id, res["table_object_id"])
 		assert_equal(purchase.uuid, res["uuid"])
 		assert_equal(purchase.payment_intent_id, res["payment_intent_id"])
 		assert_equal(purchase.provider_name, res["provider_name"])

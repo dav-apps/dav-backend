@@ -1,0 +1,11 @@
+snicketFirstBookMattPurchaseStoreBook:
+  table_object: snicketFirstBook
+  purchase: snicketFirstBookMattPurchase
+
+snicketFirstBookMattPurchase2StoreBook:
+  table_object: snicketFirstBook
+  purchase: snicketFirstBookMattPurchase2
+
+snicketFirstBookCatoPurchaseStoreBook:
+  table_object: snicketFirstBook
+  purchase: snicketFirstBookCatoPurchase

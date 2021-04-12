@@ -1,6 +1,5 @@
 snicketFirstBookMattPurchase:
   user: matt
-  table_object: snicketFirstBook
   uuid: 2de6316b-f3ea-447c-81ce-a33f00337d2c
   payment_intent_id: aiosoasidajisd
   provider_name: Lemony Snicket
@@ -13,7 +12,6 @@ snicketFirstBookMattPurchase:
 
 snicketFirstBookMattPurchase2:
   user: matt
-  table_object: snicketFirstBook
   uuid: 45c6302d-565f-4210-864c-2f93001bfdde
   payment_intent_id: aiosoasidajisd
   provider_name: Lemony Snicket
@@ -26,7 +24,6 @@ snicketFirstBookMattPurchase2:
 
 snicketFirstBookCatoPurchase:
   user: cato
-  table_object: snicketFirstBook
   uuid: 093d0451-f439-4cb3-aa34-9c88a66a85e0
   payment_intent_id: aiosoasidajisd
   provider_name: Lemony Snicket
