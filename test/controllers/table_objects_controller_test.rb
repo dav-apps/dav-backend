@@ -282,6 +282,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -374,6 +376,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -449,6 +453,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -485,6 +491,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -524,6 +532,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -565,6 +575,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:matt).id, res["user_id"])
@@ -604,6 +616,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(table_object.etag, res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(table_object.table_object_properties.length, res["properties"].length)
 
 		assert_equal(users(:sherlock).id, res["user_id"])
@@ -713,6 +727,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(4, res["properties"].length)
 
 		first_property = table_object.table_object_properties.where(name: "test1").first
@@ -748,6 +764,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(!res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(2, res["properties"].length)
 
 		first_property = table_object.table_object_properties.where(name: "page1").first
@@ -757,6 +775,28 @@ describe TableObjectsController do
 		second_property = table_object.table_object_properties.where(name: "page2").first
 		assert_equal(second_property.value, res["properties"][second_property.name])
 		assert(res["properties"][second_property.name].is_a?(String))
+	end
+
+	it "should get purchased table object with access" do
+		table_object = table_objects(:snicketFirstBook)
+		purchase = purchases(:snicketFirstBookMattPurchase)
+
+		res = get_request(
+			"/v1/table_object/#{table_object.uuid}",
+			{Authorization: sessions(:mattPocketlibSession).token}
+		)
+
+		assert_response 200
+
+		assert_equal(table_object.id, res["id"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.file, res["file"])
+		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(!res["belongs_to_user"])
+		assert_equal(purchase.uuid, res["purchase"])
+		assert_equal(0, res["properties"].length)
 	end
 
 	it "should get table object and update last_active fields" do
@@ -1010,6 +1050,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(5, res["properties"].length)
 
 		# First property
@@ -1092,6 +1134,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(1, res["properties"].length)
 
 		# First property
@@ -1132,6 +1176,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(1, res["properties"].length)
 
 		# Ext property
@@ -1159,6 +1205,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert_equal(table_object.file, res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(2, res["properties"].length)
 
 		user = users(:matt)
@@ -1376,6 +1424,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert(res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob
@@ -1424,6 +1474,8 @@ describe TableObjectsController do
 		assert_equal(table_object.uuid, res["uuid"])
 		assert(res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
+		assert(res["belongs_to_user"])
+		assert_nil(res["purchase"])
 		assert_equal(3, res["properties"].length)
 
 		# Get the blob

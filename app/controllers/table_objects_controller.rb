@@ -140,6 +140,8 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			belongs_to_user: true,
+			purchase: nil,
 			properties: props
 		}
 
@@ -165,12 +167,17 @@ class TableObjectsController < ApplicationController
 		# Check if the user can access the table object
 		user_access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 		table_id = table_object.table_id
+		belongs_to_user = true
+		purchase_uuid = nil
 
 		if user_access.nil?
 			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_user(table_object, session.user))
 			ValidationService.raise_validation_errors(ValidationService.validate_table_object_belongs_to_app(table_object, session.app))
 		else
-			table_id = user_access.table_alias
+			table_id = user_access.table_alias if !user_access.table_alias.nil?
+			belongs_to_user = false
+			purchase = table_object.purchases.find_by(user: session.user, completed: true)
+			purchase_uuid = purchase.nil? ? nil : purchase.uuid
 		end
 
 		# Generate the etag if the table object has none
@@ -193,6 +200,8 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			belongs_to_user: belongs_to_user,
+			purchase: purchase_uuid,
 			properties: Hash.new
 		}
 
@@ -328,6 +337,8 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			belongs_to_user: true,
+			purchase: nil,
 			properties: Hash.new
 		}
 
@@ -494,6 +505,8 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			belongs_to_user: true,
+			purchase: nil,
 			properties: Hash.new
 		}
 
