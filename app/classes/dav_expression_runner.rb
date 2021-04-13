@@ -369,6 +369,20 @@ class DavExpressionRunner
 					return nil
 				when "User.get"		# id
 					return User.find_by(id: execute_command(command[1], vars).to_i)
+				when "User.is_provider"		# user_id
+					user_id = execute_command(command[1], vars)
+					
+					# Get the user
+					user = User.find_by(id: user_id)
+
+					if user.nil?
+						error = Hash.new
+						error["code"] = 0
+						@errors.push(error)
+						return @errors
+					end
+
+					return !user.provider.nil?
 				when "Session.get"	# access_token
 					token = execute_command(command[1], vars)
 					session = Session.find_by(token: token)
@@ -782,7 +796,7 @@ class DavExpressionRunner
 					end
 
 					# Try to get the price of the table object with the currency
-					obj_price = obj.table_object_prices.find_by(currency: currency)
+					obj_price = obj.table_object_prices.find_by(currency: currency.downcase)
 
 					if obj_price.nil?
 						# Create a new price
@@ -801,6 +815,28 @@ class DavExpressionRunner
 						@errors.push(error)
 						return @errors
 					end
+				when "TableObject.get_price"	# uuid, currency
+					uuid = execute_command(command[1], vars)
+					currency = execute_command(command[2], vars)
+
+					# Get the table object
+					obj = TableObject.find_by(uuid: uuid)
+					error = Hash.new
+
+					# Check if the table object exists
+					return nil if obj.nil?
+
+					# Check if the table of the table object belongs to the same app as the api
+					if obj.table.app != @api.app
+						error["code"] = 0
+						@errors.push(error)
+						return @errors
+					end
+
+					# Try to get the price of the table object with the currency
+					obj_price = obj.table_object_prices.find_by(currency: currency.downcase)
+					return nil if obj_price.nil?
+					return obj_price.price
 				when "TableObjectUserAccess.create"	# table_object_id, user_id, table_alias
 					# Check if there is already an TableObjectUserAccess object
 					error = Hash.new
@@ -989,6 +1025,141 @@ class DavExpressionRunner
 					objects.each{ |obj| holders.push(TableObjectHolder.new(obj)) }
 
 					return holders
+				when "Purchase.create"	# user_id, provider_name, provider_image, product_name, product_image, price, currency, table_objects
+					user_id = execute_command(command[1], vars)
+					provider_name = execute_command(command[2], vars)
+					provider_image = execute_command(command[3], vars)
+					product_name = execute_command(command[4], vars)
+					product_image = execute_command(command[5], vars)
+					price = execute_command(command[6], vars)
+					currency = execute_command(command[7], vars)
+					table_objects = execute_command(command[8], vars)
+					error = Hash.new
+
+					# Get the user
+					user = User.find_by(id: user_id)
+
+					if user.nil?
+						error["code"] = 0
+						@errors.push(error)
+						return @errors
+					end
+
+					# Check the property types
+					if !provider_name.is_a?(String) || !provider_image.is_a?(String) || !product_name.is_a?(String) || !product_image.is_a?(String) || !price.is_a?(Integer) || !currency.is_a?(String) || !table_objects.is_a?(Array)
+						error["code"] = 1
+						@errors.push(error)
+						return @errors
+					end
+
+					# Validate the price
+					if price < 0
+						error["code"] = 2
+						@errors.push(error)
+						return @errors
+					end
+
+					# Make sure there is at least one table object
+					if table_objects.count == 0
+						error["code"] = 3
+						@errors.push(error)
+						return @errors
+					end
+
+					# Get the table objects
+					objs = Array.new
+
+					table_objects.each do |uuid|
+						obj = TableObject.find_by(uuid: uuid)
+
+						if obj.nil?
+							error["code"] = 4
+							@errors.push(error)
+							return @errors
+						end
+
+						objs.push(obj)
+					end
+
+					# Check if the table objects belong to the same user
+					obj_user = objs.first.user
+					i = 1
+
+					while i < objs.count
+						if objs[i].user != obj_user
+							error["code"] = 5
+							@errors.push(error)
+							return @errors
+						end
+
+						i += 1
+					end
+
+					# Check if the user of the table objects has a provider
+					if obj_user.provider.nil?
+						error["code"] = 6
+						@errors.push(error)
+						return @errors
+					end
+
+					# Create the purchase
+					purchase = Purchase.new(
+						user: user,
+						uuid: SecureRandom.uuid,
+						provider_name: provider_name,
+						provider_image: provider_image,
+						product_name: product_name,
+						product_image: product_image,
+						price: price,
+						currency: currency
+					)
+
+					if price == 0
+						purchase.completed = true
+					else
+						# Create a stripe customer for the user, if the user has none
+						if user.stripe_customer_id.nil?
+							customer = Stripe::Customer.create(email: user.email)
+							user.stripe_customer_id = customer.id
+							ValidationService.raise_unexpected_error(!user.save)
+						end
+
+						# Create a payment intent
+						begin
+							payment_intent = Stripe::PaymentIntent.create({
+								customer: user.stripe_customer_id,
+								amount: price,
+								currency: currency.downcase,
+								confirmation_method: 'manual',
+								application_fee_amount: (price * 0.2).round,
+								transfer_data: {
+									destination: obj_user.provider.stripe_account_id
+								}
+							})
+						rescue Stripe::CardError => e
+							error["code"] = 7
+							@errors.push(error)
+							return @errors
+						end
+
+						purchase.payment_intent_id = payment_intent.id
+					end
+
+					# Create the TableObjectPurchases
+					objs.each do |obj|
+						obj_purchase = TableObjectPurchase.new(
+							table_object: obj,
+							purchase: purchase
+						)
+
+						if !obj_purchase.save
+							error["code"] = 8
+							@errors.push(error)
+							return @errors
+						end
+					end
+
+					return purchase
 				when "Purchase.get_table_object"	# purchase_id, user_id
 					error = Hash.new
 					purchase_id = execute_command(command[1], vars)
@@ -1029,13 +1200,16 @@ class DavExpressionRunner
 
 					if table_object_id.class == Integer
 						# table_object_id is id
-						return Purchase.find_by(user_id: user_id, table_object_id: table_object_id, completed: true)
+						table_object = TableObject.find_by(id: table_object_id)
+						return nil if table_object.nil?
+
+						return table_object.purchases.find_by(user_id: user_id, completed: true)
 					else
 						# table_object_id is uuid
 						table_object = TableObject.find_by(uuid: table_object_id)
-						
 						return nil if table_object.nil?
-						return Purchase.find_by(user_id: user_id, table_object: table_object, completed: true)
+
+						return table_object.purchases.find_by(user_id: user_id, completed: true)
 					end
 				when "Math.round"	# var, rounding = 2
 					var = execute_command(command[1], vars)
