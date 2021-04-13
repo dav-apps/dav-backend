@@ -2,7 +2,7 @@ users = User.create([
 	{email: "dav@dav-apps.tech", password: "davdavdav", first_name: "Dav", confirmed: true},
 	{email: "test@example.com", password: "loremipsum", first_name: "Tester", confirmed: true},
 	{email: "author@dav-apps.tech", password: "books", first_name: "Author-Tester", confirmed: true},
-	{email: "klaus.baudelaire@dav-apps.tech", password: "isadora", first_name: "Klaus", confirmed: true, plan: 2}
+	{email: "klaus.baudelaire@dav-apps.tech", password: "isadora", first_name: "Klaus", confirmed: true, plan: 2, stripe_customer_id: "cus_H2NhsO2V8Lp2vp"}
 ])
 
 devs = Dev.create([
@@ -11,7 +11,8 @@ devs = Dev.create([
 ])
 
 providers = Provider.create([
-	{user: users[1], stripe_account_id: "acct_1GPFIgAwAxz84qLO"}
+	{user: users[1], stripe_account_id: "acct_1GdyrpIgs6wPf3j0"},
+	{user: users[2], stripe_account_id: "acct_1GPFIgAwAxz84qLO"}
 ])
 
 apps = App.create([

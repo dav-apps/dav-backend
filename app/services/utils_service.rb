@@ -120,5 +120,7 @@ class UtilsService
 				return value
 			end
 		end
+
+		return value
 	end
 end
