@@ -1096,7 +1096,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the user of the table objects has a provider
-					if obj_user.provider.nil?
+					if price > 0 && obj_user.provider.nil?
 						error["code"] = 6
 						@errors.push(error)
 						return @errors
