@@ -49,7 +49,31 @@ class DavExpressionRunner
 
 			case command[0]
 			when :var
-				if command[1].to_s.include?('.')
+				if command[1].to_s.include?('..')
+					parts = command[1].to_s.split('..')
+					last_part = parts.pop
+					current_var = vars
+
+					parts.each do |part|
+						if current_var.is_a?(Hash)
+							part_value = execute_command(part, vars)
+							return nil if !part_value.is_a?(String)
+
+							current_var = current_var[part_value]
+						else
+							return nil
+						end
+					end
+
+					if current_var.is_a?(Hash)
+						last_part_value = execute_command(last_part, vars)
+						return nil if !last_part_value.is_a?(String)
+
+						current_var[last_part_value] = execute_command(command[2], vars)
+					end
+
+					return nil
+				elsif command[1].to_s.include?('.')
 					parts = command[1].to_s.split('.')
 					last_part = parts.pop
 					current_var = vars
@@ -96,6 +120,8 @@ class DavExpressionRunner
 				else
 					vars[command[1].to_s] = execute_command(command[2], vars)
 				end
+
+				return nil
 			when :return
 				return execute_command(command[1], vars)
 			when :hash
@@ -1326,6 +1352,17 @@ class DavExpressionRunner
 			return command
 		elsif command.class == String && command.size == 1
 			return command
+		elsif command.to_s.include?('..')
+			parts = command.to_s.split('..')
+			last_part = parts.pop
+
+			# Check if the variable exists
+			return command if !vars.include?(parts[0].split('#')[0])
+			var = execute_command(parts.join('..').to_sym, vars)
+			last_part_value = vars[last_part]
+
+			return var if !var.is_a?(Hash) || !last_part_value.is_a?(String)
+			return var[last_part_value]
 		elsif command.to_s.include?('.')
 			# Return the value of the hash
 			parts = command.to_s.split('.')
