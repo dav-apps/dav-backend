@@ -479,8 +479,9 @@ class TableObjectsController < ApplicationController
 		# Save the new used storage
 		UtilsService.update_used_storage(session.user, session.app, file_size_diff)
 
-		# Update the etag of the table object
+		# Update etag and file_uploaded of the table object
 		table_object.etag = UtilsService.generate_table_object_etag(table_object)
+		table_object.file_uploaded = true
 		ValidationService.raise_unexpected_error(!table_object.save)
 
 		# Save that the user was active
@@ -545,6 +546,9 @@ class TableObjectsController < ApplicationController
 
 		# Check if the table object is a file
 		ValidationService.raise_validation_errors(ValidationService.validate_table_object_is_file(table_object))
+
+		# Check if the table object has a file uploaded
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_has_file(table_object))
 
 		# Download the file
 		begin

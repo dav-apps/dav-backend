@@ -913,6 +913,11 @@ class ValidationService
 		!table_object.file ? get_validation_hash(error_code, 422) : get_validation_hash
 	end
 
+	def self.validate_table_object_has_file(table_object)
+		error_code = 3006
+		(!table_object.file || !table_object.file_uploaded) ? get_validation_hash(error_code, 404) : get_validation_hash
+	end
+
 	def self.raise_table_object_has_no_file
 		error_code = 3006
 		raise RuntimeError, [get_validation_hash(error_code, 404)].to_json
