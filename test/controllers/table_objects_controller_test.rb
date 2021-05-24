@@ -1428,6 +1428,9 @@ describe TableObjectsController do
 		assert_nil(res["purchase"])
 		assert_equal(3, res["properties"].length)
 
+		table_object = TableObject.find_by(id: table_object.id)
+		assert(table_object.file_uploaded)
+
 		# Get the blob
 		blob, content = BlobOperationsService.download_blob(table_object)
 		assert_equal(content, file_content)
@@ -1477,6 +1480,9 @@ describe TableObjectsController do
 		assert(res["belongs_to_user"])
 		assert_nil(res["purchase"])
 		assert_equal(3, res["properties"].length)
+
+		table_object = TableObject.find_by(id: table_object.id)
+		assert(table_object.file_uploaded)
 
 		# Get the blob
 		blob, content = BlobOperationsService.download_blob(table_object)
@@ -1599,6 +1605,19 @@ describe TableObjectsController do
 		res = get_request(
 			"/v1/table_object/#{table_object.uuid}/file",
 			{Authorization: sessions(:davTestAppSession).token}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_HAS_NO_FILE, res["errors"][0]["code"])
+	end
+
+	it "should not get table object file of table object that has no file uploaded" do
+		table_object = table_objects(:sherlockTestFile)
+
+		res = get_request(
+			"/v1/table_object/#{table_object.uuid}/file",
+			{Authorization: sessions(:sherlockTestAppSession).token}
 		)
 
 		assert_response 404

@@ -339,6 +339,28 @@ describe TablesController do
 		assert_equal(generate_table_object_etag(sixth_table_object), res["table_objects"][1]["etag"])
 	end
 
+	it "should get table and return only table objects with uploaded file" do
+		table = tables(:testTable)
+
+		res = get_request(
+			"/v1/table/#{table.id}",
+			{Authorization: sessions(:sherlockTestAppSession).token}
+		)
+
+		assert_response 200
+
+		assert_equal(table.id, res["id"])
+		assert_equal(table.app.id, res["app_id"])
+		assert_equal(table.name, res["name"])
+		assert_equal(1, res["pages"])
+		assert_equal(1, res["table_objects"].count)
+
+		first_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
+		assert_equal(first_table_object.uuid, res["table_objects"][0]["uuid"])
+		assert_equal(first_table_object.uuid, table_objects(:sherlockTestData).uuid)
+		assert_equal(generate_table_object_etag(first_table_object), res["table_objects"][0]["etag"])
+	end
+
 	it "should get table and update last_active fields" do
 		table = tables(:card)
 
