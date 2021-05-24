@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_10_174049) do
+ActiveRecord::Schema.define(version: 2021_05_24_194028) do
 
   create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
@@ -200,6 +200,7 @@ ActiveRecord::Schema.define(version: 2021_04_10_174049) do
     t.string "etag"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.boolean "file_uploaded", default: false
     t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
   end
 
