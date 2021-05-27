@@ -37,7 +37,6 @@ class DavExpressionRunner
 		return nil if @break_loop
 
 		if command.class == Array
-			# Command is a function call
 			if command[0].class == Array && (!command[1] || command[1].class == Array)
 				# Command contains commands
 				result = nil
@@ -47,6 +46,7 @@ class DavExpressionRunner
 				return result
 			end
 
+			# Command is a function call
 			case command[0]
 			when :var
 				if command[1].to_s.include?('..')
@@ -336,6 +336,10 @@ class DavExpressionRunner
 					return execute_command(command[0], vars) > execute_command(command[2], vars)
 				when :<
 					return execute_command(command[0], vars) < execute_command(command[2], vars)
+				when :>=
+					return execute_command(command[0], vars) >= execute_command(command[2], vars)
+				when :<=
+					return execute_command(command[0], vars) <= execute_command(command[2], vars)
 				when :+, :-
 					# Get all values
 					values = Array.new
@@ -357,6 +361,8 @@ class DavExpressionRunner
 						
 						if result.class == String || value.class == String
 							result = result.to_s + value.to_s
+						elsif command[i] == :- && result.class != String
+							result -= value
 						else
 							result += value
 						end
@@ -366,11 +372,21 @@ class DavExpressionRunner
 					end
 
 					return result
+				when :*
+					first_var = execute_command(command[0], vars)
+					second_var = execute_command(command[2], vars)
+					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
+					return first_var * second_var
 				when :/
 					first_var = execute_command(command[0], vars)
 					second_var = execute_command(command[2], vars)
 					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
 					return first_var / second_var
+				when :%
+					first_var = execute_command(command[0], vars)
+					second_var = execute_command(command[2], vars)
+					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
+					return first_var % second_var
 				when :and, :or
 					result = execute_command(command[0], vars)
 					i = 2
@@ -467,8 +483,13 @@ class DavExpressionRunner
 						return @errors
 					end
 
-					objects = table.table_objects.where(user_id: execute_command(command[2], vars).to_i).to_a
-					
+					user_id = execute_command(command[2], vars)
+					if user_id.nil?
+						objects = table.table_objects.to_a
+					else
+						objects = table.table_objects.where(user_id: user_id.to_i).to_a
+					end
+
 					holders = Array.new
 					objects.each{ |obj| holders.push(TableObjectHolder.new(obj)) }
 
@@ -1330,6 +1351,10 @@ class DavExpressionRunner
 								end
 	
 								return result
+							elsif function_name == "select"
+								start_pos = execute_command(command[1], vars)
+								end_pos = execute_command(command[2], vars)
+								return var[start_pos, end_pos]
 							end
 						elsif var.class == String
 							if function_name == "split"
