@@ -326,84 +326,6 @@ class DavExpressionRunner
 			when :!
 				return !execute_command(command[1], vars)
 			else
-				# Command might be an expression
-				case command[1]
-				when :==
-					return execute_command(command[0], vars) == execute_command(command[2], vars)
-				when :!=
-					return execute_command(command[0], vars) != execute_command(command[2], vars)
-				when :>
-					return execute_command(command[0], vars) > execute_command(command[2], vars)
-				when :<
-					return execute_command(command[0], vars) < execute_command(command[2], vars)
-				when :>=
-					return execute_command(command[0], vars) >= execute_command(command[2], vars)
-				when :<=
-					return execute_command(command[0], vars) <= execute_command(command[2], vars)
-				when :+, :-
-					# Get all values
-					values = Array.new
-					i = 0
-
-					while command[i]
-						value = execute_command(command[i], vars)
-						values.push(value)
-
-						i += 2
-					end
-
-					result = values[0].class == String ? "" : 0
-					i = -1
-					j = 0
-
-					while command[i]
-						value = values[j]
-						
-						if result.class == String || value.class == String
-							result = result.to_s + value.to_s
-						elsif command[i] == :- && result.class != String
-							result -= value
-						else
-							result += value
-						end
-
-						i += 2
-						j += 1
-					end
-
-					return result
-				when :*
-					first_var = execute_command(command[0], vars)
-					second_var = execute_command(command[2], vars)
-					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
-					return first_var * second_var
-				when :/
-					first_var = execute_command(command[0], vars)
-					second_var = execute_command(command[2], vars)
-					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
-					return first_var / second_var
-				when :%
-					first_var = execute_command(command[0], vars)
-					second_var = execute_command(command[2], vars)
-					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
-					return first_var % second_var
-				when :and, :or
-					result = execute_command(command[0], vars)
-					i = 2
-					
-					while command[i]
-						if command[i - 1] == :and
-							result = execute_command(command[i], vars) && result
-						elsif command[i - 1] == :or
-							result = execute_command(command[i], vars) || result
-						end
-
-						i += 2
-					end
-
-					return result
-				end
-
 				# Command might be a method call
 				case command[0].to_s
 				when "#"
@@ -1320,57 +1242,136 @@ class DavExpressionRunner
 						result["height"] = -1
 						return result
 					end
-				else
-					if command[0].to_s.include?('.')
-						# Get the value of the variable
-						parts = command[0].to_s.split('.')
-						function_name = parts.pop
+				end
 
-						# Check if the variable exists
-						return command[0] if !vars.include?(parts[0].split('#')[0])
-						var = parts.size == 1 ? vars[parts[0]] : execute_command(parts.join('.'), vars)
+				# Command might be an expression
+				case command[1]
+				when :==
+					return execute_command(command[0], vars) == execute_command(command[2], vars)
+				when :!=
+					return execute_command(command[0], vars) != execute_command(command[2], vars)
+				when :>
+					return execute_command(command[0], vars) > execute_command(command[2], vars)
+				when :<
+					return execute_command(command[0], vars) < execute_command(command[2], vars)
+				when :>=
+					return execute_command(command[0], vars) >= execute_command(command[2], vars)
+				when :<=
+					return execute_command(command[0], vars) <= execute_command(command[2], vars)
+				when :+, :-
+					# Get all values
+					values = Array.new
+					i = 0
 
-						if var.class == Array
-							if function_name == "push"
-								i = 1
-								while command[i]
-									result = execute_command(command[i], vars)
-									var.push(result) if result != nil
-									i += 1
-								end
-							elsif function_name == "contains"
-								return var.include?(execute_command(command[1], vars))
-							elsif function_name == "join"
-								return "" if var.size == 0
-	
-								separator = execute_command(command[1], vars)
-								result = var[0]
-	
-								for i in 1..var.size - 1 do
-									result = result + separator + var[i]
-								end
-	
-								return result
-							elsif function_name == "select"
-								start_pos = execute_command(command[1], vars)
-								end_pos = execute_command(command[2], vars)
-								return var[start_pos, end_pos]
-							end
-						elsif var.class == String
-							if function_name == "split"
-								return var.split(execute_command(command[1], vars))
-							elsif function_name == "contains"
-								return var.include?(execute_command(command[1], vars))
-							end
+					while command[i]
+						value = execute_command(command[i], vars)
+						values.push(value)
+
+						i += 2
+					end
+
+					result = values[0].class == String ? "" : 0
+					i = -1
+					j = 0
+
+					while command[i]
+						value = values[j]
+
+						if result.class == String || value.class == String
+							result = result.to_s + value.to_s
+						elsif command[i] == :- && result.class != String
+							result -= value
+						else
+							result += value
 						end
-					else
-						result = nil
-						command.each do |c|
-							result = execute_command(c, vars)
+
+						i += 2
+						j += 1
+					end
+
+					return result
+				when :*
+					first_var = execute_command(command[0], vars)
+					second_var = execute_command(command[2], vars)
+					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
+					return first_var * second_var
+				when :/
+					first_var = execute_command(command[0], vars)
+					second_var = execute_command(command[2], vars)
+					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
+					return first_var / second_var
+				when :%
+					first_var = execute_command(command[0], vars)
+					second_var = execute_command(command[2], vars)
+					return nil if (first_var.class != Integer && first_var.class != Float) || (second_var.class != Integer && second_var.class != Float)
+					return first_var % second_var
+				when :and, :or
+					result = execute_command(command[0], vars)
+					i = 2
+
+					while !command[i].nil?
+						if command[i - 1] == :and
+							result = execute_command(command[i], vars) && result
+						elsif command[i - 1] == :or
+							result = execute_command(command[i], vars) || result
 						end
-						return result
+
+						i += 2
+					end
+
+					return result
+				end
+
+				if command[0].to_s.include?('.')
+					# Get the value of the variable
+					parts = command[0].to_s.split('.')
+					function_name = parts.pop
+
+					# Check if the variable exists
+					return command[0] if !vars.include?(parts[0].split('#')[0])
+					var = parts.size == 1 ? vars[parts[0]] : execute_command(parts.join('.'), vars)
+
+					if var.class == Array
+						if function_name == "push"
+							i = 1
+							while command[i]
+								result = execute_command(command[i], vars)
+								var.push(result) if result != nil
+								i += 1
+							end
+						elsif function_name == "contains"
+							return var.include?(execute_command(command[1], vars))
+						elsif function_name == "join"
+							return "" if var.size == 0
+
+							separator = execute_command(command[1], vars)
+							result = var[0]
+
+							for i in 1..var.size - 1 do
+								result = result + separator + var[i]
+							end
+
+							return result
+						elsif function_name == "select"
+							start_pos = execute_command(command[1], vars)
+							end_pos = execute_command(command[2], vars)
+							return var[start_pos, end_pos]
+						end
+					elsif var.class == String
+						if function_name == "split"
+							return var.split(execute_command(command[1], vars))
+						elsif function_name == "contains"
+							return var.include?(execute_command(command[1], vars))
+						end
 					end
 				end
+
+				# Treat the command like a series of commands
+				result = nil
+				command.each do |c|
+					result = execute_command(c, vars)
+				end
+				return result
 			end
 		elsif command.class == Regexp || !!command == command
 			# Command is Regexp or boolean
