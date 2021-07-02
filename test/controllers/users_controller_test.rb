@@ -1210,7 +1210,7 @@ describe UsersController do
 		assert_equal(ErrorCodes::IMAGE_FILE_INVALID, res["errors"][0]["code"])
 	end
 
-	it "should not set profile image of user with content type that does not match the image type" do
+	it "should not set profile image of user with unsupported image type" do
 		file_content = File.open("test/fixtures/files/test.gif", "rb").read
 
 		res = put_request(
@@ -1219,9 +1219,9 @@ describe UsersController do
 			file_content
 		)
 
-		assert_response 400
+		assert_response 415
 		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::CONTENT_TYPE_DOES_NOT_MATCH_FILE_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
 	end
 
 	it "should not set profile image of user with too large image file" do

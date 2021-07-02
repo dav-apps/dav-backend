@@ -386,7 +386,7 @@ class UsersController < ApplicationController
 			ValidationService.raise_image_file_invalid
 		end
 
-		ValidationService.raise_validation_errors(ValidationService.validate_content_type_matches_file_type(content_type, image.mime_type))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_image(image.mime_type))
 
 		# Validate the file size
 		ValidationService.raise_validation_errors(ValidationService.validate_image_size(UtilsService.get_file_size(request.body)))
