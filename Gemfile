@@ -62,6 +62,9 @@ gem 'stripe'
 gem 'stripe_event'
 gem 'stripe-ruby-mock', :require => 'stripe_mock'
 
+# Monitoring
+gem "rorvswild"
+
 group :development, :test do
 	gem 'dotenv-rails'
 end
