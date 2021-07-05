@@ -132,7 +132,7 @@ class DavExpressionRunner
 					hash[command[i][0].to_s] = execute_command(command[i][1], vars)
 					i += 1
 				end
-				
+
 				return hash
 			when :list
 				list = Array.new
@@ -227,7 +227,7 @@ class DavExpressionRunner
 
 						ast_parent = Array.new
 						ast = @parser.parse_string(function.commands)
-						
+
 						ast.each do |element|
 							ast_parent.push(element)
 						end
@@ -260,10 +260,17 @@ class DavExpressionRunner
 			when :throw_errors
 				# Add the errors to the errors array
 				i = 1
+				errors = Array.new
+
 				while !command[i].nil?
-					@errors.push(execute_command(command[i], vars))
+					errors.push(execute_command(command[i], vars))
 					i += 1
 				end
+
+				errors.each do |e|
+					@errors.push(e)
+				end
+
 				return @errors
 			when :log
 				result = execute_command(command[1], vars)
@@ -335,7 +342,7 @@ class DavExpressionRunner
 					return User.find_by(id: execute_command(command[1], vars).to_i)
 				when "User.is_provider"		# user_id
 					user_id = execute_command(command[1], vars)
-					
+
 					# Get the user
 					user = User.find_by(id: user_id)
 
