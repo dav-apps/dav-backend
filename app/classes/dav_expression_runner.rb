@@ -31,6 +31,7 @@ class DavExpressionRunner
 		return @response
 	end
 
+	private
 	def execute_command(command, vars)
 		return nil if @execution_stopped
 		return nil if @errors.count > 0
@@ -126,9 +127,9 @@ class DavExpressionRunner
 				return execute_command(command[1], vars)
 			when :hash
 				hash = Hash.new
-
 				i = 1
-				while command[i]
+
+				while !command[i].nil?
 					hash[command[i][0].to_s] = execute_command(command[i][1], vars)
 					i += 1
 				end
@@ -136,9 +137,9 @@ class DavExpressionRunner
 				return hash
 			when :list
 				list = Array.new
-
 				i = 1
-				while command[i]
+
+				while !command[i].nil?
 					result = execute_command(command[i], vars)
 					list.push(result) if result != nil
 					i += 1
@@ -150,7 +151,7 @@ class DavExpressionRunner
 					return execute_command(command[2], vars)
 				else
 					i = 3
-					while command[i] != nil
+					while !command[i].nil?
 						if command[i] == :elseif && execute_command(command[i + 1], vars)
 							return execute_command(command[i + 2], vars)
 						elsif command[i] == :else
@@ -1270,7 +1271,7 @@ class DavExpressionRunner
 					values = Array.new
 					i = 0
 
-					while command[i]
+					while !command[i].nil?
 						value = execute_command(command[i], vars)
 						values.push(value)
 
@@ -1281,7 +1282,7 @@ class DavExpressionRunner
 					i = -1
 					j = 0
 
-					while command[i]
+					while !command[i].nil?
 						value = values[j]
 
 						if result.class == String || value.class == String
