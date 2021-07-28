@@ -68,6 +68,8 @@ module Constants
 	ENV_VAR_NAME_MAX_LENGTH = 100
 	ENV_VAR_VALUE_MIN_LENGTH = 1
 	ENV_VAR_VALUE_MAX_LENGTH = 250
+	SLOT_MIN_LENGTH = 3
+	SLOT_MAX_LENGTH = 30
 
 	# Constants for tests
 	MATT_PASSWORD = "schachmatt"

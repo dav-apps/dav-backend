@@ -194,7 +194,7 @@ class ApisController < ApplicationController
 
 	def get_api
 		access_token = get_auth
-		id = params["id"]
+		id = params[:id]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 
@@ -250,6 +250,76 @@ class ApisController < ApplicationController
 		}
 		
 		render json: result, status: 200
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
+	def compile_api
+		access_token = get_auth
+		id = params[:id]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+
+		# Make sure this was called from the website
+		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
+
+		# Get the api
+		api = Api.find_by(id: id)
+		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
+
+		# Check if the api belongs to an app of the dev of the user
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		slot = body["slot"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors(ValidationService.validate_slot_presence(slot))
+
+		# Validate the types of the fields
+		ValidationService.raise_validation_errors(ValidationService.validate_slot_type(slot))
+
+		# Try to find a slot with the name
+		api_slot = ApiSlot.find_by(api: api, name: slot)
+
+		if api_slot.nil?
+			# Validate the slot name
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_length(slot))
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_validity(slot))
+
+			# Create a slot with the name
+			api_slot = ApiSlot.new(api: api, name: slot)
+			ValidationService.raise_unexpected_error(!api_slot.save)
+		end
+
+		# Compile each ApiEndpoint and create or update the CompiledApiEndpoints with the compiled code
+		compiler = DavExpressionCompiler.new
+
+		api.api_endpoints.each do |endpoint|
+			code = compiler.compile({
+				api: api,
+				vars: Hash.new,
+				commands: endpoint.commands
+			})
+
+			# Try to find the CompiledApiEndpoint
+			compiled_endpoint = endpoint.compiled_api_endpoints.find_by(api_slot: api_slot)
+
+			if compiled_endpoint.nil?
+				# Create the compiled endpoint
+				compiled_endpoint = CompiledApiEndpoint.new(api_slot: api_slot, api_endpoint: endpoint)
+			end
+
+			compiled_endpoint.code = code
+			ValidationService.raise_unexpected_error(!compiled_endpoint.save)
+		end
+
+		head 204, content_type: "application/json"
 	rescue RuntimeError => e
 		render_errors(e)
 	end

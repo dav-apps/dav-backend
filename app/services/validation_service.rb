@@ -284,6 +284,11 @@ class ValidationService
 		table_objects.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_slot_presence(slot)
+		error_code = 2131
+		slot.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Fields with wrong type
 	def self.validate_access_token_type(access_token)
 		error_code = 2200
@@ -545,6 +550,11 @@ class ValidationService
 		end
 
 		get_validation_hash
+	end
+
+	def self.validate_slot_type(slot)
+		error_code = 2249
+		!slot.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Too short & too long fields
@@ -840,6 +850,16 @@ class ValidationService
 		end
 	end
 
+	def self.validate_slot_length(slot)
+		if slot.length < Constants::SLOT_MIN_LENGTH
+			get_validation_hash(2328, 400)
+		elsif slot.length > Constants::SLOT_MAX_LENGTH
+			get_validation_hash(2428, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Invalid fields
 	def self.validate_email_validity(email)
 		error_code = 2500
@@ -869,6 +889,11 @@ class ValidationService
 	def self.validate_method_validity(method)
 		error_code = 2505
 		!validate_method(method) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_slot_validity(slot)
+		error_code = 2506
+		!validate_slot(slot) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Generic state errors
@@ -1132,6 +1157,10 @@ class ValidationService
 		/^(https?:\/\/)?[\w.-]+(\.[\w.-]+)+[\w\-._~\/?#@&\+,;=]+$/.match?(url)
 	end
 
+	def self.validate_slot(slot)
+		/^\w+$/.match?(name)
+	end
+
 	# Error methods
 	def self.raise_validation_errors(validations)
 		if validations.is_a?(Hash)
@@ -1260,6 +1289,8 @@ class ValidationService
 			"Missing field: env_vars"
 		when 2130
 			"Missing field: table_objects"
+		when 2131
+			"Missing field: slot"
 		# Fields with wrong type
 		when 2200
 			"Field has wrong type: access_token"
@@ -1359,6 +1390,8 @@ class ValidationService
 			"Field has wrong type: env_var value"
 		when 2248
 			"Field has wrong type: table_objects"
+		when 2249
+			"Field has wrong type: slot"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1416,6 +1449,8 @@ class ValidationService
 			"Field too short: env_var name"
 		when 2327
 			"Field too short: env_var value"
+		when 2328
+			"Field too short: slot"
 		# Too long fields
 		when 2400
 			"Field too long: first_name"
@@ -1473,6 +1508,8 @@ class ValidationService
 			"Field too long: env_var name"
 		when 2427
 			"Field too long: env_var value"
+		when 2428
+			"Field too long: slot"
 		# Invalid fields
 		when 2500
 			"Field invalid: email"
@@ -1486,6 +1523,8 @@ class ValidationService
 			"Field invalid: microsoft_store_link"
 		when 2505
 			"Field invalid: method"
+		when 2506
+			"Field invalid: slot"
 		# Generic state errors
 		when 3000
 			"The user is already confirmed"
