@@ -8,21 +8,19 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to store and access variables" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var result "Hello World")
 				(return result)
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal("Hello World", result)
 	end
 
 	it "should correctly handle simple if expressions" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(if true (
 					(return 1)
@@ -32,14 +30,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(1, result)
 	end
 
 	it "should correctly handle complex if expressions" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(if (1 == 2) (
 					(return 1)
@@ -51,14 +48,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(2, result)
 	end
 
 	it "should be able to run for each loops" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var numbers (list 1 2 3 4 5))
 				(var result 0)
@@ -71,14 +67,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(15, result)
 	end
 
 	it "should be able to break for each loops" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var numbers (list 1 2 3 4 5))
 				(var result 0)
@@ -93,14 +88,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(6, result)
 	end
 
 	it "should be able to throw exceptions" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var result 0)
 
@@ -116,14 +110,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(6, result)
 	end
 
 	it "should be able to throw exception within functions" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(def add (a b) (
 					(if ((a < 0) or (b < 0)) (
@@ -147,35 +140,33 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(6, result)
 	end
 
 	it "should be able to get the length of a string" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var string "Hello World")
 				(return string.length)
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(11, result)
 	end
 
 	it "should be able to split a string" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var string "123.456.789")
 				(return (string.split "."))
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal("123", result[0])
 		assert_equal("456", result[1])
 		assert_equal("789", result[2])
@@ -184,7 +175,6 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to check if a string contains a substring" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var string "Hello World")
 				(var result 0)
@@ -201,14 +191,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(1, result)
 	end
 
 	it "should be able to convert a string to upcase and downcase" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var result (list))
 				(var bla "bla")
@@ -221,7 +210,7 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal("BLA", result[0])
 		assert_equal("test", result[1])
 	end
@@ -229,14 +218,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to convert a int to float" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var int 24)
 				(return int.to_f)
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(24.0, result)
 		assert_equal(Float, result.class)
 	end
@@ -244,21 +232,19 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to round a float" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var float 2.3523)
 				(return float.round)
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(2, result)
 	end
 
 	it "should be able to create a hash and set and read values" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var hash (hash (test "Hello") (bla "World")))
 				(var varname "test")
@@ -274,7 +260,7 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal("Hello", result[0])
 		assert_equal("World2", result[1])
 		assert_equal("Hello", result[2])
@@ -283,7 +269,6 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to create and fill a list" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var list (list 1 2))
 
@@ -303,14 +288,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(10, result)
 	end
 
 	it "should be able to use advanced methods on list" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var list (list "Lorem" "ipsum" "dolor" "sit" "amet"))
 				(var result (list))
@@ -341,7 +325,7 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(true, result[0])
 		assert_equal(false, result[1])
 		assert_equal("ipsum", result[2][0])
@@ -357,7 +341,6 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 	it "should be able to define and call functions" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(def add (a b) (
 					(return (a + b))
@@ -369,28 +352,26 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(116, result)
 	end
 
 	test "to_int should return the given value as int" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var result "42")
 				(return (to_int result))
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(42, result)
 	end
 
 	test "is_nil should return true if the given value is nil" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var test nil)
 				(var test2 23)
@@ -408,14 +389,13 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(1, result)
 	end
 
 	test "class should return the class of the variable" do
 		code = @compiler.compile({
 			api: apis(:pocketlibApi),
-			vars: Hash.new,
 			commands: '
 				(var result (list))
 
@@ -432,14 +412,9 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 			'
 		})
 
-		result = execute(code)
+		result = @compiler.run(code)
 		assert_equal(String, result[0])
 		assert_equal(Integer, result[1])
 		assert_equal(Float, result[2])
-	end
-
-	private
-	def execute(code)
-		eval code
 	end
 end
