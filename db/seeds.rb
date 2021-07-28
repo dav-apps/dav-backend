@@ -71,3 +71,7 @@ sessions = Session.create([
 apis = Api.create([
 	{app: apps[3], name: "PocketLib API v1"}
 ])
+
+api_slots = ApiSlot.create([
+	{api: apis[0], name: "prod"}
+])
