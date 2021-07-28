@@ -1,6 +1,5 @@
 class DavExpressionCompiler
 	def compile(props)
-		@api = props[:api]
 		@defined_functions = Array.new
 		@functions_to_define = Array.new
 
@@ -12,28 +11,7 @@ class DavExpressionCompiler
 
 		ast.each do |element|
 			code += "#{compile_command(element)}\n"
-		end
-
-		# Define necessary vars
-		vars_code = "@vars[:api] = Api.find_by(id: #{@api.id})\n"
-
-		env_vars_code = "env = Hash.new\n"
-		@api.api_env_vars.each do |env_var|
-			env_vars_code += "env['#{env_var.name}'] = "
-
-			if env_var.class_name == "string"
-				env_vars_code += "\"#{env_var.value}\"\n"
-			elsif env_var.class_name.include?(':')
-				env_vars_code += "["
-
-				env_var.value.split(',').each do |value|
-					env_vars_code += "#{value}, "
-				end
-
-				env_vars_code += "]\n"
-			else
-				env_vars_code += "#{env_var.value}\n"
-			end
+			code += "return @vars[:response] if !@vars[:response].nil?\n"
 		end
 
 		# Define functions
@@ -48,6 +26,12 @@ class DavExpressionCompiler
 				errors = Array.new
 
 				case method_name
+				when 'get_error'
+					error = ApiError.find_by(api: @vars[:api], code: params[:code])
+					return {
+						\"code\" => error.code,
+						\"message\" => error.message
+					}
 				when 'Session.get'
 					token = params[:access_token]
 					session = Session.find_by(token: token)
@@ -199,11 +183,19 @@ class DavExpressionCompiler
 			end
 		"
 
-		return vars_code + env_vars_code + functions_code + methods_code + code
+		return functions_code + methods_code + code
 	end
 
-	def run(code, request = nil)
-		@vars = Hash.new
+	def run(code, api, request = nil)
+		# Define necessary vars
+		@vars = {
+			api: api,
+			env: Hash.new
+		}
+
+		api.api_env_vars.each do |env_var|
+			@vars[:env][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+		end
 
 		if !request.nil?
 			# Get the headers
@@ -211,6 +203,9 @@ class DavExpressionCompiler
 			headers["Authorization"] = request.headers["Authorization"]
 			headers["Content-Type"] = request.headers["Content-Type"]
 			headers["Content-Disposition"] = request.headers["Content-Disposition"]
+
+			# Get the query params
+			# TODO
 
 			@vars[:body] = request.body
 			@vars[:headers] = headers
@@ -250,26 +245,48 @@ class DavExpressionCompiler
 			when :return
 				return "return #{compile_command(command[1])}"
 			when :hash
-				result = "{\n"
-				i = 1
-
-				while !command[i].nil? && command[i].is_a?(Array)
-					result += "\"#{command[i][0]}\" => #{compile_command(command[i][1])},\n"
-					i += 1
-				end
-
-				result += "}\n"
-				return result
-			when :list
-				result = "[\n"
+				compiled_commands = []
 				i = 1
 
 				while !command[i].nil?
-					result += "#{compile_command(command[i])},\n"
+					compiled_commands.push({
+						name: command[i][0],
+						command: compile_command(command[i][1])
+					})
 					i += 1
 				end
 
-				result += "]\n"
+				return "{}" if compiled_commands.size == 0
+				result = "{\n"
+
+				for i in 0..compiled_commands.size - 1
+					compiled_command = compiled_commands[i]
+					result += "\"#{compiled_command[:name]}\" => #{compiled_command[:command]}"
+					result += ", " if !compiled_commands[i + 1].nil?
+					result += "\n"
+				end
+
+				result += "}"
+				return result
+			when :list
+				compiled_commands = []
+				i = 1
+
+				while !command[i].nil?
+					compiled_commands.push(compile_command(command[i]))
+					i += 1
+				end
+
+				return "[]" if compiled_commands.size == 0
+				result = "[\n"
+
+				for i in 0..compiled_commands.size - 1
+					result += compiled_commands[i].to_s
+					result += ", " if !compiled_commands[i + 1].nil?
+					result += "\n"
+				end
+
+				result += "].compact"
 				return result
 			when :if
 				result = "if (#{compile_command(command[1])})\n"
@@ -291,8 +308,10 @@ class DavExpressionCompiler
 				return result
 			when :for
 				return nil if command[2] != :in
+				varname = command[1]
 
-				result = "#{command[3]}.each do |#{command[1]}|\n"
+				result = "#{command[3]}.each do |#{varname}|\n"
+				result += "next if #{varname}.nil?\n"
 				result += compile_command(command[4])
 				result += "end\n"
 
@@ -340,7 +359,7 @@ class DavExpressionCompiler
 					i += 1
 				end
 
-				result += ")\n"
+				result += ")"
 				return result
 			when :catch
 				result = "begin\n"
@@ -368,15 +387,28 @@ class DavExpressionCompiler
 				return "#{compile_command(command[1])}.nil?"
 			when :parse_json
 				json_command = compile_command(command[1])
-				return "#{json_command}.size < 2 ? nil : JSON.parse(#{json_command})"
+				return "JSON.parse(#{json_command})\n"
 			when :get_header
-				return "@vars[:headers][\"#{compile_command(command[1])}\"]"
+				return "@vars[:headers][#{compile_command(command[1])}]"
 			when :get_body
-				return "@vars[:body]"
+				result = "if @vars[:body].class == StringIO\n"
+				result += "@vars[:body].string\n"
+				result += "elsif @vars[:body].class == Tempfile\n"
+				result += "@vars[:body].read\n"
+				result += "else\n"
+				result += "@vars[:body]\n"
+				result += "end\n"
+				return result
 			when :get_error
-				return "ApiError.find_by(api: @vars[:api], code: #{compile_command(command[1])})"
+				return "_method_call('get_error', code: #{compile_command(command[1])})"
+			when :get_env
+				return "@vars[:env][#{compile_command(command[1])}]"
 			when :render_json
-				return "render json: #{compile_command(command[1])}, status: #{compile_command(command[2])}"
+				result = "@vars[:response] = {\n"
+				result += "data: #{compile_command(command[1])},\n"
+				result += "status: #{compile_command(command[2])},\n"
+				result += "file: false\n"
+				result += "}"
 			when :!
 				return "!(#{compile_command(command[1])})"
 			else
@@ -537,7 +569,14 @@ class DavExpressionCompiler
 				"properties"
 			].include?(last_part)
 
-			return command if valid
+			if valid
+				if last_part == "class"
+					# Return the class as string
+					return "#{command}.to_s"
+				else
+					return command
+				end
+			end
 
 			# The first part of the command is probably a variable / hash
 			return "#{compile_command(parts.join('.').to_sym)}[\"#{last_part}\"]"
