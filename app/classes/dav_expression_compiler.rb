@@ -27,6 +27,24 @@ class DavExpressionCompiler
 				errors = Array.new
 
 				case method_name
+				when 'parse_json'
+					json = params[:json]
+
+					if json.length < 2
+						return {}
+					else
+						return JSON.parse(json)
+					end
+				when 'get_body'
+					body = @vars[:body]
+
+					if body.class == StringIO
+						return body.string
+					elsif body.class == Tempfile
+						return body.read
+					else
+						return body
+					end
 				when 'get_error'
 					error = ApiError.find_by(api: @vars[:api], code: params[:code])
 					return {
@@ -43,26 +61,17 @@ class DavExpressionCompiler
 
 						if session.nil?
 							# Session does not exist
-							error = Hash.new
-							error['code'] = 0
-							errors.push(error)
-							return errors
+							raise RuntimeError, [{\"code\" => 0}].to_json
 						else
 							# The old token was used
 							# Delete the session, as the token may be stolen
 							session.destroy!
-							error = Hash.new
-							error['code'] = 1
-							errors.push(error)
-							return errors
+							raise RuntimeError, [{\"code\" => 1}].to_json
 						end
 					else
 						# Check if the session needs to be renewed
 						if Rails.env.production? && (Time.now - session.updated_at) > 1.day
-							error = Hash.new
-							error['code'] = 2
-							errors.push(error)
-							return errors
+							raise RuntimeError, [{\"code\" => 2}].to_json
 						end
 					end
 
@@ -76,10 +85,7 @@ class DavExpressionCompiler
 
 					if table.app != @vars[:api].app
 						# Action not allowed error
-						error = Hash.new
-						error['code'] = 1
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
 					if user_id.nil?
@@ -96,28 +102,21 @@ class DavExpressionCompiler
 
 					# Get the table
 					table = Table.find_by(id: table_id)
-					error = Hash.new
 
 					# Check if the table exists
 					if table.nil?
-						error['code'] = 0
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
 					# Check if the table belongs to the same app as the api
 					if table.app != @vars[:api].app
-						error['code'] = 1
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
 					# Check if the user exists
 					user = User.find_by(id: user_id)
 					if user.nil?
-						error['code'] = 2
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 2}].to_json
 					end
 
 					# Create the table object
@@ -128,9 +127,7 @@ class DavExpressionCompiler
 
 					if !obj.save
 						# Unexpected error
-						error['code'] = 3
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 3}].to_json
 					end
 
 					# Create the properties
@@ -158,9 +155,7 @@ class DavExpressionCompiler
 					end
 
 					if obj.nil?
-						error['code'] = 0
-						errors.push(error)
-						return errors
+						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
 					# Try to find the collection
@@ -387,19 +382,11 @@ class DavExpressionCompiler
 			when :is_nil
 				return "#{compile_command(command[1])}.nil?"
 			when :parse_json
-				json_command = compile_command(command[1])
-				return "JSON.parse(#{json_command})\n"
+				return "_method_call('parse_json', json: #{compile_command(command[1])})"
 			when :get_header
 				return "@vars[:headers][#{compile_command(command[1])}]"
 			when :get_body
-				result = "if @vars[:body].class == StringIO\n"
-				result += "@vars[:body].string\n"
-				result += "elsif @vars[:body].class == Tempfile\n"
-				result += "@vars[:body].read\n"
-				result += "else\n"
-				result += "@vars[:body]\n"
-				result += "end\n"
-				return result
+				return "_method_call('get_body')"
 			when :get_error
 				return "_method_call('get_error', code: #{compile_command(command[1])})"
 			when :get_env
