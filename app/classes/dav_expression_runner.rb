@@ -917,12 +917,9 @@ class DavExpressionRunner
 						return @errors
 					end
 
-					# Find the TableObjectCollection
+					# Find and delete the TableObjectCollection
 					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
-
-					if !obj_collection.nil?
-						obj_collection.destroy!
-					end
+					obj_collection.destroy! if !obj_collection.nil?
 				when "Collection.get_table_objects"	# table_id, collection_name
 					error = Hash.new
 					table_id = execute_command(command[1], vars)
@@ -975,6 +972,7 @@ class DavExpressionRunner
 										break
 									end
 								end
+
 								objects.push(table_object) if contains_value
 							end
 						end
@@ -995,6 +993,7 @@ class DavExpressionRunner
 										break
 									end
 								end
+
 								objects.push(table_object) if contains_value
 							end
 						end
@@ -1215,13 +1214,13 @@ class DavExpressionRunner
 					begin
 						image = Magick::ImageList.new
 		
-						if @request[:body].class == StringIO
-							image.from_blob(@request[:body].string)
-						elsif @request[:body].class == Tempfile
-							@request[:body].rewind
-							image.from_blob(@request[:body].read)
+						if image_data.class == StringIO
+							image.from_blob(image_data.string)
+						elsif image_data.class == Tempfile
+							image_data.rewind
+							image.from_blob(image_data.read)
 						else
-							image.from_blob(@request[:body])
+							image.from_blob(image_data)
 						end
 
 						return Blurhash.encode(image.columns, image.rows, image.export_pixels)
@@ -1230,18 +1229,18 @@ class DavExpressionRunner
 					end
 				when "Image.get_details"	# image_data
 					image_data = execute_command(command[1], vars)
-					result = Hash.new
 
 					begin
+						result = Hash.new
 						image = Magick::ImageList.new
 
-						if @request[:body].class == StringIO
-							image.from_blob(@request[:body].string)
-						elsif @request[:body].class == Tempfile
-							@request[:body].rewind
-							image.from_blob(@request[:body].read)
+						if image_data.class == StringIO
+							image.from_blob(image_data.string)
+						elsif image_data.class == Tempfile
+							image_data.rewind
+							image.from_blob(image_data.read)
 						else
-							image.from_blob(@request[:body])
+							image.from_blob(image_data)
 						end
 
 						result["width"] = image.columns
