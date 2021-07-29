@@ -83,28 +83,39 @@ class ApisController < ApplicationController
 			end
 		end
 
-		# Get the environment variables
-		vars["env"] = Hash.new
-		api.api_env_vars.each do |env_var|
-			vars["env"][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+		if ENV["USE_COMPILED_API_ENDPOINTS"] == "true"
+			# Get the prod slot
+			prod_slot = api.api_slots.find_by(name: "prod")
+
+			# Get the compiled endpoint
+			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
+
+			compiler = DavExpressionCompiler.new
+			result = compiler.run(compiled_endpoint.code, api, request)
+		else
+			# Get the environment variables
+			vars["env"] = Hash.new
+			api.api_env_vars.each do |env_var|
+				vars["env"][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+			end
+
+			# Get the headers
+			headers = Hash.new
+			headers["Authorization"] = request.headers["Authorization"]
+			headers["Content-Type"] = request.headers["Content-Type"]
+			headers["Content-Disposition"] = request.headers["Content-Disposition"]
+
+			runner = DavExpressionRunner.new
+			result = runner.run({
+				api: api,
+				vars: vars,
+				commands: api_endpoint.commands,
+				request: {
+					headers: headers,
+					body: request.body
+				}
+			})
 		end
-
-		# Get the headers
-		headers = Hash.new
-		headers["Authorization"] = request.headers["Authorization"]
-		headers["Content-Type"] = request.headers["Content-Type"]
-		headers["Content-Disposition"] = request.headers["Content-Disposition"]
-
-		runner = DavExpressionRunner.new
-		result = runner.run({
-			api: api,
-			vars: vars,
-			commands: api_endpoint.commands,
-			request: {
-				headers: headers,
-				body: request.body
-			}
-		})
 
 		if cache_response && result[:status] == 200
 			# Save the response in the cache
@@ -303,7 +314,6 @@ class ApisController < ApplicationController
 		api.api_endpoints.each do |endpoint|
 			code = compiler.compile({
 				api: api,
-				vars: Hash.new,
 				commands: endpoint.commands
 			})
 

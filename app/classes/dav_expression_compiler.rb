@@ -1,5 +1,6 @@
 class DavExpressionCompiler
 	def compile(props)
+		@api = props[:api]
 		@defined_functions = Array.new
 		@functions_to_define = Array.new
 
@@ -338,7 +339,7 @@ class DavExpressionCompiler
 				return result
 			when :func
 				name = command[1].to_s
-				
+
 				# Check if the function is defined
 				if !@defined_functions.include?(name)
 					# Try to get the function from the database

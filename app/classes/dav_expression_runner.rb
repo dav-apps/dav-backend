@@ -308,6 +308,8 @@ class DavExpressionRunner
 					result["message"] = error.message
 					return result
 				end
+			when :get_env
+				return vars["env"][execute_command(command[1], vars)]
 			when :render_json
 				result = execute_command(command[1], vars)
 				status = execute_command(command[2], vars)
