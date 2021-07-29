@@ -12,7 +12,6 @@ class DavExpressionCompiler
 
 		ast.each do |element|
 			code += "#{compile_command(element)}\n"
-			code += "return @vars[:response] if !@vars[:response].nil?\n"
 		end
 
 		# Define functions
@@ -211,13 +210,13 @@ class DavExpressionCompiler
 	end
 
 	private
-	def compile_command(command)
+	def compile_command(command, nested = false)
 		if command.class == Array
 			if command[0].class == Array && (!command[1] || command[1].class == Array)
 				# Command contains commands
 				code = ""
 				command.each do |c|
-					code += "#{compile_command(c)}\n"
+					code += "#{compile_command(c, nested)}\n"
 				end
 				return code
 			end
@@ -229,17 +228,17 @@ class DavExpressionCompiler
 					parts = command[1].to_s.split('..')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('..').to_sym)}[\"#{last_part}\"] = #{compile_command(command[2])}"
+					return "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{compile_command(command[2])}"
 				elsif command[1].to_s.include?('.')
 					parts = command[1].to_s.split('.')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('.').to_sym)}[\"#{last_part}\"] = #{compile_command(command[2])}"
+					return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"] = #{compile_command(command[2])}"
 				else
 					return "#{command[1]} = #{compile_command(command[2])}"
 				end
 			when :return
-				return "return #{compile_command(command[1])}"
+				return "return #{compile_command(command[1], true)}"
 			when :hash
 				compiled_commands = []
 				i = 1
@@ -247,7 +246,7 @@ class DavExpressionCompiler
 				while !command[i].nil?
 					compiled_commands.push({
 						name: command[i][0],
-						command: compile_command(command[i][1])
+						command: compile_command(command[i][1], true)
 					})
 					i += 1
 				end
@@ -269,7 +268,7 @@ class DavExpressionCompiler
 				i = 1
 
 				while !command[i].nil?
-					compiled_commands.push(compile_command(command[i]))
+					compiled_commands.push(compile_command(command[i], true))
 					i += 1
 				end
 
@@ -285,13 +284,13 @@ class DavExpressionCompiler
 				result += "].compact"
 				return result
 			when :if
-				result = "if (#{compile_command(command[1])})\n"
+				result = "if (#{compile_command(command[1], true)})\n"
 				result += "#{compile_command(command[2])}\n"
 
 				i = 3
 				while !command[i].nil?
 					if command[i] == :elseif
-						result += "elsif #{compile_command(command[i + 1])}\n"
+						result += "elsif #{compile_command(command[i + 1], true)}\n"
 						result += "#{compile_command(command[i + 2])}\n"
 					elsif command[i] == :else
 						result += "else\n#{compile_command(command[i + 1])}\n"
@@ -351,11 +350,13 @@ class DavExpressionCompiler
 				i = 0
 				command[2].each do |parameter|
 					result += ", " if i != 0
-					result += compile_command(parameter).to_s
+					result += compile_command(parameter, true).to_s
 					i += 1
 				end
 
 				result += ")"
+				result += "\nreturn @vars[:response] if !@vars[:response].nil?" if !nested
+
 				return result
 			when :catch
 				result = "begin\n"
@@ -369,36 +370,38 @@ class DavExpressionCompiler
 				i = 1
 
 				while !command[i].nil?
-					errors += "#{compile_command(command[i])},\n"
+					errors += "#{compile_command(command[i], true)},\n"
 					i += 1
 				end
 
 				errors += "].to_json"
 				return "raise RuntimeError, #{errors}"
 			when :log
-				return "puts #{compile_command(command[1])}"
+				return "puts #{compile_command(command[1], true)}"
 			when :to_int
 				return "#{command[1]}.to_i"
 			when :is_nil
-				return "#{compile_command(command[1])}.nil?"
+				return "#{compile_command(command[1], true)}.nil?"
 			when :parse_json
-				return "_method_call('parse_json', json: #{compile_command(command[1])})"
+				return "_method_call('parse_json', json: #{compile_command(command[1], true)})"
 			when :get_header
-				return "@vars[:headers][#{compile_command(command[1])}]"
+				return "@vars[:headers][#{compile_command(command[1], true)}]"
 			when :get_body
 				return "_method_call('get_body')"
 			when :get_error
-				return "_method_call('get_error', code: #{compile_command(command[1])})"
+				return "_method_call('get_error', code: #{compile_command(command[1], true)})"
 			when :get_env
-				return "@vars[:env][#{compile_command(command[1])}]"
+				return "@vars[:env][#{compile_command(command[1], true)}]"
 			when :render_json
 				result = "@vars[:response] = {\n"
-				result += "data: #{compile_command(command[1])},\n"
-				result += "status: #{compile_command(command[2])},\n"
+				result += "data: #{compile_command(command[1], true)},\n"
+				result += "status: #{compile_command(command[2], true)},\n"
 				result += "file: false\n"
-				result += "}"
+				result += "}\n"
+				result += "return @vars[:response]"
+				return result
 			when :!
-				return "!(#{compile_command(command[1])})"
+				return "!(#{compile_command(command[1], true)})"
 			else
 				# Command might be a method call
 				case command[0].to_s
@@ -406,48 +409,48 @@ class DavExpressionCompiler
 					# It's a comment. Ignore this command
 					return ""
 				when "Session.get"
-					return "_method_call('Session.get', access_token: #{compile_command(command[1])})"
+					return "_method_call('Session.get', access_token: #{compile_command(command[1], true)})"
 				when "Table.get_table_objects"
 					return "_method_call('Table.get_table_objects',
-						id: #{compile_command(command[1])},
-						user_id: #{compile_command(command[2])}
+						id: #{compile_command(command[1], true)},
+						user_id: #{compile_command(command[2], true)}
 					)"
 				when "TableObject.create"
 					return "_method_call('TableObject.create',
-						user_id: #{compile_command(command[1])},
-						table_id: #{compile_command(command[2])},
-						properties: #{compile_command(command[3])}
+						user_id: #{compile_command(command[1], true)},
+						table_id: #{compile_command(command[2], true)},
+						properties: #{compile_command(command[3], true)}
 					)"
 				when "Collection.add_table_object"
 					return "_method_call('Collection.add_table_object',
-						collection_name: #{compile_command(command[1])},
-						table_object_id: #{compile_command(command[2])}
+						collection_name: #{compile_command(command[1], true)},
+						table_object_id: #{compile_command(command[2], true)}
 					)"
 				end
 
 				# Command might be an expression
 				case command[1]
 				when :==
-					return "#{compile_command(command[0])} == #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} == #{compile_command(command[2], true)}"
 				when :!=
-					return "#{compile_command(command[0])} != #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} != #{compile_command(command[2], true)}"
 				when :>
-					return "#{compile_command(command[0])} > #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} > #{compile_command(command[2], true)}"
 				when :<
-					return "#{compile_command(command[0])} < #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} < #{compile_command(command[2], true)}"
 				when :>=
-					return "#{compile_command(command[0])} >= #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} >= #{compile_command(command[2], true)}"
 				when :<=
-					return "#{compile_command(command[0])} <= #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} <= #{compile_command(command[2], true)}"
 				when :+, :-
 					result = ""
 					i = 1
 
 					while !command[i].nil?
 						if command[i] == :-
-							result += "#{compile_command(command[0])} - #{compile_command(command[2])}"
+							result += "#{compile_command(command[0], true)} - #{compile_command(command[2], true)}"
 						else
-							result += "#{compile_command(command[0])} + #{compile_command(command[2])}"
+							result += "#{compile_command(command[0], true)} + #{compile_command(command[2], true)}"
 						end
 
 						i += 2
@@ -455,20 +458,20 @@ class DavExpressionCompiler
 
 					return result
 				when :*
-					return "#{compile_command(command[0])} * #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} * #{compile_command(command[2], true)}"
 				when :/
-					return "#{compile_command(command[0])} / #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} / #{compile_command(command[2], true)}"
 				when :%
-					return "#{compile_command(command[0])} % #{compile_command(command[2])}"
+					return "#{compile_command(command[0], true)} % #{compile_command(command[2], true)}"
 				when :and, :or
 					result = ""
 					i = 1
 
 					while !command[i].nil?
 						if command[i] == :and
-							result += "#{compile_command(command[0])} && #{compile_command(command[2])}"
+							result += "#{compile_command(command[0], true)} && #{compile_command(command[2], true)}"
 						else
-							result += "#{compile_command(command[0])} || #{compile_command(command[2])}"
+							result += "#{compile_command(command[0], true)} || #{compile_command(command[2], true)}"
 						end
 
 						i += 2
@@ -493,9 +496,9 @@ class DavExpressionCompiler
 					if valid
 						# Change the function name if necessary
 						if function_name == "contains"
-							complete_command = "#{compile_command(parts.join('.').to_sym)}.include?"
+							complete_command = "#{compile_command(parts.join('.').to_sym, true)}.include?"
 						elsif function_name == "select"
-							return "#{parts.join('.')}[#{compile_command(command[1])}, #{compile_command(command[2])}]"
+							return "#{parts.join('.')}[#{compile_command(command[1], true)}, #{compile_command(command[2], true)}]"
 						else
 							complete_command = "#{parts.join('.')}.#{function_name}"
 						end
@@ -510,9 +513,9 @@ class DavExpressionCompiler
 							if command[i].is_a?(String)
 								result += "\"#{command[i]}\""
 							elsif command[i].is_a?(Array) && command[i].length == 1
-								result += compile_command(command[i][0]).to_s
+								result += compile_command(command[i][0], true).to_s
 							else
-								result += compile_command(command[i]).to_s
+								result += compile_command(command[i], true).to_s
 							end
 
 							i += 1
@@ -536,7 +539,7 @@ class DavExpressionCompiler
 			last_part = parts.pop
 
 			# The first part of the command is probably a variable / hash
-			return "#{compile_command(parts.join('..').to_sym)}[#{last_part}]"
+			return "#{compile_command(parts.join('..').to_sym, true)}[#{last_part}]"
 		elsif command.to_s.include?('.')
 			parts = command.to_s.split('.')
 			last_part = parts.pop
@@ -567,12 +570,12 @@ class DavExpressionCompiler
 			end
 
 			# The first part of the command is probably a variable / hash
-			return "#{compile_command(parts.join('.').to_sym)}[\"#{last_part}\"]"
+			return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"]"
 		elsif command.to_s.include?('#')
 			parts = command.to_s.split('#')
 			last_part = parts.pop
 
-			return "#{compile_command(parts.join('#').to_sym)}[#{last_part}]"
+			return "#{compile_command(parts.join('#').to_sym, true)}[#{last_part}]"
 		else
 			return command
 		end
