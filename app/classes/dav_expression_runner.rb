@@ -423,7 +423,7 @@ class DavExpressionRunner
 					end
 
 					holders = Array.new
-					objects.each{ |obj| holders.push(TableObjectHolder.new(obj)) }
+					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 
 					return holders
 				when "TableObject.create"	# user_id, table_id, properties
@@ -937,14 +937,13 @@ class DavExpressionRunner
 					# Try to find the collection
 					collection = Collection.find_by(name: collection_name, table: table)
 
-					if collection
+					if collection.nil?
+						return Array.new
+					else
 						holders = Array.new
-						collection.table_objects.each{ |obj| holders.push(TableObjectHolder.new(obj)) }
-
+						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 						return holders
 					end
-
-					return Array.new
 				when "TableObject.find_by_property"	# user_id, table_id, property_name, property_value, exact = true
 					all_user = command[1] == :* 
 					user_id = all_user ? -1 : execute_command(command[1], vars)
@@ -1000,8 +999,7 @@ class DavExpressionRunner
 					end
 
 					holders = Array.new
-					objects.each{ |obj| holders.push(TableObjectHolder.new(obj)) }
-
+					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 					return holders
 				when "Purchase.create"	# user_id, provider_name, provider_image, product_name, product_image, price, currency, table_objects
 					user_id = execute_command(command[1], vars)

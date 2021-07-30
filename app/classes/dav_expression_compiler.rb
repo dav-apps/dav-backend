@@ -117,7 +117,10 @@ class DavExpressionCompiler
 						objects = table.table_objects.where(user_id: user_id.to_i).to_a
 					end
 
-					return objects
+					holders = Array.new
+					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
+
+					return holders
 				when 'TableObject.create'
 					user_id = params[:user_id]
 					table_id = params[:table_id]
@@ -163,7 +166,7 @@ class DavExpressionCompiler
 					end
 
 					# Return the table object
-					return obj
+					return TableObjectHolder.new(obj)
 				when 'TableObject.create_file'
 					user_id = params[:user_id]
 					table_id = params[:table_id]
@@ -251,7 +254,7 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 6}].to_json
 					end
 
-					return obj
+					return TableObjectHolder.new(obj)
 				when 'TableObject.get'
 					uuid = params[:uuid]
 
@@ -263,7 +266,7 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
-					return obj
+					return TableObjectHolder.new(obj)
 				when 'TableObject.get_file'
 					uuid = params[:uuid]
 
@@ -324,7 +327,7 @@ class DavExpressionCompiler
 						end
 					end
 
-					return obj
+					return TableObjectHolder.new(obj)
 				when 'TableObject.update_file'
 					uuid = params[:uuid]
 					ext = params[:ext]
@@ -408,7 +411,7 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 5}].to_json
 					end
 
-					return obj
+					return TableObjectHolder.new(obj)
 				when 'TableObject.set_price'
 					uuid = params[:uuid]
 					price = params[:price]
@@ -500,7 +503,6 @@ class DavExpressionCompiler
 				when 'Collection.add_table_object'
 					collection_name = params[:collection_name]
 					table_object_id = params[:table_object_id]
-					error = Hash.new
 
 					if table_object_id.is_a?(String)
 						# Get the table object by uuid
@@ -574,7 +576,9 @@ class DavExpressionCompiler
 					if collection.nil?
 						return Array.new
 					else
-						return collection.table_objects
+						holders = Array.new
+						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
+						return holders
 					end
 				when 'TableObject.find_by_property'
 					all_user = params[:user_id] == :*
@@ -630,6 +634,8 @@ class DavExpressionCompiler
 						end
 					end
 
+					holders = Array.new
+					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 					return objects
 				when 'Purchase.create'
 					user_id = params[:user_id]
@@ -771,7 +777,7 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 3}].to_json
 					end
 
-					return purchase.table_object
+					return TableObjectHolder.new(purchase.table_object)
 				when 'Purchase.find_by_user_and_table_object'
 					user_id = params[:user_id]
 					table_object_id = params[:table_object_id]
@@ -999,7 +1005,7 @@ class DavExpressionCompiler
 				i = 0
 				command[2].each do |parameter|
 					result += ", " if i != 0
-					result += parameter.to_s
+					result += "#{parameter} = nil"
 					i += 1
 				end
 
@@ -1269,9 +1275,9 @@ class DavExpressionCompiler
 
 					while !command[i].nil?
 						if command[i] == :and
-							result += "#{compile_command(command[0], true)} && #{compile_command(command[2], true)}"
+							result += "(#{compile_command(command[0], true)}) && (#{compile_command(command[2], true)})"
 						else
-							result += "#{compile_command(command[0], true)} || #{compile_command(command[2], true)}"
+							result += "(#{compile_command(command[0], true)}) || (#{compile_command(command[2], true)})"
 						end
 
 						i += 2
@@ -1355,7 +1361,11 @@ class DavExpressionCompiler
 				"to_f",
 				"round",
 				"table_objects",
+				"properties",
+				"id",
+				"uuid",
 				"user_id",
+				"table_id",
 				"app_id",
 				"properties"
 			].include?(last_part)
@@ -1364,6 +1374,9 @@ class DavExpressionCompiler
 				if last_part == "class"
 					# Return the class as string
 					return "#{command}.to_s"
+				elsif last_part == "properties"
+					# Return the TableObjectHolder directly
+					return parts.join('.').to_sym
 				else
 					return command
 				end
@@ -1387,7 +1400,7 @@ class DavExpressionCompiler
 		i = 0
 		function.params.split(',').each do |parameter|
 			result += ", " if i != 0
-			result += parameter.to_s
+			result += "#{parameter} = nil"
 			i += 1
 		end
 

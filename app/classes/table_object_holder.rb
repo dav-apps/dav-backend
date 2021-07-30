@@ -11,4 +11,55 @@ class TableObjectHolder
 			@values[prop.name] = prop.value
 		end
 	end
+
+	def id
+		return nil if @obj.nil?
+		@obj.id
+	end
+
+	def uuid
+		return nil if @obj.nil?
+		@obj.uuid
+	end
+
+	def user_id
+		return nil if @obj.nil?
+		@obj.user_id
+	end
+
+	def table_id
+		return nil if @obj.nil?
+		@obj.table_id
+	end
+
+	def [](name)
+		# Return the appropriate property value
+		@values[name]
+	end
+
+	def []=(name, value)
+		# Set the appropriate property value
+		prop = @properties.find{ |p| p.name == name }
+
+		if prop.nil?
+			# Create a new property
+			prop = TableObjectProperty.create(
+				table_object: @obj,
+				name: name,
+				value: value
+			)
+
+			# Update the local values
+			@values[name] = value
+			@properties.push(prop)
+			return value
+		else
+			# Set the value of the existing property
+			prop.value = value
+			prop.save
+
+			# Update the local values
+			@values[name] = value
+		end
+	end
 end
