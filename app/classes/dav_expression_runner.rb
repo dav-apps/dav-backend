@@ -290,7 +290,7 @@ class DavExpressionRunner
 			when :get_header
 				return @request[:headers][command[1].to_s]
 			when :get_param
-				return params[command[1]]
+				return @request[:params][command[1].to_s]
 			when :get_body
 				if @request[:body].class == StringIO
 					return @request[:body].string

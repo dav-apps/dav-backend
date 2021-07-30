@@ -866,7 +866,7 @@ class DavExpressionCompiler
 		return functions_code + methods_code + code
 	end
 
-	def run(code, api, request = nil)
+	def run(code, api, request = nil, params = {})
 		# Define necessary vars
 		@vars = {
 			api: api,
@@ -884,9 +884,7 @@ class DavExpressionCompiler
 			headers["Content-Type"] = request.headers["Content-Type"]
 			headers["Content-Disposition"] = request.headers["Content-Disposition"]
 
-			# Get the query params
-			# TODO
-
+			@vars[:params] = params
 			@vars[:body] = request.body
 			@vars[:headers] = headers
 		end
@@ -1071,6 +1069,8 @@ class DavExpressionCompiler
 				return "_method_call('parse_json', json: #{compile_command(command[1], true)})"
 			when :get_header
 				return "@vars[:headers][#{compile_command(command[1], true)}]"
+			when :get_param
+				return "@vars[:params][#{compile_command(command[1], true)}]"
 			when :get_body
 				return "_method_call('get_body')"
 			when :get_error

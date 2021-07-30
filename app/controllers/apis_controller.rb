@@ -9,7 +9,7 @@ class ApisController < ApplicationController
 
 		# Find the appropriate api endpoint
 		api_endpoint = ApiEndpoint.find_by(api: api, method: request.method, path: path)
-		vars = Hash.new
+		url_params = Hash.new
 
 		if api_endpoint.nil?
 			# Try to find the appropriate endpoint with a variable in the url
@@ -39,7 +39,7 @@ class ApisController < ApplicationController
 				if !cancelled
 					api_endpoint = endpoint
 					url_vars.each do |key, value|
-						vars[key] = value
+						url_params[key] = value
 					end
 
 					break
@@ -51,7 +51,7 @@ class ApisController < ApplicationController
 
 		# Get the url params
 		request.query_parameters.each do |key, value|
-			vars[key.to_s] = value
+			url_params[key] = value
 		end
 
 		cache_response = false
@@ -59,7 +59,7 @@ class ApisController < ApplicationController
 		if api_endpoint.caching && Rails.env.production? && request.headers["Authorization"].nil? && request.method.downcase == "get"
 			# Try to find a cache of the endpoint with this combination of params
 			cache = nil
-			cache_params = vars.sort.to_h
+			cache_params = url_params.sort.to_h
 
 			api_endpoint.api_endpoint_request_caches.each do |request_cache|
 				request_cache_params = request_cache.api_endpoint_request_cache_params
@@ -91,8 +91,10 @@ class ApisController < ApplicationController
 			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
 
 			compiler = DavExpressionCompiler.new
-			result = compiler.run(compiled_endpoint.code, api, request)
+			result = compiler.run(compiled_endpoint.code, api, request, url_params)
 		else
+			vars = Hash.new
+
 			# Get the environment variables
 			vars["env"] = Hash.new
 			api.api_env_vars.each do |env_var|
@@ -112,6 +114,7 @@ class ApisController < ApplicationController
 				commands: api_endpoint.commands,
 				request: {
 					headers: headers,
+					params: url_params,
 					body: request.body
 				}
 			})
