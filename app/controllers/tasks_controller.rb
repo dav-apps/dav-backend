@@ -22,11 +22,12 @@ class TasksController < ApplicationController
 
 				api_endpoint.api_endpoint_request_caches.each do |cache|
 					vars = Hash.new
+					url_params = Hash.new
 					vars["env"] = env_vars
 
 					# Get the params
 					cache.api_endpoint_request_cache_params.each do |param|
-						vars[param.name] = param.value
+						url_params[param.name] = param.value
 					end
 
 					runner = DavExpressionRunner.new
@@ -36,6 +37,7 @@ class TasksController < ApplicationController
 						commands: api_endpoint.commands,
 						request: {
 							headers: Hash.new,
+							params: url_params,
 							body: nil
 						}
 					})
