@@ -33,8 +33,19 @@ class TableObjectHolder
 	end
 
 	def [](name)
-		# Return the appropriate property value
-		@values[name]
+		return nil if @obj.nil?
+
+		if name == "id"
+			@obj.id
+		elsif name == "uuid"
+			@obj.uuid
+		elsif name == "user_id"
+			@obj.user_id
+		elsif name == "table_id"
+			@obj.table_id
+		else
+			@values[name]
+		end
 	end
 
 	def []=(name, value)

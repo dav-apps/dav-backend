@@ -50,6 +50,31 @@ class DavExpressionCompiler
 						\"code\" => error.code,
 						\"message\" => error.message
 					}
+				when 'render_json'
+					data = params[:data]
+					status = params[:status]
+
+					@vars[:response] = {
+						data: data,
+						status: status,
+						file: false
+					}
+				when 'render_file'
+					data = params[:data]
+					type = params[:type]
+					filename = params[:filename]
+					status = params[:status]
+
+					@vars[:response] = {
+						data: data,
+						status: status,
+						file: true,
+						headers: {
+							\"Content-Length\" => data == nil ? 0 : data.size
+						},
+						type: type,
+						filename: filename
+					}
 				when 'User.get'
 					id = params[:id]
 					return User.find_by(id: id)
@@ -898,9 +923,7 @@ class DavExpressionCompiler
 			if command[0].class == Array && (!command[1] || command[1].class == Array)
 				# Command contains commands
 				code = ""
-				command.each do |c|
-					code += "#{compile_command(c, nested)}\n"
-				end
+				command.each { |c| code += "#{compile_command(c, nested)}\n" }
 				return code
 			end
 
@@ -968,21 +991,21 @@ class DavExpressionCompiler
 				return result
 			when :if
 				result = "if (#{compile_command(command[1], true)})\n"
-				result += "#{compile_command(command[2])}\n"
+				result += "#{compile_command(command[2], nested)}\n"
 
 				i = 3
 				while !command[i].nil?
 					if command[i] == :elseif
 						result += "elsif #{compile_command(command[i + 1], true)}\n"
-						result += "#{compile_command(command[i + 2])}\n"
+						result += "#{compile_command(command[i + 2], nested)}\n"
 					elsif command[i] == :else
-						result += "else\n#{compile_command(command[i + 1])}\n"
+						result += "else\n#{compile_command(command[i + 1], nested)}\n"
 					end
 
 					i += 3
 				end
 
-				result += "end\n"
+				result += "end"
 				return result
 			when :for
 				return nil if command[2] != :in
@@ -1078,13 +1101,17 @@ class DavExpressionCompiler
 			when :get_env
 				return "@vars[:env][#{compile_command(command[1], true)}]"
 			when :render_json
-				result = "@vars[:response] = {\n"
-				result += "data: #{compile_command(command[1], true)},\n"
-				result += "status: #{compile_command(command[2], true)},\n"
-				result += "file: false\n"
-				result += "}\n"
-				result += "return @vars[:response]"
-				return result
+				return "_method_call('render_json',
+					data: #{compile_command(command[1], true)},
+					status: #{compile_command(command[2], true)}
+				)"
+			when :render_file
+				return "_method_call('render_file',
+					data: #{compile_command(command[1], true)},
+					type: #{compile_command(command[2], true)},
+					filename: #{compile_command(command[3], true)},
+					status: #{compile_command(command[4], true)}
+				)"
 			when :!
 				return "!(#{compile_command(command[1], true)})"
 			else
@@ -1249,14 +1276,14 @@ class DavExpressionCompiler
 				when :<=
 					return "#{compile_command(command[0], true)} <= #{compile_command(command[2], true)}"
 				when :+, :-
-					result = ""
+					result = "#{compile_command(command[0], true)}"
 					i = 1
 
 					while !command[i].nil?
 						if command[i] == :-
-							result += "#{compile_command(command[0], true)} - #{compile_command(command[2], true)}"
+							result += " - #{compile_command(command[i + 1], true)}"
 						else
-							result += "#{compile_command(command[0], true)} + #{compile_command(command[2], true)}"
+							result += " + #{compile_command(command[i + 1], true)}"
 						end
 
 						i += 2
@@ -1333,11 +1360,18 @@ class DavExpressionCompiler
 
 					return ""
 				end
+
+				# Treat the command like a series of commands
+				code = ""
+				command.each { |c| code += "#{compile_command(c, nested)}" }
+				return code
 			end
 		elsif command.is_a?(String)
 			return "\"#{command}\""
 		elsif command.is_a?(Float)
 			return command
+		elsif command.is_a?(Regexp)
+			return command.inspect
 		elsif command.is_a?(NilClass)
 			return "nil"
 		elsif command.to_s.include?('..')
@@ -1362,11 +1396,6 @@ class DavExpressionCompiler
 				"round",
 				"table_objects",
 				"properties",
-				"id",
-				"uuid",
-				"user_id",
-				"table_id",
-				"app_id",
 				"properties"
 			].include?(last_part)
 
