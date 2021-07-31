@@ -636,7 +636,7 @@ class DavExpressionCompiler
 
 					holders = Array.new
 					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
-					return objects
+					return holders
 				when 'Purchase.create'
 					user_id = params[:user_id]
 					provider_name = params[:provider_name]
@@ -988,7 +988,7 @@ class DavExpressionCompiler
 				return nil if command[2] != :in
 				varname = command[1]
 
-				result = "#{command[3]}.each do |#{varname}|\n"
+				result = "#{compile_command(command[3], true)}.each do |#{varname}|\n"
 				result += "next if #{varname}.nil?\n"
 				result += compile_command(command[4])
 				result += "end\n"
@@ -1062,7 +1062,7 @@ class DavExpressionCompiler
 			when :log
 				return "puts #{compile_command(command[1], true)}"
 			when :to_int
-				return "#{command[1]}.to_i"
+				return "#{compile_command(command[1], true)}.to_i"
 			when :is_nil
 				return "#{compile_command(command[1], true)}.nil?"
 			when :parse_json
@@ -1306,7 +1306,7 @@ class DavExpressionCompiler
 						elsif function_name == "select"
 							return "#{parts.join('.')}[#{compile_command(command[1], true)}, #{compile_command(command[2], true)}]"
 						else
-							complete_command = "#{parts.join('.')}.#{function_name}"
+							complete_command = "#{compile_command(parts.join('.').to_sym, true)}.#{function_name}"
 						end
 
 						# Get the parameters
