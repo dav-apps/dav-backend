@@ -79,7 +79,7 @@ class DavExpressionCompiler
 					id = params[:id]
 					return User.find_by(id: id)
 				when 'User.is_provider'
-					user_id = params[:id]
+					user_id = params[:user_id]
 
 					user = User.find_by(id: user_id)
 
@@ -606,12 +606,12 @@ class DavExpressionCompiler
 						return holders
 					end
 				when 'TableObject.find_by_property'
-					all_user = params[:user_id] == :*
+					all_user = params[:user_id] == \"*\"
 					user_id = all_user ? -1 : params[:user_id]
 					table_id = params[:table_id]
 					property_name = params[:property_name]
 					property_value = params[:property_value]
-					exact = params[:exact]
+					exact = params[:exact].nil? ? true : params[:exact]
 
 					objects = Array.new
 
@@ -822,7 +822,7 @@ class DavExpressionCompiler
 					end
 				when 'Math.round'
 					var = params[:var]
-					rounding = params[:rounding]
+					rounding = params[:rounding].nil? ? 2 : params[:rounding]
 
 					return var if var.class != Float || rounding.class != Integer
 					rounded_value = var.round(rounding)
@@ -1213,7 +1213,7 @@ class DavExpressionCompiler
 						table_id: #{compile_command(command[2], true)},
 						property_name: #{compile_command(command[3], true)},
 						property_value: #{compile_command(command[4], true)},
-						exact: #{compile_command(command[5], true)} || true
+						exact: #{compile_command(command[5], true)}
 					)"
 				when "Purchase.create"
 					return "_method_call('Purchase.create',
@@ -1239,7 +1239,7 @@ class DavExpressionCompiler
 				when "Math.round"
 					return "_method_call('Math.round',
 						var: #{compile_command(command[1], true)},
-						rounding: #{compile_command(command[2], true)} || 2
+						rounding: #{compile_command(command[2], true)}
 					)"
 				when "Regex.match"
 					return "_method_call('Regex.match',
@@ -1276,7 +1276,7 @@ class DavExpressionCompiler
 				when :<=
 					return "#{compile_command(command[0], true)} <= #{compile_command(command[2], true)}"
 				when :+, :-
-					result = "#{compile_command(command[0], true)}"
+					result = "(#{compile_command(command[0], true)})"
 					i = 1
 
 					while !command[i].nil?
@@ -1291,20 +1291,20 @@ class DavExpressionCompiler
 
 					return result
 				when :*
-					return "#{compile_command(command[0], true)} * #{compile_command(command[2], true)}"
+					return "(#{compile_command(command[0], true)}) * (#{compile_command(command[2], true)})"
 				when :/
-					return "#{compile_command(command[0], true)} / #{compile_command(command[2], true)}"
+					return "(#{compile_command(command[0], true)}) / (#{compile_command(command[2], true)})"
 				when :%
-					return "#{compile_command(command[0], true)} % #{compile_command(command[2], true)}"
+					return "(#{compile_command(command[0], true)}) % (#{compile_command(command[2], true)})"
 				when :and, :or
-					result = ""
+					result = "(#{compile_command(command[0], true)})"
 					i = 1
 
 					while !command[i].nil?
 						if command[i] == :and
-							result += "(#{compile_command(command[0], true)}) && (#{compile_command(command[2], true)})"
+							result += " && (#{compile_command(command[i + 1], true)})"
 						else
-							result += "(#{compile_command(command[0], true)}) || (#{compile_command(command[2], true)})"
+							result += " || (#{compile_command(command[i + 1], true)})"
 						end
 
 						i += 2
