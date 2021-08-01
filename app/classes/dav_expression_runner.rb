@@ -945,7 +945,7 @@ class DavExpressionRunner
 						return holders
 					end
 				when "TableObject.find_by_property"	# user_id, table_id, property_name, property_value, exact = true
-					all_user = command[1] == :* 
+					all_user = command[1] == "*"
 					user_id = all_user ? -1 : execute_command(command[1], vars)
 					table_id = execute_command(command[2], vars)
 					property_name = execute_command(command[3], vars)

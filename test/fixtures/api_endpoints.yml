@@ -2,26 +2,38 @@ pocketlibApiGetTest:
   api: pocketlibApi
   path: "test/:id"
   method: GET
-  commands: "(render_json (hash (get_text text) (id id.to_i)))"
+  commands: "(
+      (var id (get_param id))
+      (render_json (hash (get_text (get_param text)) (id id.to_i)))
+    )"
   caching: true
 
 pocketlibApiPostTest:
   api: pocketlibApi
   path: "test/:id"
   method: POST
-  commands: "(render_json (hash (post_text text) (id id.to_i)))"
+  commands: "(
+      (var id (get_param id))
+      (render_json (hash (post_text (get_param text)) (id id.to_i)))
+    )"
   caching: false
 
 pocketlibApiPutTest:
   api: pocketlibApi
   path: "test/:id"
   method: PUT
-  commands: "(render_json (hash (put_text text) (id id.to_i)))"
+  commands: "(
+      (var id (get_param id))
+      (render_json (hash (put_text (get_param text)) (id id.to_i)))
+    )"
   caching: false
 
 pocketlibApiDeleteTest:
   api: pocketlibApi
   path: "test/:id"
   method: DELETE
-  commands: "(render_json (hash (delete_text text) (id id.to_i)))"
+  commands: "(
+      (var id (get_param id))
+      (render_json (hash (delete_text (get_param text)) (id id.to_i)))
+    )"
   caching: false
