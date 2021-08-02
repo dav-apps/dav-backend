@@ -1391,6 +1391,7 @@ class DavExpressionCompiler
 				"reverse",
 				"upcase",
 				"downcase",
+				"to_s",
 				"to_i",
 				"to_f",
 				"round",
