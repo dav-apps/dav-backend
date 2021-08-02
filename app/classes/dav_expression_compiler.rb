@@ -1395,7 +1395,6 @@ class DavExpressionCompiler
 				"to_f",
 				"round",
 				"table_objects",
-				"properties",
 				"properties"
 			].include?(last_part)
 
@@ -1407,7 +1406,7 @@ class DavExpressionCompiler
 					# Return the TableObjectHolder directly
 					return parts.join('.').to_sym
 				else
-					return command
+					return "#{compile_command(parts.join('.').to_sym, true)}.#{last_part}"
 				end
 			end
 
