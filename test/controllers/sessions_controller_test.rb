@@ -85,28 +85,6 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][6]["code"])
 	end
 
-	it "should not create session with too short optional properties" do
-		res = post_request(
-			"/v1/session",
-			{Authorization: "asdasda", 'Content-Type': 'application/json'},
-			{
-				email: "test@example.com",
-				password: "saasdasd",
-				app_id: 1,
-				api_key: "asdassda",
-				device_name: "a",
-				device_type: "a",
-				device_os: "a"
-			}
-		)
-
-		assert_response 400
-		assert_equal(3, res["errors"].length)
-		assert_equal(ErrorCodes::DEVICE_NAME_TOO_SHORT, res["errors"][0]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_SHORT, res["errors"][1]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_SHORT, res["errors"][2]["code"])
-	end
-
 	it "should not create session with too long optional properties" do
 		res = post_request(
 			"/v1/session",
@@ -566,27 +544,6 @@ describe SessionsController do
 		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][3]["code"])
 		assert_equal(ErrorCodes::DEVICE_TYPE_WRONG_TYPE, res["errors"][4]["code"])
 		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][5]["code"])
-	end
-
-	it "should not create session from access token with too short optional properties" do
-		res = post_request(
-			"/v1/session/access_token",
-			{Authorization: "adasdasdasd", 'Content-Type': 'application/json'},
-			{
-				access_token: "spjdjfsodfsdfi",
-				app_id: 1,
-				api_key: "sodfsjdgsdnjksfdnklfdfd",
-				device_name: "a",
-				device_type: "a",
-				device_os: "a"
-			}
-		)
-
-		assert_response 400
-		assert_equal(3, res["errors"].length)
-		assert_equal(ErrorCodes::DEVICE_NAME_TOO_SHORT, res["errors"][0]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_SHORT, res["errors"][1]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_SHORT, res["errors"][2]["code"])
 	end
 
 	it "should not create session from access token with too long optional properties" do

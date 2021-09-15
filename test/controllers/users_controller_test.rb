@@ -126,12 +126,9 @@ describe UsersController do
 		)
 
 		assert_response 400
-		assert_equal(5, res["errors"].length)
+		assert_equal(2, res["errors"].length)
 		assert_equal(ErrorCodes::FIRST_NAME_TOO_SHORT, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PASSWORD_TOO_SHORT, res["errors"][1]["code"])
-		assert_equal(ErrorCodes::DEVICE_NAME_TOO_SHORT, res["errors"][2]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_SHORT, res["errors"][3]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_SHORT, res["errors"][4]["code"])
 	end
 
 	it "should not signup with too long properties" do
