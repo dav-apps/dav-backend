@@ -46,6 +46,7 @@ module DavBackend
       "https://calendo-dav.azurewebsites.net",
       "https://calendo-dav-staging.azurewebsites.net",
       "https://pocketlib.dav-apps.tech",
+		"https://pocketlib-nzgpy.ondigitalocean.app",
       "https://pocketlib-dav.azurewebsites.net",
       "https://pocketlib-dav-staging.azurewebsites.net"
     ]
@@ -63,6 +64,7 @@ module DavBackend
           'calendo-dav.azurewebsites.net',
           'calendo-dav-staging.azurewebsites.net',
           'pocketlib.dav-apps.tech',
+			 'pocketlib-nzgpy.ondigitalocean.app',
           'pocketlib-dav.azurewebsites.net',
           'pocketlib-dav-staging.azurewebsites.net'
         resource '*',
