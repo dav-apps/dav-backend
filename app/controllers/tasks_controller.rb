@@ -13,39 +13,75 @@ class TasksController < ApplicationController
 
 	def update_api_caches
 		Api.all.each do |api|
-			api.api_endpoints.where(caching: true).each do |api_endpoint|
-				# Get the environment variables of the api
-				env_vars = Hash.new
-				api.api_env_vars.each do |env_var|
-					env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+			if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
+				# Get the prod slot
+				prod_slot = api.api_slots.find_by(name: "prod")
+				compiler = DavExpressionCompiler.new
+
+				api.api_endpoints.where(caching: true).each do |api_endpoint|
+					# Get the compiled endpoint
+					compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
+
+					api_endpoint.api_endpoint_request_caches.each do |cache|
+						# Get the params
+						url_params = Hash.new
+						cache.api_endpoint_request_cache_params.each do |param|
+							url_params[param.name] = param.value
+						end
+
+						result = compiler.run({
+							code: compiled_endpoint.code,
+							api: api,
+							request: {
+								headers: Hash.new,
+								params: url_params,
+								body: nil
+							}
+						})
+
+						if result[:status] == 200 && !result[:file]
+							# Update the cache
+							cache.response = result[:data].to_json
+							cache.save
+						end
+					end
 				end
+			else
+				runner = DavExpressionRunner.new
 
-				api_endpoint.api_endpoint_request_caches.each do |cache|
-					vars = Hash.new
-					url_params = Hash.new
-					vars["env"] = env_vars
-
-					# Get the params
-					cache.api_endpoint_request_cache_params.each do |param|
-						url_params[param.name] = param.value
+				api.api_endpoints.where(caching: true).each do |api_endpoint|
+					# Get the environment variables of the api
+					env_vars = Hash.new
+					api.api_env_vars.each do |env_var|
+						env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
 					end
 
-					runner = DavExpressionRunner.new
-					result = runner.run({
-						api: api,
-						vars: vars,
-						commands: api_endpoint.commands,
-						request: {
-							headers: Hash.new,
-							params: url_params,
-							body: nil
-						}
-					})
+					api_endpoint.api_endpoint_request_caches.each do |cache|
+						vars = Hash.new
+						url_params = Hash.new
+						vars["env"] = env_vars
 
-					if result[:status] == 200 && !result[:file]
-						# Update the cache
-						cache.response = result[:data].to_json
-						cache.save
+						# Get the params
+						cache.api_endpoint_request_cache_params.each do |param|
+							url_params[param.name] = param.value
+						end
+
+						result = runner.run({
+							api: api,
+							vars: vars,
+							commands: api_endpoint.commands,
+							request: {
+								headers: Hash.new,
+								params: url_params,
+								body: nil
+							}
+						})
+
+						if result[:status] == 200 && !result[:file]
+							# Update the cache
+							cache.response = result[:data].to_json
+							cache.save
+						end
 					end
 				end
 			end
@@ -53,7 +89,7 @@ class TasksController < ApplicationController
 
 		head 204, content_type: "application/json"
 	end
-	
+
 	def send_notifications
 		Notification.where("time <= ?", DateTime.now).each do |notification|
 			if notification.title.nil? || notification.body.nil?
