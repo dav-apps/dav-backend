@@ -90,8 +90,22 @@ class ApisController < ApplicationController
 			# Get the compiled endpoint
 			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
 
+			# Get the headers
+			headers = Hash.new
+			headers["Authorization"] = request.headers["Authorization"]
+			headers["Content-Type"] = request.headers["Content-Type"]
+			headers["Content-Disposition"] = request.headers["Content-Disposition"]
+
 			compiler = DavExpressionCompiler.new
-			result = compiler.run(compiled_endpoint.code, api, request, url_params)
+			result = compiler.run(
+				code: compiled_endpoint.code,
+				api: api,
+				request: {
+					headers: headers,
+					params: url_params,
+					body: request.body
+				}
+			)
 		else
 			vars = Hash.new
 

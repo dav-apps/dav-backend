@@ -891,30 +891,25 @@ class DavExpressionCompiler
 		return functions_code + methods_code + code
 	end
 
-	def run(code, api, request = nil, params = {})
+	def run(props)
+		api = props[:api]
+
 		# Define necessary vars
 		@vars = {
 			api: api,
 			env: Hash.new
 		}
 
+		# Get the environment variables
 		api.api_env_vars.each do |env_var|
 			@vars[:env][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
 		end
 
-		if !request.nil?
-			# Get the headers
-			headers = Hash.new
-			headers["Authorization"] = request.headers["Authorization"]
-			headers["Content-Type"] = request.headers["Content-Type"]
-			headers["Content-Disposition"] = request.headers["Content-Disposition"]
+		@vars[:params] = props[:request][:params]
+		@vars[:body] = props[:request][:body]
+		@vars[:headers] = props[:request][:headers]
 
-			@vars[:params] = params
-			@vars[:body] = request.body
-			@vars[:headers] = headers
-		end
-
-		eval code
+		eval props[:code]
 	end
 
 	private
