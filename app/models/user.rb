@@ -10,6 +10,7 @@ class User < ApplicationRecord
 	has_many :purchases, dependent: :destroy
 	has_many :notifications, dependent: :destroy
 	has_many :websocket_connections, dependent: :destroy
+	has_many :api_endpoint_request_cache_dependencies
 
 	has_secure_password
 end

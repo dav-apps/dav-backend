@@ -9,6 +9,7 @@ class TableObject < ApplicationRecord
 	has_many :table_object_purchases, dependent: :destroy
 	has_many :purchases, through: :table_object_purchases
 	has_many :table_object_changes
+	has_many :api_endpoint_request_cache_dependencies
 
 	validates :uuid, presence: true, uniqueness: { case_sensitive: false }
 end
