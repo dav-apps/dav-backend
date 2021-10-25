@@ -57,7 +57,8 @@ class DavExpressionCompiler
 					@vars[:response] = {
 						data: data,
 						status: status,
-						file: false
+						file: false,
+						dependencies: @vars[:dependencies]
 					}
 				when 'render_file'
 					data = params[:data]
@@ -138,8 +139,21 @@ class DavExpressionCompiler
 
 					if user_id.nil?
 						objects = table.table_objects.to_a
+
+						# Add the dependency to the dependencies of the response
+						@vars[:dependencies].push({
+							name: 'Table.get_table_objects',
+							table_id: table.id
+						})
 					else
 						objects = table.table_objects.where(user_id: user_id.to_i).to_a
+
+						# Add the dependency to the dependencies of the response
+						@vars[:dependencies].push({
+							name: 'Table.get_table_objects',
+							user_id: user_id.to_i,
+							table_id: table.id
+						})
 					end
 
 					holders = Array.new
@@ -189,6 +203,9 @@ class DavExpressionCompiler
 						prop.value = value
 						prop.save
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(table_object: obj)
 
 					# Return the table object
 					return TableObjectHolder.new(obj)
@@ -291,6 +308,12 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					# Add the dependency to the dependencies of the response
+					@vars[:dependencies].push({
+						name: 'TableObject.get',
+						table_object_id: obj.id
+					})
+
 					return TableObjectHolder.new(obj)
 				when 'TableObject.get_file'
 					uuid = params[:uuid]
@@ -351,6 +374,9 @@ class DavExpressionCompiler
 							prop.destroy!
 						end
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(table_object: obj)
 
 					return TableObjectHolder.new(obj)
 				when 'TableObject.update_file'
@@ -517,11 +543,18 @@ class DavExpressionCompiler
 					end
 
 					# Find the access and return it
-					access = TableObjectUserAccess.find_by(table_object_id: table_object_id, user_id: user_id, table_alias: table_alias)
+					access = TableObjectUserAccess.find_by(
+						table_object_id: table_object_id,
+						user_id: user_id,
+						table_alias: table_alias
+					)
 
 					if access.nil?
-						access = TableObjectUserAccess.new(table_object_id: table_object_id, user_id: user_id, table_alias: table_alias)
-						access.save
+						access = TableObjectUserAccess.create(
+							table_object_id: table_object_id,
+							user_id: user_id,
+							table_alias: table_alias
+						)
 					end
 
 					return access
@@ -558,6 +591,11 @@ class DavExpressionCompiler
 						obj_collection = TableObjectCollection.new(table_object: obj, collection: collection)
 						obj_collection.save
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(collection: collection)
+
+					return obj_collection
 				when 'Collection.remove_table_object'
 					collection_name = params[:collection_name]
 					table_object_id = params[:table_object_id]
@@ -584,6 +622,9 @@ class DavExpressionCompiler
 					# Find and delete the TableObjectCollection
 					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
 					obj_collection.destroy! if !obj_collection.nil?
+
+					# Create the TableObjectChange
+					TableObjectChange.create(collection: collection)
 				when 'Collection.get_table_objects'
 					table_id = params[:table_id]
 					collection_name = params[:collection_name]
@@ -601,6 +642,12 @@ class DavExpressionCompiler
 					if collection.nil?
 						return Array.new
 					else
+						# Add the dependency to the dependencies of the response
+						@vars[:dependencies].push({
+							name: 'Collection.get_table_objects',
+							collection_id: collection.id
+						})
+
 						holders = Array.new
 						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 						return holders
@@ -636,6 +683,12 @@ class DavExpressionCompiler
 								objects.push(table_object) if contains_value
 							end
 						end
+
+						# Add the dependency to the dependencies of the response
+						@vars[:dependencies].push({
+							name: 'TableObject.find_by_property',
+							table_id: table_id
+						})
 					else
 						TableObject.where(user_id: user_id, table_id: table_id).each do |table_object|
 							if exact
@@ -657,6 +710,13 @@ class DavExpressionCompiler
 								objects.push(table_object) if contains_value
 							end
 						end
+
+						# Add the dependency to the dependencies of the response
+						@vars[:dependencies].push({
+							name: 'TableObject.find_by_property',
+							user_id: user_id,
+							table_id: table_id
+						})
 					end
 
 					holders = Array.new
@@ -908,6 +968,7 @@ class DavExpressionCompiler
 		@vars[:params] = props[:request][:params]
 		@vars[:body] = props[:request][:body]
 		@vars[:headers] = props[:request][:headers]
+		@vars[:dependencies] = Array.new
 
 		eval props[:code]
 	end
@@ -1096,16 +1157,22 @@ class DavExpressionCompiler
 			when :get_env
 				return "@vars[:env][#{compile_command(command[1], true)}]"
 			when :render_json
+				status = 200
+				status = compile_command(command[2], true) if !command[2].nil?
+
 				return "_method_call('render_json',
 					data: #{compile_command(command[1], true)},
-					status: #{compile_command(command[2], true)}
+					status: #{status}
 				)"
 			when :render_file
+				status = 200
+				status = compile_command(command[4], true) if command[4].nil?
+
 				return "_method_call('render_file',
 					data: #{compile_command(command[1], true)},
 					type: #{compile_command(command[2], true)},
 					filename: #{compile_command(command[3], true)},
-					status: #{compile_command(command[4], true)}
+					status: #{status}
 				)"
 			when :!
 				return "!(#{compile_command(command[1], true)})"

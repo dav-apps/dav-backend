@@ -52,6 +52,9 @@ class TableObjectHolder
 		# Set the appropriate property value
 		prop = @properties.find{ |p| p.name == name }
 
+		# Create the TableObjectChange
+		TableObjectChange.create(table_object: obj)
+
 		if prop.nil?
 			# Create a new property
 			prop = TableObjectProperty.create(
@@ -71,6 +74,7 @@ class TableObjectHolder
 
 			# Update the local values
 			@values[name] = value
+			return value
 		end
 	end
 end

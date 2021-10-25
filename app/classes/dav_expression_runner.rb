@@ -9,7 +9,9 @@ class DavExpressionRunner
 		@functions = Hash.new
 		@errors = Array.new
 		@request = props[:request]
-		@response = Hash.new
+		@response = {
+			dependencies: Array.new
+		}
 
 		# Parse and execute the commands
 		@parser = Sexpistol.new
@@ -400,9 +402,9 @@ class DavExpressionRunner
 						error["code"] = 1
 						@errors.push(error)
 						return @errors
-					else
-						return table
 					end
+
+					return table
 				when "Table.get_table_objects"		# id, user_id
 					table = Table.find_by(id: execute_command(command[1], vars).to_i)
 					return nil if !table
@@ -418,8 +420,21 @@ class DavExpressionRunner
 					user_id = execute_command(command[2], vars)
 					if user_id.nil?
 						objects = table.table_objects.to_a
+
+						# Add the dependency to the dependencies of the response
+						@response[:dependencies].push({
+							name: "Table.get_table_objects",
+							table_id: table.id
+						})
 					else
 						objects = table.table_objects.where(user_id: user_id.to_i).to_a
+
+						# Add the dependency to the dependencies of the response
+						@response[:dependencies].push({
+							name: "Table.get_table_objects",
+							user_id: user_id.to_i,
+							table_id: table.id
+						})
 					end
 
 					holders = Array.new
@@ -430,7 +445,7 @@ class DavExpressionRunner
 					# Get the table
 					table = Table.find_by(id: execute_command(command[2], vars))
 					error = Hash.new
-					
+
 					# Check if the table exists
 					if table.nil?
 						error["code"] = 0
@@ -475,6 +490,9 @@ class DavExpressionRunner
 						prop.value = value
 						prop.save
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(table_object: obj)
 
 					# Return the table object
 					return TableObjectHolder.new(obj)
@@ -588,6 +606,12 @@ class DavExpressionRunner
 						return @errors
 					end
 
+					# Add the dependency to the dependencies of the response
+					@response[:dependencies].push({
+						name: "TableObject.get",
+						table_object_id: obj.id
+					})
+
 					return TableObjectHolder.new(obj)
 				when "TableObject.get_file"	# uuid
 					obj = TableObject.find_by(uuid: execute_command(command[1], vars))
@@ -653,6 +677,9 @@ class DavExpressionRunner
 							prop.destroy!
 						end
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(table_object: obj)
 
 					return TableObjectHolder.new(obj)
 				when "TableObject.update_file"	# uuid, ext, type, file
@@ -845,11 +872,18 @@ class DavExpressionRunner
 					end
 
 					# Find the access and return it
-					access = TableObjectUserAccess.find_by(table_object_id: table_object_id, user_id: user_id, table_alias: table_alias)
+					access = TableObjectUserAccess.find_by(
+						table_object_id: table_object_id,
+						user_id: user_id,
+						table_alias: table_alias
+					)
 
 					if access.nil?
-						access = TableObjectUserAccess.new(table_object_id: table_object_id, user_id: user_id, table_alias: table_alias)
-						access.save
+						access = TableObjectUserAccess.create(
+							table_object_id: table_object_id,
+							user_id: user_id,
+							table_alias: table_alias
+						)
 					end
 
 					return access
@@ -889,6 +923,11 @@ class DavExpressionRunner
 						obj_collection = TableObjectCollection.new(table_object: obj, collection: collection)
 						obj_collection.save
 					end
+
+					# Create the TableObjectChange
+					TableObjectChange.create(collection: collection)
+
+					return obj_collection
 				when "Collection.remove_table_object"	# collection_name, table_object_id
 					error = Hash.new
 					collection_name = execute_command(command[1], vars)
@@ -920,6 +959,9 @@ class DavExpressionRunner
 					# Find and delete the TableObjectCollection
 					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
 					obj_collection.destroy! if !obj_collection.nil?
+
+					# Create the TableObjectChange
+					TableObjectChange.create(collection: collection)
 				when "Collection.get_table_objects"	# table_id, collection_name
 					error = Hash.new
 					table_id = execute_command(command[1], vars)
@@ -940,6 +982,12 @@ class DavExpressionRunner
 					if collection.nil?
 						return Array.new
 					else
+						# Add the dependency to the dependencies of the response
+						@response[:dependencies].push({
+							name: "Collection.get_table_objects",
+							collection_id: collection.id
+						})
+
 						holders = Array.new
 						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 						return holders
@@ -975,6 +1023,12 @@ class DavExpressionRunner
 								objects.push(table_object) if contains_value
 							end
 						end
+
+						# Add the dependency to the dependencies of the response
+						@response[:dependencies].push({
+							name: "TableObject.find_by_property",
+							table_id: table_id
+						})
 					else
 						TableObject.where(user_id: user_id, table_id: table_id).each do |table_object|
 							if exact
@@ -996,6 +1050,13 @@ class DavExpressionRunner
 								objects.push(table_object) if contains_value
 							end
 						end
+
+						# Add the dependency to the dependencies of the response
+						@response[:dependencies].push({
+							name: "TableObject.find_by_property",
+							user_id: user_id,
+							table_id: table_id
+						})
 					end
 
 					holders = Array.new
