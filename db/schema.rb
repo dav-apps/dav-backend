@@ -16,6 +16,7 @@ ActiveRecord::Schema.define(version: 2021_10_24_205710) do
     t.bigint "user_id"
     t.bigint "table_id"
     t.bigint "table_object_id"
+    t.bigint "collection_id"
     t.bigint "api_endpoint_request_cache_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
@@ -188,9 +189,10 @@ ActiveRecord::Schema.define(version: 2021_10_24_205710) do
   end
 
   create_table "table_object_changes", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
+    t.bigint "user_id"
     t.bigint "table_id"
     t.bigint "table_object_id"
-    t.integer "change"
+    t.bigint "collection_id"
     t.datetime "created_at", precision: 6, null: false
   end
 

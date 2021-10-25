@@ -4,6 +4,7 @@ class CreateApiEndpointRequestCacheDependency < ActiveRecord::Migration[6.0]
 		t.bigint :user_id
 		t.bigint :table_id
 		t.bigint :table_object_id
+		t.bigint :collection_id
 		t.bigint :api_endpoint_request_cache_id
 		t.string :name
 		t.timestamps
