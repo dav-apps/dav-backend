@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_24_203318) do
+ActiveRecord::Schema.define(version: 2021_10_24_205710) do
 
   create_table "api_endpoint_request_cache_dependencies", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.bigint "table_object_id"
+    t.bigint "api_endpoint_request_cache_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
@@ -32,6 +33,7 @@ ActiveRecord::Schema.define(version: 2021_10_24_203318) do
     t.text "response"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.boolean "old", default: true
   end
 
   create_table "api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
