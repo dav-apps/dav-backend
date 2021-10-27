@@ -76,6 +76,11 @@ class DavExpressionCompiler
 						type: type,
 						filename: filename
 					}
+				when 'contains_all'
+					original_array = params[:original_array]
+					comparing_array = params[:comparing_array]
+					intersecting_array = original_array & comparing_array
+					return intersecting_array.size == comparing_array.size
 				when 'User.get'
 					id = params[:id]
 					return User.find_by(id: id)
@@ -1383,6 +1388,7 @@ class DavExpressionCompiler
 					valid = [
 						"push",
 						"contains",
+						"contains_all",
 						"join",
 						"select",
 						"split"
@@ -1392,6 +1398,11 @@ class DavExpressionCompiler
 						# Change the function name if necessary
 						if function_name == "contains"
 							complete_command = "#{compile_command(parts.join('.').to_sym, true)}.include?"
+						elsif function_name == "contains_all"
+							return "_method_call('contains_all',
+								original_array: #{compile_command(parts.join('.').to_sym, true)},
+								comparing_array: #{compile_command(command[1], true)}
+							)"
 						elsif function_name == "select"
 							return "#{parts.join('.')}[#{compile_command(command[1], true)}, #{compile_command(command[2], true)}]"
 						else

@@ -1409,6 +1409,10 @@ class DavExpressionRunner
 							end
 						elsif function_name == "contains"
 							return var.include?(execute_command(command[1], vars))
+						elsif function_name == "contains_all"
+							comparing_array = execute_command(command[1], vars)
+							intersection_array = (var & comparing_array)
+							return intersection_array.size == comparing_array.size
 						elsif function_name == "join"
 							return "" if var.size == 0
 
