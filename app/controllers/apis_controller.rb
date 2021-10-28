@@ -85,7 +85,7 @@ class ApisController < ApplicationController
 
 		if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
 			# Get the prod slot
-			prod_slot = api.api_slots.find_by(name: "prod")
+			prod_slot = api.api_slots.find_by(name: "master")
 
 			# Get the compiled endpoint
 			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)

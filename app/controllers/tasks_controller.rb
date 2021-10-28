@@ -45,7 +45,7 @@ class TasksController < ApplicationController
 		Api.all.each do |api|
 			if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
 				# Get the prod slot
-				prod_slot = api.api_slots.find_by(name: "prod")
+				prod_slot = api.api_slots.find_by(name: "master")
 				compiler = DavExpressionCompiler.new
 
 				api.api_endpoints.where(caching: true).each do |api_endpoint|
