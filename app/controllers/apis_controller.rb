@@ -283,24 +283,25 @@ class ApisController < ApplicationController
 	end
 
 	def compile_api
-		access_token = get_auth
+		auth = get_auth
 		id = params[:id]
 
-		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
 
-		# Get the session
-		session = ValidationService.get_session_from_token(access_token)
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
 
-		# Make sure this was called from the website
-		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
 
 		# Get the api
 		api = Api.find_by(id: id)
 		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
 		# Check if the api belongs to an app of the dev of the user
-		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
+		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
 		# Get the params from the body
 		body = ValidationService.parse_json(request.body.string)
