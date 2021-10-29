@@ -8,7 +8,7 @@ describe ApisController do
 	# api_call
 	it "should not do api call for api that does not exist" do
 		res = get_request(
-			"/v1/api/-123/call/test"
+			"/v1/api/-123/master/test"
 		)
 
 		assert_response 404
@@ -16,9 +16,19 @@ describe ApisController do
 		assert_equal(ErrorCodes::API_DOES_NOT_EXIST, res["errors"][0]["code"])
 	end
 
+	it "should not do api call for api slot that does not exist" do
+		res = get_request(
+			"/v1/api/#{apis(:pocketlibApi).id}/bla/asdasdasds"
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::API_SLOT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
 	it "should not do api call for api endpoint that does not exist" do
 		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/call/asdasdasd"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/asdasdasd"
 		)
 
 		assert_response 404
@@ -32,7 +42,7 @@ describe ApisController do
 		id = 4
 
 		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/call/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -47,7 +57,7 @@ describe ApisController do
 		id = 674
 
 		res = post_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/call/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -62,7 +72,7 @@ describe ApisController do
 		id = 145
 
 		res = put_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/call/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -77,7 +87,7 @@ describe ApisController do
 		id = 50
 
 		res = delete_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/call/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -217,107 +227,6 @@ describe ApisController do
 		assert_equal(api.id, res["id"])
 		assert_equal(api.app_id, res["app_id"])
 		assert_equal(api.name, res["name"])
-		assert_equal(0, api.api_endpoints.length)
-		assert_equal(0, api.api_functions.length)
-		assert_equal(0, api.api_errors.length)
-	end
-
-	# get_api
-	it "should not get api without access token" do
-		res = get_request("/v1/api/1")
-
-		assert_response 401
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
-	end
-
-	it "should not get api with access token for session that does not exist" do
-		res = get_request(
-			"/v1/api/1",
-			{Authorization: "adsasdasasd"}
-		)
-
-		assert_response 404
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
-	end
-
-	it "should not get api from another app than the website" do
-		res = get_request(
-			"/v1/api/1",
-			{Authorization: sessions(:sherlockTestAppSession).token}
-		)
-
-		assert_response 403
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
-	end
-
-	it "should not get api that does not exist" do
-		res = get_request(
-			"/v1/api/-123",
-			{Authorization: sessions(:mattWebsiteSession).token}
-		)
-
-		assert_response 404
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::API_DOES_NOT_EXIST, res["errors"][0]["code"])
-	end
-
-	it "should not get api that belongs to the app of another dev" do
-		api = apis(:pocketlibApi)
-
-		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}",
-			{Authorization: sessions(:sherlockWebsiteSession).token}
-		)
-
-		assert_response 403
-		assert_equal(1, res["errors"].length)
-		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
-	end
-
-	it "should get api" do
-		api = apis(:pocketlibApi)
-
-		res = get_request(
-			"/v1/api/#{api.id}",
-			{Authorization: sessions(:davWebsiteSession).token}
-		)
-
-		assert_response 200
-
-		assert_equal(api.id, res["id"])
-		assert_equal(api.app_id, res["app_id"])
-		assert_equal(api.name, res["name"])
-
-		assert_equal(api.api_endpoints.length, res["endpoints"].length)
-		assert_equal(api.api_functions.length, res["functions"].length)
-		assert_equal(api.api_errors.length, res["errors"].length)
-		
-		i = 0
-		api.api_endpoints.each do |endpoint|
-			assert_equal(endpoint.id, res["endpoints"][i]["id"])
-			assert_equal(endpoint.path, res["endpoints"][i]["path"])
-			assert_equal(endpoint.method, res["endpoints"][i]["method"])
-			assert_equal(endpoint.caching, res["endpoints"][i]["caching"])
-			i += 1
-		end
-
-		i = 0
-		api.api_functions.each do |function|
-			assert_equal(function.id, res["functions"][i]["id"])
-			assert_equal(function.name, res["functions"][i]["name"])
-			assert_equal(function.params, res["functions"][i]["params"])
-			i += 1
-		end
-		
-		i = 0
-		api.api_errors.each do |error|
-			assert_equal(error.id, res["errors"][i]["id"])
-			assert_equal(error.code, res["errors"][i]["code"])
-			assert_equal(error.message, res["errors"][i]["message"])
-			i += 1
-		end
+		assert_equal(0, api.api_slots.length)
 	end
 end

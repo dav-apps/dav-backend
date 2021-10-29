@@ -1,5 +1,5 @@
 pocketlibApiGetTest:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   path: "test/:id"
   method: GET
   commands: "(
@@ -9,7 +9,7 @@ pocketlibApiGetTest:
   caching: true
 
 pocketlibApiPostTest:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   path: "test/:id"
   method: POST
   commands: "(
@@ -19,7 +19,7 @@ pocketlibApiPostTest:
   caching: false
 
 pocketlibApiPutTest:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   path: "test/:id"
   method: PUT
   commands: "(
@@ -29,7 +29,7 @@ pocketlibApiPutTest:
   caching: false
 
 pocketlibApiDeleteTest:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   path: "test/:id"
   method: DELETE
   commands: "(

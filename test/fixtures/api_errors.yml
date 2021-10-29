@@ -1,9 +1,9 @@
 pocketlibApiFirstError:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   code: 100
   message: "First error"
 
 pocketlibApiSecondError:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   code: 101
   message: "Second error"

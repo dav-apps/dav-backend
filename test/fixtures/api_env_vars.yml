@@ -1,23 +1,23 @@
 pocketlibApiFirstEnvVar:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   name: first_env_var
   value: "Hello World"
   class_name: "string"
 
 pocketlibApiSecondEnvVar:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   name: second_env_var
   value: 1234
   class_name: "int"
 
 pocketlibApiThirdEnvVar:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   name: third_env_var
   value: 12.345
   class_name: "float"
 
 pocketlibApiFourthEnvVar:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   name: fourth_env_var
   value: "1,2,3,4,5"
   class_name: "array:int"

@@ -1,5 +1,5 @@
 pocketlibApiTestFunction:
-  api: pocketlibApi
+  api_slot: pocketlibApiMaster
   name: test
   params: "a,b"
   commands: "(return (a + b))"
