@@ -1,7 +1,10 @@
 class ApisController < ApplicationController
 	def api_call
 		api_id = params[:id]
+		slot_name = params[:slot]
 		path = params[:path]
+
+		slot_name = "master" if slot_name == "call"
 
 		# Get the api
 		api = Api.find_by(id: api_id)
@@ -84,11 +87,17 @@ class ApisController < ApplicationController
 		end
 
 		if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
-			# Get the prod slot
-			prod_slot = api.api_slots.find_by(name: "master")
+			# Get the slot
+			slot = api.api_slots.find_by(name: slot_name)
+
+			# Check if the slot exists
+			ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(slot))
 
 			# Get the compiled endpoint
-			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
+			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: slot)
+
+			# Check if the compiled api endpoint exists
+			ValidationService.raise_validation_errors(ValidationService.validate_compiled_api_endpoint_existence(compiled_endpoint))
 
 			# Get the headers
 			headers = Hash.new

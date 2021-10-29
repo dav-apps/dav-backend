@@ -68,7 +68,7 @@ Rails.application.routes.draw do
 	match '/v1/notification/:uuid', to: 'notifications#delete_notification', via: :delete
 
 	# ApisController
-	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
+	match '/v1/api/:id/:slot/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api', to: 'apis#create_api', via: :post
 	match '/v1/api/:id', to: 'apis#get_api', via: :get
 	match '/v1/api/:id/compile', to: 'apis#compile_api', via: :put

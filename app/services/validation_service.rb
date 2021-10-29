@@ -1134,6 +1134,16 @@ class ValidationService
 		api_endpoint.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
 	end
 
+	def self.validate_compiled_api_endpoint_existence(compiled_api_endpoint)
+		error_code = 3614
+		compiled_api_endpoint.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
+	end
+
+	def self.validate_api_slot_existence(api_slot)
+		error_code = 3615
+		api_slot.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
+	end
+
 	# Errors for already existing resources
 	def self.validate_provider_nonexistence(provider)
 		error_code = 3702
@@ -1604,6 +1614,10 @@ class ValidationService
 			"Resource does not exist: Api"
 		when 3613
 			"Resource does not exist: ApiEndpoint"
+		when 3614
+			"Resource does not exist: CompiledApiEndpoint"
+		when 3615
+			"Resource does not exist: ApiSlot"
 		# Errors for already existing resources
 		when 3700
 			"Resource already exists: User"
@@ -1633,6 +1647,10 @@ class ValidationService
 			"Resource already exists: Api"
 		when 3713
 			"Resource already exists: ApiEndpoint"
+		when 3714
+			"Resource already exists: CompiledApiEndpoint"
+		when 3715
+			"Resource already exists: ApiSlot"
 		end
 	end
 end
