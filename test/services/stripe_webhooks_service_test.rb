@@ -2,6 +2,10 @@ require 'test_helper'
 require 'stripe_mock'
 
 class StripeWebhooksServiceTest < ActiveSupport::TestCase
+	setup do
+		setup
+	end
+
 	before do
 		StripeMock.start
 	end

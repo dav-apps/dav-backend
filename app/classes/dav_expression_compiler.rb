@@ -970,9 +970,16 @@ class DavExpressionCompiler
 			@vars[:env][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
 		end
 
-		@vars[:params] = props[:request][:params]
-		@vars[:body] = props[:request][:body]
-		@vars[:headers] = props[:request][:headers]
+		if props[:request].nil?
+			@vars[:params] = Hash.new
+			@vars[:body] = nil
+			@vars[:headers] = Hash.new
+		else
+			@vars[:params] = props[:request][:params]
+			@vars[:body] = props[:request][:body]
+			@vars[:headers] = props[:request][:headers]
+		end
+
 		@vars[:dependencies] = Array.new
 
 		eval props[:code]
