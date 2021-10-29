@@ -10,13 +10,17 @@ class ApisController < ApplicationController
 		api = Api.find_by(id: api_id)
 		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
 
+		# Get the api slot
+		slot = api.api_slots.find_by(name: slot_name)
+		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(slot))
+
 		# Find the appropriate api endpoint
-		api_endpoint = ApiEndpoint.find_by(api: api, method: request.method, path: path)
+		api_endpoint = ApiEndpoint.find_by(api_slot: slot, method: request.method, path: path)
 		url_params = Hash.new
 
 		if api_endpoint.nil?
 			# Try to find the appropriate endpoint with a variable in the url
-			ApiEndpoint.where(api: api, method: request.method).each do |endpoint|
+			ApiEndpoint.where(api_slot: slot, method: request.method).each do |endpoint|
 				path_parts = endpoint.path.split('/')
 				url_parts = path.split('/')
 				next if path_parts.count != url_parts.count
@@ -87,17 +91,9 @@ class ApisController < ApplicationController
 		end
 
 		if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
-			# Get the slot
-			slot = api.api_slots.find_by(name: slot_name)
-
-			# Check if the slot exists
-			ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(slot))
-
 			# Get the compiled endpoint
-			compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: slot)
-
-			# Check if the compiled api endpoint exists
-			ValidationService.raise_validation_errors(ValidationService.validate_compiled_api_endpoint_existence(compiled_endpoint))
+			compiled_api_endpoint = api_endpoint.compiled_api_endpoint
+			ValidationService.raise_validation_errors(ValidationService.validate_compiled_api_endpoint_existence(compiled_api_endpoint))
 
 			# Get the headers
 			headers = Hash.new
@@ -107,7 +103,7 @@ class ApisController < ApplicationController
 
 			compiler = DavExpressionCompiler.new
 			result = compiler.run(
-				code: compiled_endpoint.code,
+				code: compiled_api_endpoint.code,
 				api: api,
 				request: {
 					headers: headers,
@@ -120,7 +116,7 @@ class ApisController < ApplicationController
 
 			# Get the environment variables
 			vars["env"] = Hash.new
-			api.api_env_vars.each do |env_var|
+			slot.api_env_vars.each do |env_var|
 				vars["env"][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
 			end
 
@@ -229,68 +225,6 @@ class ApisController < ApplicationController
 		render_errors(e)
 	end
 
-	def get_api
-		access_token = get_auth
-		id = params[:id]
-
-		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
-
-		# Get the session
-		session = ValidationService.get_session_from_token(access_token)
-
-		# Make sure this was called from the website
-		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
-
-		# Get the api
-		api = Api.find_by(id: id)
-		ValidationService.raise_validation_errors(ValidationService.validate_api_existence(api))
-
-		# Check if the api belongs to an app of the dev of the user
-		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, session.user.dev))
-
-		# Return the data
-		endpoints = Array.new
-		api.api_endpoints.each do |endpoint|
-			endpoints.push({
-				id: endpoint.id,
-				path: endpoint.path,
-				method: endpoint.method,
-				caching: endpoint.caching
-			})
-		end
-
-		functions = Array.new
-		api.api_functions.each do |function|
-			functions.push({
-				id: function.id,
-				name: function.name,
-				params: function.params
-			})
-		end
-
-		errors = Array.new
-		api.api_errors.each do |error|
-			errors.push({
-				id: error.id,
-				code: error.code,
-				message: error.message
-			})
-		end
-		
-		result = {
-			id: api.id,
-			app_id: api.app_id,
-			name: api.name,
-			endpoints: endpoints,
-			functions: functions,
-			errors: errors
-		}
-		
-		render json: result, status: 200
-	rescue RuntimeError => e
-		render_errors(e)
-	end
-
 	def compile_api
 		auth = get_auth
 		id = params[:id]
@@ -322,34 +256,24 @@ class ApisController < ApplicationController
 		# Validate the types of the fields
 		ValidationService.raise_validation_errors(ValidationService.validate_slot_type(slot))
 
-		# Try to find a slot with the name
+		# Get the api slot
 		api_slot = ApiSlot.find_by(api: api, name: slot)
-
-		if api_slot.nil?
-			# Validate the slot name
-			ValidationService.raise_validation_errors(ValidationService.validate_slot_length(slot))
-			ValidationService.raise_validation_errors(ValidationService.validate_slot_validity(slot))
-
-			# Create a slot with the name
-			api_slot = ApiSlot.new(api: api, name: slot)
-			ValidationService.raise_unexpected_error(!api_slot.save)
-		end
+		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slotslot))
 
 		# Compile each ApiEndpoint and create or update the CompiledApiEndpoints with the compiled code
 		compiler = DavExpressionCompiler.new
 
-		api.api_endpoints.each do |endpoint|
+		api_slot.api_endpoints.each do |endpoint|
 			code = compiler.compile({
 				api: api,
 				commands: endpoint.commands
 			})
 
-			# Try to find the CompiledApiEndpoint
-			compiled_endpoint = endpoint.compiled_api_endpoints.find_by(api_slot: api_slot)
+			compiled_endpoint = endpoint.compiled_api_endpoint
 
 			if compiled_endpoint.nil?
 				# Create the compiled endpoint
-				compiled_endpoint = CompiledApiEndpoint.new(api_slot: api_slot, api_endpoint: endpoint)
+				compiled_endpoint = CompiledApiEndpoint.new(api_endpoint: endpoint)
 			end
 
 			compiled_endpoint.code = code
