@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_24_205710) do
+ActiveRecord::Schema.define(version: 2021_10_29_213510) do
 
   create_table "api_endpoint_request_cache_dependencies", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
     t.bigint "user_id"
@@ -38,7 +38,7 @@ ActiveRecord::Schema.define(version: 2021_10_24_205710) do
   end
 
   create_table "api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "api_id"
+    t.bigint "api_slot_id"
     t.string "path"
     t.string "method"
     t.text "commands"
@@ -48,20 +48,20 @@ ActiveRecord::Schema.define(version: 2021_10_24_205710) do
   end
 
   create_table "api_env_vars", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "api_id"
+    t.bigint "api_slot_id"
     t.string "name"
     t.string "value"
     t.string "class_name"
   end
 
   create_table "api_errors", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "api_id"
+    t.bigint "api_slot_id"
     t.integer "code"
     t.string "message"
   end
 
   create_table "api_functions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "api_id"
+    t.bigint "api_slot_id"
     t.string "name"
     t.string "params"
     t.text "commands"
@@ -120,7 +120,6 @@ ActiveRecord::Schema.define(version: 2021_10_24_205710) do
   end
 
   create_table "compiled_api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "api_slot_id"
     t.bigint "api_endpoint_id"
     t.text "code"
     t.datetime "created_at", precision: 6, null: false
