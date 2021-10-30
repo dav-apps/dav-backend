@@ -4,7 +4,7 @@ class ApisController < ApplicationController
 		slot_name = params[:slot]
 		path = params[:path]
 
-		slot_name = "master" if slot_name == "call"
+		slot_name = "master" if slot_name.nil?
 
 		# Get the api
 		api = Api.find_by(id: api_id)

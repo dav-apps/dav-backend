@@ -8,7 +8,7 @@ describe ApisController do
 	# api_call
 	it "should not do api call for api that does not exist" do
 		res = get_request(
-			"/v1/api/-123/master/test"
+			"/v1/api/-123/master/call/test"
 		)
 
 		assert_response 404
@@ -18,7 +18,7 @@ describe ApisController do
 
 	it "should not do api call for api slot that does not exist" do
 		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/bla/asdasdasds"
+			"/v1/api/#{apis(:pocketlibApi).id}/bla/call/asdasdasds"
 		)
 
 		assert_response 404
@@ -28,7 +28,7 @@ describe ApisController do
 
 	it "should not do api call for api endpoint that does not exist" do
 		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/master/asdasdasd"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/call/asdasdasd"
 		)
 
 		assert_response 404
@@ -42,7 +42,7 @@ describe ApisController do
 		id = 4
 
 		res = get_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/call/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -57,7 +57,7 @@ describe ApisController do
 		id = 674
 
 		res = post_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/call/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -72,7 +72,7 @@ describe ApisController do
 		id = 145
 
 		res = put_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/call/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
@@ -87,7 +87,7 @@ describe ApisController do
 		id = 50
 
 		res = delete_request(
-			"/v1/api/#{apis(:pocketlibApi).id}/master/test/#{id}?text=#{text}"
+			"/v1/api/#{apis(:pocketlibApi).id}/master/call/test/#{id}?text=#{text}"
 		)
 
 		assert_response 200
