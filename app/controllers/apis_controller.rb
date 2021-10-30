@@ -104,7 +104,7 @@ class ApisController < ApplicationController
 			compiler = DavExpressionCompiler.new
 			result = compiler.run(
 				code: compiled_api_endpoint.code,
-				api: api,
+				api_slot: slot,
 				request: {
 					headers: headers,
 					params: url_params,
@@ -128,7 +128,7 @@ class ApisController < ApplicationController
 
 			runner = DavExpressionRunner.new
 			result = runner.run({
-				api: api,
+				api_slot: slot,
 				vars: vars,
 				commands: api_endpoint.commands,
 				request: {
@@ -256,7 +256,7 @@ class ApisController < ApplicationController
 
 		api_slot.api_endpoints.each do |endpoint|
 			code = compiler.compile({
-				api: api,
+				api_slot: api_slot,
 				commands: endpoint.commands
 			})
 

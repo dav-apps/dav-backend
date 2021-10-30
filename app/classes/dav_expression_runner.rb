@@ -4,7 +4,7 @@ require 'rmagick'
 class DavExpressionRunner
 	def run(props)
 		# Get the runtime variables
-		@api = props[:api]
+		@api_slot = props[:api_slot]
 		@vars = props[:vars]
 		@functions = Hash.new
 		@errors = Array.new
@@ -214,7 +214,7 @@ class DavExpressionRunner
 					return execute_command(function["commands"], args)
 				else
 					# Try to get the function from the database
-					function = ApiFunction.find_by(api: @api, name: name)
+					function = ApiFunction.find_by(api_slot: @api_slot, name: name)
 					
 					if function
 						# Clone the vars for the function call
@@ -302,7 +302,7 @@ class DavExpressionRunner
 					return @request[:body]
 				end
 			when :get_error
-				error = ApiError.find_by(api: @api, code: execute_command(command[1], vars))
+				error = ApiError.find_by(api_slot: @api_slot, code: execute_command(command[1], vars))
 
 				if !error.nil?
 					result = Hash.new
@@ -396,7 +396,7 @@ class DavExpressionRunner
 				when "Table.get"		# id
 					table = Table.find_by(id: execute_command(command[1], vars).to_i)
 
-					if !table.nil? && table.app != @api.app
+					if !table.nil? && table.app != @api_slot.api.app
 						# Action not allowed error
 						error = Hash.new
 						error["code"] = 1
@@ -409,7 +409,7 @@ class DavExpressionRunner
 					table = Table.find_by(id: execute_command(command[1], vars).to_i)
 					return nil if !table
 
-					if table.app != @api.app
+					if table.app != @api_slot.api.app
 						# Action not allowed error
 						error = Hash.new
 						error["code"] = 1
@@ -454,7 +454,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the table belongs to the same app as the api
-					if table.app != @api.app
+					if table.app != @api_slot.api.app
 						error["code"] = 1
 						@errors.push(error)
 						return @errors
@@ -509,7 +509,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the table belongs to the same app as the api
-					if table.app != @api.app
+					if table.app != @api_slot.api.app
 						error["code"] = 1
 						@errors.push(error)
 						return @errors
@@ -600,7 +600,7 @@ class DavExpressionRunner
 					return nil if obj.nil?
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 0
 						@errors.push(error)
 						return @errors
@@ -618,7 +618,7 @@ class DavExpressionRunner
 					return nil if !obj.file
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 0
 						@errors.push(error)
 						return @errors
@@ -650,7 +650,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 2
 						@errors.push(error)
 						return @errors
@@ -702,7 +702,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 2
 						@errors.push(error)
 						return @errors
@@ -795,7 +795,7 @@ class DavExpressionRunner
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 1
 						@errors.push(error)
 						return @errors
@@ -833,7 +833,7 @@ class DavExpressionRunner
 					return nil if obj.nil?
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @api.app
+					if obj.table.app != @api_slot.api.app
 						error["code"] = 0
 						@errors.push(error)
 						return @errors

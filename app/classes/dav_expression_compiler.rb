@@ -1,6 +1,6 @@
 class DavExpressionCompiler
 	def compile(props)
-		@api = props[:api]
+		@api_slot = props[:api_slot]
 		@defined_functions = Array.new
 		@functions_to_define = Array.new
 
@@ -45,7 +45,7 @@ class DavExpressionCompiler
 						return body
 					end
 				when 'get_error'
-					error = ApiError.find_by(api: @vars[:api], code: params[:code])
+					error = ApiError.find_by(api_slot: @vars[:api_slot], code: params[:code])
 					return {
 						\"code\" => error.code,
 						\"message\" => error.message
@@ -124,7 +124,7 @@ class DavExpressionCompiler
 
 					table = Table.find_by(id: id)
 
-					if !table.nil? && table.app != @vars[:api].app
+					if !table.nil? && table.app != @vars[:api_slot].api.app
 						# Action not allowed
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
@@ -137,7 +137,7 @@ class DavExpressionCompiler
 					table = Table.find_by(id: id.to_i)
 					return nil if !table
 
-					if table.app != @vars[:api].app
+					if table.app != @vars[:api_slot].api.app
 						# Action not allowed error
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
@@ -179,7 +179,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table belongs to the same app as the api
-					if table.app != @vars[:api].app
+					if table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -230,7 +230,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table belongs to the same app as the api
-					if table.app != @vars[:api].app
+					if table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -309,7 +309,7 @@ class DavExpressionCompiler
 					return nil if obj.nil?
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -327,7 +327,7 @@ class DavExpressionCompiler
 					return nil if obj.nil? || !obj.file
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -355,7 +355,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 2}].to_json
 					end
 
@@ -404,7 +404,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 2}].to_json
 					end
 
@@ -482,7 +482,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -515,7 +515,7 @@ class DavExpressionCompiler
 					return nil if obj.nil?
 
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api].app
+					if obj.table.app != @vars[:api_slot].api.app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -957,16 +957,16 @@ class DavExpressionCompiler
 	end
 
 	def run(props)
-		api = props[:api]
+		api_slot = props[:api_slot]
 
 		# Define necessary vars
 		@vars = {
-			api: api,
+			api_slot: api_slot,
 			env: Hash.new
 		}
 
 		# Get the environment variables
-		api.api_env_vars.each do |env_var|
+		api_slot.api_env_vars.each do |env_var|
 			@vars[:env][env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
 		end
 
@@ -1111,7 +1111,7 @@ class DavExpressionCompiler
 				# Check if the function is defined
 				if !@defined_functions.include?(name)
 					# Try to get the function from the database
-					function = ApiFunction.find_by(api: @api, name: name)
+					function = ApiFunction.find_by(api_slot: @api_slot, name: name)
 					return "" if function.nil?
 
 					@defined_functions.push(name)

@@ -43,14 +43,17 @@ class TasksController < ApplicationController
 		end
 
 		Api.all.each do |api|
+			# Get the master slot
+			api_slot = api.api_slots.find_by(name: "master")
+			next if api_slot.nil?
+
 			if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
-				# Get the prod slot
-				prod_slot = api.api_slots.find_by(name: "master")
 				compiler = DavExpressionCompiler.new
 
-				api.api_endpoints.where(caching: true).each do |api_endpoint|
+				api_slot.api_endpoints.where(caching: true).each do |api_endpoint|
 					# Get the compiled endpoint
-					compiled_endpoint = api_endpoint.compiled_api_endpoints.find_by(api_slot: prod_slot)
+					compiled_endpoint = api_endpoint.compiled_api_endpoint
+					next if compiled_endpoint.nil?
 
 					api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
 						# Get the params
@@ -61,7 +64,7 @@ class TasksController < ApplicationController
 
 						result = compiler.run({
 							code: compiled_endpoint.code,
-							api: api,
+							api_slot: api_slot,
 							request: {
 								headers: Hash.new,
 								params: url_params,
@@ -98,13 +101,13 @@ class TasksController < ApplicationController
 			else
 				runner = DavExpressionRunner.new
 
-				api.api_endpoints.where(caching: true).each do |api_endpoint|
-					# Get the environment variables of the api
-					env_vars = Hash.new
-					api.api_env_vars.each do |env_var|
-						env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
-					end
+				# Get the environment variables of the api
+				env_vars = Hash.new
+				api_slot.api_env_vars.each do |env_var|
+					env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+				end
 
+				api_slot.api_endpoints.where(caching: true).each do |api_endpoint|
 					api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
 						vars = Hash.new
 						url_params = Hash.new
@@ -116,7 +119,7 @@ class TasksController < ApplicationController
 						end
 
 						result = runner.run({
-							api: api,
+							api_slot: api_slot,
 							vars: vars,
 							commands: api_endpoint.commands,
 							request: {
