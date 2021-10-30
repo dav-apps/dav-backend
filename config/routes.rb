@@ -71,7 +71,7 @@ Rails.application.routes.draw do
 	match '/v1/api/:id/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api/:id/:slot/call/*path', to: 'apis#api_call', via: [:post, :get, :put, :delete]
 	match '/v1/api', to: 'apis#create_api', via: :post
-	match '/v1/api/:id/compile', to: 'apis#compile_api', via: :put
+	match '/v1/api/:id/:slot/compile', to: 'apis#compile_api', via: :put
 
 	# ApiEndpointsController
 	match '/v1/api/:id/endpoint', to: 'api_endpoints#set_api_endpoint', via: :put

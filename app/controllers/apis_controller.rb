@@ -228,6 +228,7 @@ class ApisController < ApplicationController
 	def compile_api
 		auth = get_auth
 		id = params[:id]
+		slot_name = params[:slot]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
@@ -246,19 +247,9 @@ class ApisController < ApplicationController
 		# Check if the api belongs to an app of the dev of the user
 		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
-		# Get the params from the body
-		body = ValidationService.parse_json(request.body.string)
-		slot = body["slot"]
-
-		# Validate missing fields
-		ValidationService.raise_validation_errors(ValidationService.validate_slot_presence(slot))
-
-		# Validate the types of the fields
-		ValidationService.raise_validation_errors(ValidationService.validate_slot_type(slot))
-
 		# Get the api slot
-		api_slot = ApiSlot.find_by(api: api, name: slot)
-		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slotslot))
+		api_slot = api.api_slots.find_by(name: slot_name)
+		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slot))
 
 		# Compile each ApiEndpoint and create or update the CompiledApiEndpoints with the compiled code
 		compiler = DavExpressionCompiler.new
