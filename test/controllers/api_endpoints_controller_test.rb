@@ -7,7 +7,7 @@ describe ApiEndpointsController do
 
 	# set_api_endpoint
 	it "should not set api endpoint without auth" do
-		res = put_request("/v1/api/1/endpoint")
+		res = put_request("/v1/api/1/master/endpoint")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
@@ -16,7 +16,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint without Content-Type json" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: "asdasdasd"}
 		)
 
@@ -27,7 +27,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with invalid auth" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: "#{devs(:dav).api_key},jhdfh92h3r9sa", 'Content-Type': 'application/json'}
 		)
 
@@ -38,7 +38,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint without required properties" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
 		)
 
@@ -51,7 +51,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with properties with wrong types" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: true,
@@ -69,7 +69,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with optional properties with wrong types" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: 51.2,
@@ -89,7 +89,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with too short properties" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: "a",
@@ -106,7 +106,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with too long properties" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: "a" * 200,
@@ -123,7 +123,7 @@ describe ApiEndpointsController do
 
 	it "should not set api endpoint with invalid method" do
 		res = put_request(
-			"/v1/api/1/endpoint",
+			"/v1/api/1/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: "test",
@@ -137,11 +137,27 @@ describe ApiEndpointsController do
 		assert_equal(ErrorCodes::METHOD_INVALID, res["errors"][0]["code"])
 	end
 
+	it "should not set api endpoint for api that does not exist" do
+		res = put_request(
+			"/v1/api/-2342/master/endpoint",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				path: "test",
+				method: "get",
+				commands: "(log 'test')"
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::API_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
 	it "should not set api endpoint for api of the app of another dev" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/endpoint",
+			"/v1/api/#{api.id}/master/endpoint",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
 				path: "test",
@@ -155,14 +171,51 @@ describe ApiEndpointsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
+	it "should not set api endpoint with too short slot name length" do
+		api = apis(:pocketlibApi)
+
+		res = put_request(
+			"/v1/api/#{api.id}/a/endpoint",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				path: "test",
+				method: "get",
+				commands: "(log 'test')"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SLOT_TOO_SHORT, res["errors"][0]["code"])
+	end
+
+	it "should not set api endpoint with too long slot name length" do
+		api = apis(:pocketlibApi)
+
+		res = put_request(
+			"/v1/api/#{api.id}/#{"a" * 50}/endpoint",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				path: "test",
+				method: "get",
+				commands: "(log 'test')"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SLOT_TOO_LONG, res["errors"][0]["code"])
+	end
+
 	it "should create new api endpoint in set api endpoint" do
 		api = apis(:pocketlibApi)
+		api_slot = api_slots(:pocketlibApiMaster)
 		path = "test"
 		method = "GET"
 		commands = "(log 'test')"
 
 		res = put_request(
-			"/v1/api/#{api.id}/endpoint",
+			"/v1/api/#{api.id}/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: path,
@@ -174,7 +227,7 @@ describe ApiEndpointsController do
 		assert_response 200
 
 		assert_not_nil(res["id"])
-		assert_equal(api.id, res["api_id"])
+		assert_equal(api_slot.id, res["api_slot_id"])
 		assert_equal(path, res["path"])
 		assert_equal(method, res["method"])
 		assert_equal(commands, res["commands"])
@@ -183,22 +236,64 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(endpoint.api_id, res["api_id"])
+		assert_equal(endpoint.api_slot_id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
 		assert_equal(endpoint.caching, res["caching"])
 	end
 
+	it "should create new api endpoint and create new api slot in set api endpoint" do
+		api = apis(:pocketlibApi)
+		api_slot_name = "testslot"
+		path = "test"
+		method = "GET"
+		commands = "(log 'test')"
+
+		res = put_request(
+			"/v1/api/#{api.id}/#{api_slot_name}/endpoint",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				path: path,
+				method: method,
+				commands: commands
+			}
+		)
+
+		assert_response 200
+
+		assert_not_nil(res["id"])
+		assert_not_nil(res["api_slot_id"])
+		assert_equal(path, res["path"])
+		assert_equal(method, res["method"])
+		assert_equal(commands, res["commands"])
+		assert(!res["caching"])
+
+		endpoint = ApiEndpoint.find_by(id: res["id"])
+		assert_not_nil(endpoint)
+		assert_equal(endpoint.id, res["id"])
+		assert_equal(endpoint.api_slot_id, res["api_slot_id"])
+		assert_equal(endpoint.path, res["path"])
+		assert_equal(endpoint.method, res["method"])
+		assert_equal(endpoint.commands, res["commands"])
+		assert_equal(endpoint.caching, res["caching"])
+
+		api_slot = ApiSlot.find_by(api: api, name: api_slot_name)
+		assert_not_nil(api_slot)
+		assert_equal(api_slot.id, res["api_slot_id"])
+		assert_equal(api_slot.name, api_slot_name)
+	end
+
 	it "should create new api endpoint with optional properties in set api endpoint" do
 		api = apis(:pocketlibApi)
+		api_slot = api_slots(:pocketlibApiMaster)
 		path = "test"
 		method = "GET"
 		commands = "(log 'Bla')"
 		caching = true
 
 		res = put_request(
-			"/v1/api/#{api.id}/endpoint",
+			"/v1/api/#{api.id}/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: path,
@@ -211,7 +306,7 @@ describe ApiEndpointsController do
 		assert_response 200
 
 		assert_not_nil(res["id"])
-		assert_equal(api.id, res["api_id"])
+		assert_equal(api_slot.id, res["api_slot_id"])
 		assert_equal(path, res["path"])
 		assert_equal(method, res["method"])
 		assert_equal(commands, res["commands"])
@@ -220,7 +315,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(endpoint.api_id, res["api_id"])
+		assert_equal(endpoint.api_slot_id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
@@ -229,11 +324,12 @@ describe ApiEndpointsController do
 
 	it "should update existing api endpoint in set api endpoint" do
 		api = apis(:pocketlibApi)
+		api_slot = api_slots(:pocketlibApiMaster)
 		endpoint = api_endpoints(:pocketlibApiPostTest)
 		commands = "(log 'test')"
 
 		res = put_request(
-			"/v1/api/#{api.id}/endpoint",
+			"/v1/api/#{api.id}/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: endpoint.path,
@@ -245,7 +341,7 @@ describe ApiEndpointsController do
 		assert_response 200
 
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(api.id, res["api_id"])
+		assert_equal(api_slot.id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(commands, res["commands"])
@@ -254,7 +350,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(endpoint.api_id, res["api_id"])
+		assert_equal(endpoint.api_slot_id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
@@ -263,12 +359,13 @@ describe ApiEndpointsController do
 
 	it "should update existing api endpoint with optional properties in set api endpoint" do
 		api = apis(:pocketlibApi)
+		api_slot = api_slots(:pocketlibApiMaster)
 		endpoint = api_endpoints(:pocketlibApiPostTest)
 		commands = "(log 'Hello World')"
 		caching = true
 
 		res = put_request(
-			"/v1/api/#{api.id}/endpoint",
+			"/v1/api/#{api.id}/master/endpoint",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				path: endpoint.path,
@@ -281,7 +378,7 @@ describe ApiEndpointsController do
 		assert_response 200
 
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(api.id, res["api_id"])
+		assert_equal(api_slot.id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(commands, res["commands"])
@@ -290,7 +387,7 @@ describe ApiEndpointsController do
 		endpoint = ApiEndpoint.find_by(id: res["id"])
 		assert_not_nil(endpoint)
 		assert_equal(endpoint.id, res["id"])
-		assert_equal(endpoint.api_id, res["api_id"])
+		assert_equal(endpoint.api_slot_id, res["api_slot_id"])
 		assert_equal(endpoint.path, res["path"])
 		assert_equal(endpoint.method, res["method"])
 		assert_equal(endpoint.commands, res["commands"])
