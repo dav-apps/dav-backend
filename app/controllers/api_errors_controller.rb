@@ -2,6 +2,7 @@ class ApiErrorsController < ApplicationController
 	def set_api_errors
 		auth = get_auth
 		api_id = params[:id]
+		slot_name = params[:slot]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
@@ -42,16 +43,29 @@ class ApiErrorsController < ApplicationController
 		# Check if the api belongs to an app of the dev
 		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
+		# Get the api slot
+		api_slot = api.api_slots.find_by(name: slot_name)
+
+		if api_slot.nil?
+			# Validate the slot name
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_length(slot_name))
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_validity(slot_name))
+
+			# Create a slot with the name
+			api_slot = ApiSlot.new(api: api, name: slot_name)
+			ValidationService.raise_unexpected_error(!api_slot.save)
+		end
+
 		errors.each do |error|
 			# Try to find the api error
-			api_error = ApiError.find_by(api: api, code: error["code"])
+			api_error = ApiError.find_by(api_slot: api_slot, code: error["code"])
 
 			if !api_error.nil?
 				# Update the existing error
 				api_error.message = error["message"]
 			else
 				api_error = ApiError.new(
-					api: api,
+					api_slot: api_slot,
 					code: error["code"],
 					message: error["message"]
 				)

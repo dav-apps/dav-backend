@@ -16,7 +16,7 @@ Rails.application.routes.draw do
 	match '/v1/user/:id/save_new_password', to: 'users#save_new_password', via: :post
 	match '/v1/user/:id/reset_email', to: 'users#reset_email', via: :post
 	match '/v1/user/:id/password', to: 'users#set_password', via: :put
-	
+
 	# DevsController
 	match '/v1/dev', to: 'devs#get_dev', via: :get
 
@@ -80,7 +80,7 @@ Rails.application.routes.draw do
 	match '/v1/api/:id/:slot/function', to: 'api_functions#set_api_function', via: :put
 
 	# ApiErrorsController
-	match '/v1/api/:id/errors', to: 'api_errors#set_api_errors', via: :put
+	match '/v1/api/:id/:slot/errors', to: 'api_errors#set_api_errors', via: :put
 
 	# ApiEnvVarsController
 	match '/v1/api/:id/env_vars', to: 'api_env_vars#set_api_env_vars', via: :put
