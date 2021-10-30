@@ -7,7 +7,7 @@ describe ApiEnvVarsController do
 
 	# set_api_env_vars
 	it "should not set api env vars without auth" do
-		res = put_request("/v1/api/1/env_vars")
+		res = put_request("/v1/api/1/master/env_vars")
 
 		assert_response 401
 		assert_equal(1, res["errors"].length)
@@ -16,7 +16,7 @@ describe ApiEnvVarsController do
 
 	it "should not set api env vars without Content-Type json" do
 		res = put_request(
-			"/v1/api/1/env_vars",
+			"/v1/api/1/master/env_vars",
 			{Authorization: "asasassadsda"}
 		)
 
@@ -27,7 +27,7 @@ describe ApiEnvVarsController do
 
 	it "should not set api env vars with invalid auth" do
 		res = put_request(
-			"/v1/api/1/env_vars",
+			"/v1/api/1/master/env_vars",
 			{Authorization: "#{devs(:dav).api_key},jhdfhasd9", 'Content-Type': 'application/json'}
 		)
 
@@ -38,7 +38,7 @@ describe ApiEnvVarsController do
 
 	it "should not set api env vars without required properties" do
 		res = put_request(
-			"/v1/api/1/env_vars",
+			"/v1/api/1/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
 		)
 
@@ -49,7 +49,7 @@ describe ApiEnvVarsController do
 
 	it "should not set api env vars with wrong types" do
 		res = put_request(
-			"/v1/api/1/env_vars",
+			"/v1/api/1/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: "Hello World"
@@ -63,7 +63,7 @@ describe ApiEnvVarsController do
 
 	it "should not set api env vars with env vars with wrong types" do
 		res = put_request(
-			"/v1/api/1/env_vars",
+			"/v1/api/1/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -81,7 +81,7 @@ describe ApiEnvVarsController do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -99,7 +99,7 @@ describe ApiEnvVarsController do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -117,7 +117,7 @@ describe ApiEnvVarsController do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -135,7 +135,7 @@ describe ApiEnvVarsController do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -153,7 +153,7 @@ describe ApiEnvVarsController do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:sherlock)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -167,9 +167,26 @@ describe ApiEnvVarsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
+	it "should not set api env vars for api that does not exist" do
+		res = put_request(
+			"/v1/api/-123/master/env_vars",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				env_vars: {
+					"test": "Hello World"
+				}
+			}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::API_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
 	it "should create new api env vars in set api env vars" do
 		api = apis(:pocketlibApi)
-		env_vars_count = api.api_env_vars.count
+		api_slot = api_slots(:pocketlibApiMaster)
+		env_vars_count = api_slot.api_env_vars.count
 		first_env_var_name = "test1"
 		first_env_var_value = "Hello World"
 		second_env_var_name = "test2"
@@ -180,7 +197,7 @@ describe ApiEnvVarsController do
 		fourth_env_var_value = [1, 2, 3, 4]
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -193,32 +210,93 @@ describe ApiEnvVarsController do
 		)
 
 		assert_response 204
-		assert_equal(env_vars_count + 4, api.api_env_vars.count)
+		assert_equal(env_vars_count + 4, api_slot.api_env_vars.count)
 
-		first_env_var = ApiEnvVar.find_by(api: api, name: first_env_var_name)
+		first_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: first_env_var_name)
 		assert_not_nil(first_env_var)
-		assert_equal(api.id, first_env_var.api_id)
+		assert_equal(api_slot.id, first_env_var.api_slot_id)
 		assert_equal(first_env_var_name, first_env_var.name)
 		assert_equal(first_env_var_value, first_env_var.value)
 		assert_equal("string", first_env_var.class_name)
 
-		second_env_var = ApiEnvVar.find_by(api: api, name: second_env_var_name)
+		second_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: second_env_var_name)
 		assert_not_nil(second_env_var)
-		assert_equal(api.id, second_env_var.api_id)
+		assert_equal(api_slot.id, second_env_var.api_slot_id)
 		assert_equal(second_env_var_name, second_env_var.name)
 		assert_equal(second_env_var_value.to_s, second_env_var.value)
 		assert_equal("int", second_env_var.class_name)
 
-		third_env_var = ApiEnvVar.find_by(api: api, name: third_env_var_name)
+		third_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: third_env_var_name)
 		assert_not_nil(third_env_var)
-		assert_equal(api.id, third_env_var.api_id)
+		assert_equal(api_slot.id, third_env_var.api_slot_id)
 		assert_equal(third_env_var_name, third_env_var.name)
 		assert_equal(third_env_var_value.to_s, third_env_var.value)
 		assert_equal("float", third_env_var.class_name)
 
-		fourth_env_var = ApiEnvVar.find_by(api: api, name: fourth_env_var_name)
+		fourth_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: fourth_env_var_name)
 		assert_not_nil(fourth_env_var)
-		assert_equal(api.id, fourth_env_var.api_id)
+		assert_equal(api_slot.id, fourth_env_var.api_slot_id)
+		assert_equal(fourth_env_var_name, fourth_env_var.name)
+		assert_equal(fourth_env_var_value.join(','), fourth_env_var.value)
+		assert_equal("array:int", fourth_env_var.class_name)
+	end
+
+	it "should create new api env vars and create new api slot in set api env vars" do
+		api = apis(:pocketlibApi)
+		api_slot_name = "testslot"
+		first_env_var_name = "test1"
+		first_env_var_value = "Hello World"
+		second_env_var_name = "test2"
+		second_env_var_value = 1234
+		third_env_var_name = "test3"
+		third_env_var_value = 42.14
+		fourth_env_var_name = "test4"
+		fourth_env_var_value = [1, 2, 3, 4]
+
+		res = put_request(
+			"/v1/api/#{api.id}/#{api_slot_name}/env_vars",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{
+				env_vars: {
+					"#{first_env_var_name}": first_env_var_value,
+					"#{second_env_var_name}": second_env_var_value,
+					"#{third_env_var_name}": third_env_var_value,
+					"#{fourth_env_var_name}": fourth_env_var_value
+				}
+			}
+		)
+
+		assert_response 204
+
+		api_slot = ApiSlot.find_by(api: api, name: api_slot_name)
+		assert_not_nil(api_slot)
+		assert_equal(api_slot.name, api_slot_name)
+		assert_equal(4, api_slot.api_env_vars.count)
+
+		first_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: first_env_var_name)
+		assert_not_nil(first_env_var)
+		assert_equal(api_slot.id, first_env_var.api_slot_id)
+		assert_equal(first_env_var_name, first_env_var.name)
+		assert_equal(first_env_var_value, first_env_var.value)
+		assert_equal("string", first_env_var.class_name)
+
+		second_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: second_env_var_name)
+		assert_not_nil(second_env_var)
+		assert_equal(api_slot.id, second_env_var.api_slot_id)
+		assert_equal(second_env_var_name, second_env_var.name)
+		assert_equal(second_env_var_value.to_s, second_env_var.value)
+		assert_equal("int", second_env_var.class_name)
+
+		third_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: third_env_var_name)
+		assert_not_nil(third_env_var)
+		assert_equal(api_slot.id, third_env_var.api_slot_id)
+		assert_equal(third_env_var_name, third_env_var.name)
+		assert_equal(third_env_var_value.to_s, third_env_var.value)
+		assert_equal("float", third_env_var.class_name)
+
+		fourth_env_var = ApiEnvVar.find_by(api_slot: api_slot, name: fourth_env_var_name)
+		assert_not_nil(fourth_env_var)
+		assert_equal(api_slot.id, fourth_env_var.api_slot_id)
 		assert_equal(fourth_env_var_name, fourth_env_var.name)
 		assert_equal(fourth_env_var_value.join(','), fourth_env_var.value)
 		assert_equal("array:int", fourth_env_var.class_name)
@@ -226,7 +304,8 @@ describe ApiEnvVarsController do
 
 	it "should update existing api env vars in set api env vars" do
 		api = apis(:pocketlibApi)
-		env_vars_count = api.api_env_vars.count
+		api_slot = api_slots(:pocketlibApiMaster)
+		env_vars_count = api_slot.api_env_vars.count
 		first_env_var = api_env_vars(:pocketlibApiFirstEnvVar)
 		first_env_var_value = 523
 		second_env_var = api_env_vars(:pocketlibApiSecondEnvVar)
@@ -237,7 +316,7 @@ describe ApiEnvVarsController do
 		fourth_env_var_value = 63.423
 
 		res = put_request(
-			"/v1/api/#{api.id}/env_vars",
+			"/v1/api/#{api.id}/master/env_vars",
 			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
 			{
 				env_vars: {
@@ -250,7 +329,7 @@ describe ApiEnvVarsController do
 		)
 
 		assert_response 204
-		assert_equal(env_vars_count, api.api_env_vars.count)
+		assert_equal(env_vars_count, api_slot.api_env_vars.count)
 
 		first_env_var = ApiEnvVar.find_by(id: first_env_var.id)
 		assert_not_nil(first_env_var)

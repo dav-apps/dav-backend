@@ -83,7 +83,7 @@ Rails.application.routes.draw do
 	match '/v1/api/:id/:slot/errors', to: 'api_errors#set_api_errors', via: :put
 
 	# ApiEnvVarsController
-	match '/v1/api/:id/env_vars', to: 'api_env_vars#set_api_env_vars', via: :put
+	match '/v1/api/:id/:slot/env_vars', to: 'api_env_vars#set_api_env_vars', via: :put
 
 	# WebsocketConnectionsController
 	match '/v1/websocket_connection', to: 'websocket_connections#create_websocket_connection', via: :post
