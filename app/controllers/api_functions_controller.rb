@@ -2,6 +2,7 @@ class ApiFunctionsController < ApplicationController
 	def set_api_function
 		auth = get_auth
 		api_id = params[:id]
+		slot_name = params[:slot]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
@@ -46,8 +47,21 @@ class ApiFunctionsController < ApplicationController
 		# Check if the api belongs to an app of the dev
 		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(api.app, dev))
 
+		# Get the api slot
+		api_slot = api.api_slots.find_by(name: slot_name)
+
+		if api_slot.nil?
+			# Validate the slot name
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_length(slot_name))
+			ValidationService.raise_validation_errors(ValidationService.validate_slot_validity(slot_name))
+
+			# Create a slot with the name
+			api_slot = ApiSlot.new(api: api, name: slot_name)
+			ValidationService.raise_unexpected_error(!api_slot.save)
+		end
+
 		# Try to find the api function
-		function = ApiFunction.find_by(api: api, name: name)
+		function = ApiFunction.find_by(api_slot: api_slot, name: name)
 
 		if !function.nil?
 			# Update the existing function
@@ -56,7 +70,7 @@ class ApiFunctionsController < ApplicationController
 		else
 			# Create a new function
 			function = ApiFunction.new(
-				api: api,
+				api_slot: api_slot,
 				name: name,
 				params: params.nil? ? "" : params,
 				commands: commands
@@ -67,7 +81,7 @@ class ApiFunctionsController < ApplicationController
 
 		result = {
 			id: function.id,
-			api_id: function.api.id,
+			api_slot_id: api_slot.id,
 			name: function.name,
 			params: function.params,
 			commands: function.commands

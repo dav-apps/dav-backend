@@ -171,7 +171,7 @@ describe ApiEndpointsController do
 		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
 	end
 
-	it "should not set api endpoint with too short slot name length" do
+	it "should not set api endpoint with too short slot name" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(
@@ -189,7 +189,7 @@ describe ApiEndpointsController do
 		assert_equal(ErrorCodes::SLOT_TOO_SHORT, res["errors"][0]["code"])
 	end
 
-	it "should not set api endpoint with too long slot name length" do
+	it "should not set api endpoint with too long slot name" do
 		api = apis(:pocketlibApi)
 
 		res = put_request(

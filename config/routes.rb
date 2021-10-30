@@ -77,7 +77,7 @@ Rails.application.routes.draw do
 	match '/v1/api/:id/:slot/endpoint', to: 'api_endpoints#set_api_endpoint', via: :put
 
 	# ApiFunctionsController
-	match '/v1/api/:id/function', to: 'api_functions#set_api_function', via: :put
+	match '/v1/api/:id/:slot/function', to: 'api_functions#set_api_function', via: :put
 
 	# ApiErrorsController
 	match '/v1/api/:id/errors', to: 'api_errors#set_api_errors', via: :put
