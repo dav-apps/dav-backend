@@ -14,8 +14,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal("Hello World", result)
@@ -33,8 +33,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(1, result)
@@ -54,8 +54,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(2, result)
@@ -76,8 +76,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(15, result)
@@ -100,8 +100,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(6, result)
@@ -125,8 +125,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(6, result)
@@ -158,8 +158,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(6, result)
@@ -174,8 +174,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(11, result)
@@ -190,8 +190,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal("123", result[0])
@@ -218,8 +218,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(1, result)
@@ -240,8 +240,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal("BLA", result[0])
@@ -257,8 +257,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(24.0, result)
@@ -274,8 +274,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(2, result)
@@ -299,8 +299,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal("Hello", result[0])
@@ -330,8 +330,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(10, result)
@@ -370,8 +370,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(true, result[0])
@@ -400,8 +400,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(116, result)
@@ -416,8 +416,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(42, result)
@@ -443,8 +443,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal(1, result)
@@ -469,8 +469,8 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		})
 
 		result = @compiler.run({
-			code: code,
-			api: apis(:pocketlibApi)
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
 		})
 
 		assert_equal("String", result[0])

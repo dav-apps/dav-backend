@@ -7,7 +7,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to store and access variables" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var result "Hello World")
@@ -20,7 +20,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should correctly handle simple if expressions" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(if true (
@@ -36,7 +36,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should correctly handle complex if expressions" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(if (1 == 2) (
@@ -54,7 +54,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to run for each loops" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var numbers (list 1 2 3 4 5))
@@ -73,7 +73,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to break for each loops" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var numbers (list 1 2 3 4 5))
@@ -94,7 +94,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to throw exceptions" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var result 0)
@@ -116,7 +116,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to throw exception within functions" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(def add (a b) (
@@ -146,7 +146,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to get the length of a string" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var string "Hello World")
@@ -159,7 +159,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to split a string" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var string "123.456.789")
@@ -174,7 +174,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to check if a string contains a substring" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var string "Hello World")
@@ -197,7 +197,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to convert a string to upcase and downcase" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var result (list))
@@ -217,7 +217,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to convert a int to float" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var int 24)
@@ -231,7 +231,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to round a float" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var float 2.3523)
@@ -244,7 +244,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to create a hash and set and read values" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var hash (hash (test "Hello") (bla "World")))
@@ -268,7 +268,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to create and fill a list" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var list (list 1 2))
@@ -294,7 +294,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to use advanced methods on list" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var list (list "Lorem" "ipsum" "dolor" "sit" "amet"))
@@ -340,7 +340,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	it "should be able to define and call functions" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(def add (a b) (
@@ -358,7 +358,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	test "to_int should return the given value as int" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var result "42")
@@ -371,7 +371,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	test "is_nil should return true if the given value is nil" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var test nil)
@@ -395,7 +395,7 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 
 	test "class should return the class of the variable" do
 		result = @runner.run({
-			api: apis(:pocketlibApi),
+			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
 				(var result (list))
