@@ -21,6 +21,9 @@ class DavExpressionRunner
 		# Stop the execution of the program if this is true
 		@execution_stopped = false
 
+		# Skip the current round in the loop if this is true
+		@continue_loop = false
+
 		# Stop the current for loop if this is true
 		@break_loop = false
 
@@ -37,6 +40,7 @@ class DavExpressionRunner
 	def execute_command(command, vars)
 		return nil if @execution_stopped
 		return nil if @errors.count > 0
+		return nil if @continue_loop
 		return nil if @break_loop
 
 		if command.class == Array
@@ -172,12 +176,17 @@ class DavExpressionRunner
 
 				array.each do |entry|
 					break if @break_loop
+					next if @continue_loop
 
 					vars[var_name.to_s] = entry
 					execute_command(commands, vars)
 				end
 
+				@continue_loop = false
 				@break_loop = false
+			when :continue
+				@continue_loop = true
+				return nil
 			when :break
 				@break_loop = true
 				return nil

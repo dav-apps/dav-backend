@@ -1085,6 +1085,8 @@ class DavExpressionCompiler
 				result += "end\n"
 
 				return result
+			when :continue
+				return "next\n"
 			when :break
 				return "break\n"
 			when :def
