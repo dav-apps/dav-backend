@@ -998,7 +998,23 @@ class DavExpressionCompiler
 			# Command is a function call
 			case command[0]
 			when :var
-				if command[1].to_s.include?('..')
+				# Check usage of []
+				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+
+				if !matchdata.nil?
+					matchdata_varname = matchdata["varname"]
+					matchdata_value = matchdata["value"]
+
+					if !matchdata_value.nil?
+						if matchdata_value[0] == "\"" && matchdata_value[-1] == "\""
+							# value is a string
+							return "#{matchdata_varname}[#{matchdata_value}] = #{compile_command(command[2])}"
+						else
+							# value is an expression or var name
+							return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}] = #{compile_command(command[2])}"
+						end
+					end
+				elsif command[1].to_s.include?('..')
 					parts = command[1].to_s.split('..')
 					last_part = parts.pop
 
@@ -1456,6 +1472,18 @@ class DavExpressionCompiler
 			return command.inspect
 		elsif command.is_a?(NilClass)
 			return "nil"
+		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"]{0,}\]$/
+			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+			matchdata_varname = matchdata["varname"]
+			matchdata_value = matchdata["value"]
+
+			if matchdata_value[0] == "\"" && matchdata_value[-1] == "\""
+				# value is a string
+				return "#{matchdata_varname}[#{matchdata_value}]"
+			else
+				# value is an expression or var name
+				return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}]"
+			end
 		elsif command.to_s.include?('..')
 			parts = command.to_s.split('..')
 			last_part = parts.pop

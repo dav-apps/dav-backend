@@ -83,6 +83,29 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal(15, result)
 	end
 
+	it "should be able to continue for each loops" do
+		code = @compiler.compile({
+			commands: '
+				(var numbers (list 1 2 3 4 5))
+				(var result 0)
+
+				(for n in numbers (
+					(if (n >= 3) (continue))
+					(var result (result + n))
+				))
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal(3, result)
+	end
+
 	it "should be able to break for each loops" do
 		code = @compiler.compile({
 			commands: '
@@ -308,7 +331,34 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal("Hello", result[2])
 	end
 
-	it "should be able to create and fill a list" do
+	it "should be able to create a hash and set and read values using []" do
+		code = @compiler.compile({
+			commands: '
+				(var hash (hash (test "Hello") (bla "World")))
+				(var varname "test")
+				(var result (list))
+
+				(var hash["bla"] "World2")
+
+				(result.push hash["test"])
+				(result.push hash["bla"])
+				(result.push hash[varname])
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal("Hello", result[0])
+		assert_equal("World2", result[1])
+		assert_equal("Hello", result[2])
+	end
+
+	it "should be able to use list" do
 		code = @compiler.compile({
 			commands: '
 				(var list (list 1 2))
@@ -322,6 +372,36 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 				(var result 0)
 
 				(for n in list (
+					(var result (result + n))
+				))
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal(10, result)
+	end
+
+	it "should be able to use list within hash" do
+		code = @compiler.compile({
+			commands: '
+				(var hash (hash (root (list 1 2))))
+				(var listname "root")
+
+				(hash["root"].push 3)
+
+				(if (hash["root"].contains 1) (
+					(hash["root"].push 4)
+				))
+
+				(var result 0)
+
+				(for n in hash[listname] (
 					(var result (result + n))
 				))
 
