@@ -999,7 +999,7 @@ class DavExpressionCompiler
 			case command[0]
 			when :var
 				# Check usage of []
-				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
 
 				if !matchdata.nil?
 					matchdata_varname = matchdata["varname"]
@@ -1472,8 +1472,8 @@ class DavExpressionCompiler
 			return command.inspect
 		elsif command.is_a?(NilClass)
 			return "nil"
-		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"]{0,}\]$/
-			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.]{0,}\]$/
+			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
 			matchdata_varname = matchdata["varname"]
 			matchdata_value = matchdata["value"]
 

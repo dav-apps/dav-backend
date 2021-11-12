@@ -57,7 +57,7 @@ class DavExpressionRunner
 			case command[0]
 			when :var
 				# Check usage of []
-				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
 
 				if !matchdata.nil?
 					matchdata_varname = matchdata["varname"]
@@ -1419,7 +1419,7 @@ class DavExpressionRunner
 					function_name = parts.pop
 
 					# Check for usage of []
-					if (parts.size == 1) && (parts[0].match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"]{0,}\]$/)
+					if (parts.size == 1) && (parts[0].match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.]{0,}\]$/)
 						var = execute_command(parts[0], vars)
 					else
 						# Check if the variable exists
@@ -1478,8 +1478,8 @@ class DavExpressionRunner
 			return command
 		elsif command.class == String && command.size == 1
 			return command
-		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"]{0,}\]$/
-			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"]{0,})\]$/
+		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.]{0,}\]$/
+			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
 			matchdata_varname = matchdata["varname"]
 			matchdata_value = matchdata["value"]
 
@@ -1505,7 +1505,7 @@ class DavExpressionRunner
 			last_part = parts.pop
 
 			# Check for usage of []
-			if (parts.size == 1) && (parts[0].match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"]{0,}\]$/)
+			if (parts.size == 1) && (parts[0].match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.]{0,}\]$/)
 				var = execute_command(parts[0], vars)
 			else
 				# Check if the variable exists
