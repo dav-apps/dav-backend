@@ -102,3 +102,8 @@ snicketPocketlibSession:
   device_name: Samsung Galaxy S10
   device_type: Smartphone
   device_os: Android
+
+davPocketlibSession:
+  user: dav
+  app: pocketlib
+  token: ckka1c9su0000eph3dj1v04cz

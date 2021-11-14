@@ -1,0 +1,3 @@
+latest_books_collection:
+  table: storeBook
+  name: latest_books
