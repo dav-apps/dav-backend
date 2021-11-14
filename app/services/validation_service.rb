@@ -50,6 +50,11 @@ class ValidationService
 		table_object.table.app != app ? get_validation_hash(error_code, 403) : get_validation_hash
 	end
 
+	def self.validate_table_object_belongs_to_table(table_object, table)
+		error_code = 1002
+		table_object.table != table ? get_validation_hash(error_code, 403) : get_validation_hash
+	end
+
 	def self.validate_purchase_belongs_to_user(purchase, user)
 		error_code = 1002
 		purchase.user != user ? get_validation_hash(error_code, 403) : get_validation_hash
@@ -1143,6 +1148,11 @@ class ValidationService
 		error_code = 3615
 		api_slot.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
 	end
+	
+	def self.validate_collection_existence(collection)
+		error_code = 3616
+		collection.nil? ? get_validation_hash(error_code, 404) : get_validation_hash
+	end
 
 	# Errors for already existing resources
 	def self.validate_provider_nonexistence(provider)
@@ -1618,6 +1628,8 @@ class ValidationService
 			"Resource does not exist: CompiledApiEndpoint"
 		when 3615
 			"Resource does not exist: ApiSlot"
+		when 3616
+			"Resource does not exist: Collection"
 		# Errors for already existing resources
 		when 3700
 			"Resource already exists: User"
@@ -1651,6 +1663,8 @@ class ValidationService
 			"Resource already exists: CompiledApiEndpoint"
 		when 3715
 			"Resource already exists: ApiSlot"
+		when 3716
+			"Resource already exists: Collection"
 		end
 	end
 end

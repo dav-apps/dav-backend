@@ -56,6 +56,9 @@ Rails.application.routes.draw do
 	match '/v1/purchase/:uuid/complete', to: 'purchases#complete_purchase', via: :post
 	match '/v1/purchase/:uuid', to: 'purchases#delete_purchase', via: :delete
 
+	# CollectionsController
+	match '/v1/collection/table_objects', to: 'collections#set_table_objects_of_collection', via: :put
+
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
 	match '/v1/web_push_subscription/:uuid', to: 'web_push_subscriptions#get_web_push_subscription', via: :get
