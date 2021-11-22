@@ -52,7 +52,10 @@ tables = Table.create([
 	{name: "CategoryName", app: apps[3]},
 	# TestApp tables
 	{name: "FirstTestTable", app: apps[4]},
-	{name: "SecondTestTable", app: apps[4]}
+	{name: "SecondTestTable", app: apps[4]},
+	# PocketLib tables
+	{name: "StoreBookSeries", app: apps[3]},
+	{name: "StoreBookSeriesName", app: apps[3]}
 ])
 
 sessions = Session.create([
@@ -69,9 +72,9 @@ sessions = Session.create([
 ])
 
 apis = Api.create([
-	{app: apps[3], name: "PocketLib API v1"}
+	{app: apps[3], name: "PocketLib API"}
 ])
 
 api_slots = ApiSlot.create([
-	{api: apis[0], name: "prod"}
+	{api: apis[0], name: "master"}
 ])
