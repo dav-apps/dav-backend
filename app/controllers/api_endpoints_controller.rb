@@ -69,8 +69,17 @@ class ApiEndpointsController < ApplicationController
 		endpoint = ApiEndpoint.find_by(api_slot: api_slot, path: path, method: method.upcase)
 
 		if !endpoint.nil?
-			# Update the existing endpoint
-			endpoint.commands = commands
+			if endpoint.commands != commands
+				# Update the existing endpoint
+				endpoint.commands = commands
+
+				# Mark all caches as old
+				endpoint.api_endpoint_request_caches.each do |cache|
+					cache.old = true
+					cache.save
+				end
+			end
+
 			endpoint.caching = caching if !caching.nil?
 		else
 			# Create a new endpoint
