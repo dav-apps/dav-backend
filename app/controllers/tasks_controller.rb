@@ -42,117 +42,116 @@ class TasksController < ApplicationController
 			obj_change.destroy!
 		end
 
-		Api.all.each do |api|
-			# Get the master slot
-			api_slot = api.api_slots.find_by(name: "master")
-			next if api_slot.nil?
+		if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
+			compiler = DavExpressionCompiler.new
 
-			if ENV["USE_COMPILED_API_ENDPOINTS"] == "true" && !Rails.env.test?
-				compiler = DavExpressionCompiler.new
+			ApiEndpoint.where(caching: true).each do |api_endpoint|
+				api_slot = api_endpoint.api_slot
 
-				api_slot.api_endpoints.where(caching: true).each do |api_endpoint|
-					# Get the compiled endpoint
-					compiled_endpoint = api_endpoint.compiled_api_endpoint
-					next if compiled_endpoint.nil?
+				# Get the compiled endpoint
+				compiled_endpoint = api_endpoint.compiled_api_endpoint
+				next if compiled_endpoint.nil?
 
-					api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
-						# Get the params
-						url_params = Hash.new
-						cache.api_endpoint_request_cache_params.each do |param|
-							url_params[param.name] = param.value
-						end
+				api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
+					# Get the params
+					url_params = Hash.new
+					cache.api_endpoint_request_cache_params.each do |param|
+						url_params[param.name] = param.value
+					end
 
-						result = compiler.run({
-							code: compiled_endpoint.code,
-							api_slot: api_slot,
-							request: {
-								headers: Hash.new,
-								params: url_params,
-								body: nil
-							}
-						})
+					result = compiler.run({
+						code: compiled_endpoint.code,
+						api_slot: api_slot,
+						request: {
+							headers: Hash.new,
+							params: url_params,
+							body: nil
+						}
+					})
 
-						if result[:status] == 200 && !result[:file]
-							# Update the cache
-							cache.response = result[:data].to_json
-							cache.old = false
-							cache.save
-						end
+					if result[:status] == 200 && !result[:file]
+						# Update the cache
+						cache.response = result[:data].to_json
+						cache.old = false
+						cache.save
+					end
 
-						# Save the new dependencies in the database
-						old_dependencies = cache.api_endpoint_request_cache_dependencies
-						new_dependencies = result[:dependencies]
+					# Save the new dependencies in the database
+					old_dependencies = cache.api_endpoint_request_cache_dependencies
+					new_dependencies = result[:dependencies]
 
-						# Remove all old dependencies and save all new dependencies
-						old_dependencies.each { |dependency| dependency.destroy! }
+					# Remove all old dependencies and save all new dependencies
+					old_dependencies.each { |dependency| dependency.destroy! }
 
-						new_dependencies.each do |dependency|
-							ApiEndpointRequestCacheDependency.create(
-								user_id: dependency[:user_id],
-								table_id: dependency[:table_id],
-								table_object_id: dependency[:table_object_id],
-								collection_id: dependency[:collection_id],
-								api_endpoint_request_cache: cache,
-								name: dependency[:name]
-							)
-						end
+					new_dependencies.each do |dependency|
+						ApiEndpointRequestCacheDependency.create(
+							user_id: dependency[:user_id],
+							table_id: dependency[:table_id],
+							table_object_id: dependency[:table_object_id],
+							collection_id: dependency[:collection_id],
+							api_endpoint_request_cache: cache,
+							name: dependency[:name]
+						)
 					end
 				end
-			else
-				runner = DavExpressionRunner.new
+			end
+		else
+			runner = DavExpressionRunner.new
 
-				# Get the environment variables of the api
-				env_vars = Hash.new
-				api_slot.api_env_vars.each do |env_var|
-					env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
-				end
+			ApiEndpoint.where(caching: true).each do |api_endpoint|
+				api_slot = api_endpoint.api_slot
 
-				api_slot.api_endpoints.where(caching: true).each do |api_endpoint|
-					api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
-						vars = Hash.new
-						url_params = Hash.new
-						vars["env"] = env_vars
+				api_endpoint.api_endpoint_request_caches.where(old: true).each do |cache|
+					vars = Hash.new
+					url_params = Hash.new
 
-						# Get the params
-						cache.api_endpoint_request_cache_params.each do |param|
-							url_params[param.name] = param.value
-						end
+					# Get the environment variables of the api
+					env_vars = Hash.new
+					api_slot.api_env_vars.each do |env_var|
+						env_vars[env_var.name] = UtilsService.convert_env_value(env_var.class_name, env_var.value)
+					end
 
-						result = runner.run({
-							api_slot: api_slot,
-							vars: vars,
-							commands: api_endpoint.commands,
-							request: {
-								headers: Hash.new,
-								params: url_params,
-								body: nil
-							}
-						})
+					vars["env"] = env_vars
 
-						if result[:status] == 200 && !result[:file]
-							# Update the cache
-							cache.response = result[:data].to_json
-							cache.old = false
-							cache.save
-						end
+					# Get the params
+					cache.api_endpoint_request_cache_params.each do |param|
+						url_params[param.name] = param.value
+					end
 
-						# Save the new dependencies in the database
-						old_dependencies = cache.api_endpoint_request_cache_dependencies
-						new_dependencies = result[:dependencies]
+					result = runner.run({
+						api_slot: api_slot,
+						vars: vars,
+						commands: api_endpoint.commands,
+						request: {
+							headers: Hash.new,
+							params: url_params,
+							body: nil
+						}
+					})
 
-						# Remove all old dependencies and save all new dependencies
-						old_dependencies.each { |dependency| dependency.destroy! }
+					if result[:status] == 200 && !result[:file]
+						# Update the cache
+						cache.response = result[:data].to_json
+						cache.old = false
+						cache.save
+					end
 
-						new_dependencies.each do |dependency|
-							ApiEndpointRequestCacheDependency.create(
-								user_id: dependency[:user_id],
-								table_id: dependency[:table_id],
-								table_object_id: dependency[:table_object_id],
-								collection_id: dependency[:collection_id],
-								api_endpoint_request_cache: cache,
-								name: dependency[:name]
-							)
-						end
+					# Save the new dependencies in the database
+					old_dependencies = cache.api_endpoint_request_cache_dependencies
+					new_dependencies = result[:dependencies]
+
+					# Remove all old dependencies and save all new dependencies
+					old_dependencies.each { |dependency| dependency.destroy! }
+
+					new_dependencies.each do |dependency|
+						ApiEndpointRequestCacheDependency.create(
+							user_id: dependency[:user_id],
+							table_id: dependency[:table_id],
+							table_object_id: dependency[:table_object_id],
+							collection_id: dependency[:collection_id],
+							api_endpoint_request_cache: cache,
+							name: dependency[:name]
+						)
 					end
 				end
 			end
