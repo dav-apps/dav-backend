@@ -69,20 +69,18 @@ describe SessionsController do
 				app_id: "test",
 				api_key: 12.345,
 				device_name: false,
-				device_type: 123,
 				device_os: 123
 			}
 		)
 
 		assert_response 400
-		assert_equal(7, res["errors"].length)
+		assert_equal(6, res["errors"].length)
 		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][3]["code"])
 		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][4]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_WRONG_TYPE, res["errors"][5]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][6]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][5]["code"])
 	end
 
 	it "should not create session with too long optional properties" do
@@ -95,16 +93,14 @@ describe SessionsController do
 				app_id: 1,
 				api_key: "asdassda",
 				device_name: "a" * 50,
-				device_type: "a" * 50,
 				device_os: "a" * 50
 			}
 		)
 
 		assert_response 400
-		assert_equal(3, res["errors"].length)
+		assert_equal(2, res["errors"].length)
 		assert_equal(ErrorCodes::DEVICE_NAME_TOO_LONG, res["errors"][0]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_LONG, res["errors"][1]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][1]["code"])
 	end
 
 	it "should not create session with dev that does not exist" do
@@ -268,7 +264,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 
 		# Check the website session
@@ -277,7 +272,6 @@ describe SessionsController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
-		assert_nil(website_session.device_type)
 		assert_nil(website_session.device_os)
 	end
 
@@ -285,7 +279,6 @@ describe SessionsController do
 		user = users(:matt)
 		app = apps(:cards)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -297,7 +290,6 @@ describe SessionsController do
 				app_id: app.id,
 				api_key: devs(:sherlock).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -312,7 +304,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
@@ -321,7 +312,6 @@ describe SessionsController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
-		assert_equal(device_type, website_session.device_type)
 		assert_equal(device_os, website_session.device_os)
 	end
 
@@ -350,7 +340,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 	end
 
@@ -358,7 +347,6 @@ describe SessionsController do
 		user = users(:matt)
 		app = apps(:website)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -370,7 +358,6 @@ describe SessionsController do
 				app_id: app.id,
 				api_key: devs(:sherlock).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -385,7 +372,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 	end
 
@@ -414,7 +400,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 
 		# Check the website session
@@ -423,7 +408,6 @@ describe SessionsController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
-		assert_nil(website_session.device_type)
 		assert_nil(website_session.device_os)
 	end
 
@@ -431,7 +415,6 @@ describe SessionsController do
 		user = users(:matt)
 		app = apps(:testApp)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -443,7 +426,6 @@ describe SessionsController do
 				app_id: app.id,
 				api_key: devs(:dav).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -458,7 +440,6 @@ describe SessionsController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
@@ -467,7 +448,6 @@ describe SessionsController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
-		assert_equal(device_type, website_session.device_type)
 		assert_equal(device_os, website_session.device_os)
 	end
 
@@ -531,19 +511,17 @@ describe SessionsController do
 				app_id: true,
 				api_key: 642,
 				device_name: false,
-				device_type: 963.2,
 				device_os: 24
 			}
 		)
 
 		assert_response 400
-		assert_equal(6, res["errors"].length)
+		assert_equal(5, res["errors"].length)
 		assert_equal(ErrorCodes::ACCESS_TOKEN_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][3]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_WRONG_TYPE, res["errors"][4]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][5]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][4]["code"])
 	end
 
 	it "should not create session from access token with too long optional properties" do
@@ -555,16 +533,14 @@ describe SessionsController do
 				app_id: 1,
 				api_key: "sodfsjdgsdnjksfdnklfdfd",
 				device_name: "a" * 50,
-				device_type: "a" * 50,
 				device_os: "a" * 50
 			}
 		)
 
 		assert_response 400
-		assert_equal(3, res["errors"].length)
+		assert_equal(2, res["errors"].length)
 		assert_equal(ErrorCodes::DEVICE_NAME_TOO_LONG, res["errors"][0]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_LONG, res["errors"][1]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][2]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][1]["code"])
 	end
 
 	it "should not create session from access token with dev that does not exist" do
@@ -758,7 +734,6 @@ describe SessionsController do
 		assert_equal(app, session.app)
 		assert_equal(res["access_token"], session.token)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 	end
 
@@ -767,7 +742,6 @@ describe SessionsController do
 		user = users(:matt)
 		app = apps(:cards)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -778,7 +752,6 @@ describe SessionsController do
 				app_id: app.id,
 				api_key: dev.api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -793,7 +766,6 @@ describe SessionsController do
 		assert_equal(app, session.app)
 		assert_equal(res["access_token"], session.token)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 	end
 

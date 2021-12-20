@@ -3,7 +3,6 @@ mattTestAppSession:
   app: testApp
   token: ckkabe3ni0005tlw3lrjyd6gq
   device_name: Fairphone
-  device_type: Smartphone
   device_os: Android
 
 mattCardsSession:
@@ -11,7 +10,6 @@ mattCardsSession:
   app: cards
   token: ckkabe9z10006tlw3o6zyil4t
   device_name: Surface Duo
-  device_type: Dual-Screen
   device_os: Android
 
 mattWebsiteSession:
@@ -20,7 +18,6 @@ mattWebsiteSession:
   token: ckkabeeb30007tlw3h717t138
   old_token: ckkadpfw20000dsw3kmpx9vdw
   device_name: Desktop
-  device_type: PC
   device_os: Windows 10
 
 mattPocketlibSession:
@@ -28,7 +25,6 @@ mattPocketlibSession:
   app: pocketlib
   token: ckkmztwiw0000shw3t4sdzlrj
   device_name: Samsung Galaxy A11
-  device_type: Smartphone
   device_os: Android
 
 davWebsiteSession:
@@ -36,7 +32,6 @@ davWebsiteSession:
   app: website
   token: ckkabc41t0000tlw3divsyrlr
   device_name: Desktop
-  device_type: PC
   device_os: Windows 10
 
 davCardsSession:
@@ -44,7 +39,6 @@ davCardsSession:
   app: cards
   token: ckkabcbkh0001tlw3s3orkhgx
   device_name: Samsung Galaxy Z Flip
-  device_type: Foldable
   device_os: Android
 
 davTestAppSession:
@@ -52,7 +46,6 @@ davTestAppSession:
   app: testApp
   token: ckkabct9s0004tlw3aylkvw5s
   device_name: Samsung Galaxy A20
-  device_type: Smartphone
   device_os: Android
 
 sherlockTestAppSession:
@@ -60,7 +53,6 @@ sherlockTestAppSession:
   app: testApp
   token: ckkabchgf0002tlw3c5ujhsp9
   device_name: iPhone X
-  device_type: Smartphone
   device_os: iOS
 
 sherlockWebsiteSession:
@@ -68,7 +60,6 @@ sherlockWebsiteSession:
   app: website
   token: ckkabcmz30003tlw3cdkkx9l7
   device_name: Huawei Mate X
-  device_type: Smartphone
   device_os: Android
 
 catoWebsiteSession:
@@ -76,7 +67,6 @@ catoWebsiteSession:
   app: website
   token: ckkjook0p0000p6w33j9vp8a2
   device_name: Surface Book
-  device_type: Laptop
   device_os: Windows 10
 
 catoPocketlibSession:
@@ -84,7 +74,6 @@ catoPocketlibSession:
   app: pocketlib
   token: ckkn0l9060000u9w3v3r8ci25
   device_name: Samsung Galaxy S20
-  device_type: Smartphone
   device_os: Android
 
 snicketWebsiteSession:
@@ -92,7 +81,6 @@ snicketWebsiteSession:
   app: website
   token: ckklfugma0000dbw3bk31y293
   device_name: Surface Laptop
-  device_type: Laptop
   device_os: Windows 10
 
 snicketPocketlibSession:
@@ -100,7 +88,6 @@ snicketPocketlibSession:
   app: pocketlib
   token: ckkn1q9hu0000wpw3cj1v02cz
   device_name: Samsung Galaxy S10
-  device_type: Smartphone
   device_os: Android
 
 davPocketlibSession:

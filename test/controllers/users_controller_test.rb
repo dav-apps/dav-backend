@@ -73,21 +73,19 @@ describe UsersController do
 				app_id: "asdsad",
 				api_key: 12.423,
 				device_name: true,
-				device_type: 123,
 				device_os: false
 			}
 		)
 
 		assert_response 400
-		assert_equal(8, res["errors"].length)
+		assert_equal(7, res["errors"].length)
 		assert_equal(ErrorCodes::EMAIL_WRONG_TYPE, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::FIRST_NAME_WRONG_TYPE, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::PASSWORD_WRONG_TYPE, res["errors"][2]["code"])
 		assert_equal(ErrorCodes::APP_ID_WRONG_TYPE, res["errors"][3]["code"])
 		assert_equal(ErrorCodes::API_KEY_WRONG_TYPE, res["errors"][4]["code"])
 		assert_equal(ErrorCodes::DEVICE_NAME_WRONG_TYPE, res["errors"][5]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_WRONG_TYPE, res["errors"][6]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][7]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_WRONG_TYPE, res["errors"][6]["code"])
 	end
 
 	it "should not signup with too short properties" do
@@ -120,7 +118,6 @@ describe UsersController do
 				app_id: 1,
 				api_key: "asdasdasd",
 				device_name: "a",
-				device_type: "a",
 				device_os: "a"
 			}
 		)
@@ -161,18 +158,16 @@ describe UsersController do
 				app_id: 1,
 				api_key: "asdasdasd",
 				device_name: "a" * 50,
-				device_type: "a" * 50,
 				device_os: "a" * 50
 			}
 		)
 
 		assert_response 400
-		assert_equal(5, res["errors"].length)
+		assert_equal(4, res["errors"].length)
 		assert_equal(ErrorCodes::FIRST_NAME_TOO_LONG, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PASSWORD_TOO_LONG, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::DEVICE_NAME_TOO_LONG, res["errors"][2]["code"])
-		assert_equal(ErrorCodes::DEVICE_TYPE_TOO_LONG, res["errors"][3]["code"])
-		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][4]["code"])
+		assert_equal(ErrorCodes::DEVICE_OS_TOO_LONG, res["errors"][3]["code"])
 	end
 
 	it "should not signup with email that is already in use" do
@@ -370,7 +365,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 		
 		assert_nil(res["website_access_token"])
@@ -427,7 +421,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 
 		# Check the website session
@@ -436,7 +429,6 @@ describe UsersController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
-		assert_nil(website_session.device_type)
 		assert_nil(website_session.device_os)
 	end
 
@@ -491,7 +483,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_nil(session.device_name)
-		assert_nil(session.device_type)
 		assert_nil(session.device_os)
 
 		# Check the website session
@@ -500,7 +491,6 @@ describe UsersController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_nil(website_session.device_name)
-		assert_nil(website_session.device_type)
 		assert_nil(website_session.device_os)
 	end
 
@@ -509,7 +499,6 @@ describe UsersController do
 		first_name = "Testuser"
 		app = apps(:website)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -522,7 +511,6 @@ describe UsersController do
 				app_id: app.id,
 				api_key: devs(:sherlock).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -561,7 +549,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 		
 		assert_nil(res["website_access_token"])
@@ -572,7 +559,6 @@ describe UsersController do
 		first_name = "Testuser"
 		app = apps(:cards)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -585,7 +571,6 @@ describe UsersController do
 				app_id: app.id,
 				api_key: devs(:sherlock).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -624,7 +609,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
@@ -633,7 +617,6 @@ describe UsersController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
-		assert_equal(device_type, website_session.device_type)
 		assert_equal(device_os, website_session.device_os)
 	end
 
@@ -642,7 +625,6 @@ describe UsersController do
 		first_name = "Testuser"
 		app = apps(:testApp)
 		device_name = "Surface Phone"
-		device_type = "Dual-Screen"
 		device_os = "Andromeda"
 
 		res = post_request(
@@ -655,7 +637,6 @@ describe UsersController do
 				app_id: app.id,
 				api_key: devs(:dav).api_key,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			}
 		)
@@ -694,7 +675,6 @@ describe UsersController do
 		assert_equal(user, session.user)
 		assert_equal(app, session.app)
 		assert_equal(device_name, session.device_name)
-		assert_equal(device_type, session.device_type)
 		assert_equal(device_os, session.device_os)
 
 		# Check the website session
@@ -703,7 +683,6 @@ describe UsersController do
 		assert_equal(user, website_session.user)
 		assert_equal(apps(:website), website_session.app)
 		assert_equal(device_name, website_session.device_name)
-		assert_equal(device_type, website_session.device_type)
 		assert_equal(device_os, website_session.device_os)
 	end
 
