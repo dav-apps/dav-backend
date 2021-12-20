@@ -355,11 +355,6 @@ class ValidationService
 		!device_name.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_device_type_type(device_type)
-		error_code = 2212
-		!device_type.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
-	end
-
 	def self.validate_device_os_type(device_os)
 		error_code = 2213
 		!device_os.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
@@ -588,16 +583,6 @@ class ValidationService
 			get_validation_hash(2302, 400)
 		elsif device_name.length > Constants::DEVICE_NAME_MAX_LENGTH
 			get_validation_hash(2402, 400)
-		else
-			get_validation_hash
-		end
-	end
-
-	def self.validate_device_type_length(device_type)
-		if device_type.length < Constants::DEVICE_TYPE_MIN_LENGTH
-			get_validation_hash(2303, 400)
-		elsif device_type.length > Constants::DEVICE_TYPE_MAX_LENGTH
-			get_validation_hash(2403, 400)
 		else
 			get_validation_hash
 		end
@@ -1336,8 +1321,6 @@ class ValidationService
 			"Field has wrong type: api_key"
 		when 2211
 			"Field has wrong type: device_name"
-		when 2212
-			"Field has wrong type: device_type"
 		when 2213
 			"Field has wrong type: device_os"
 		when 2214
@@ -1419,8 +1402,6 @@ class ValidationService
 			"Field too short: password"
 		when 2302
 			"Field too short: device_name"
-		when 2303
-			"Field too short: device_type"
 		when 2304
 			"Field too short: device_os"
 		when 2305
@@ -1478,8 +1459,6 @@ class ValidationService
 			"Field too long: password"
 		when 2402
 			"Field too long: device_name"
-		when 2403
-			"Field too long: device_type"
 		when 2404
 			"Field too long: device_os"
 		when 2405

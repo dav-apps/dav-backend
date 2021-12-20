@@ -12,7 +12,6 @@ class SessionsController < ApplicationController
 		app_id = body["app_id"]
 		dev_api_key = body["api_key"]
 		device_name = body["device_name"]
-		device_type = body["device_type"]
 		device_os = body["device_os"]
 
 		# Validate missing fields
@@ -32,7 +31,6 @@ class SessionsController < ApplicationController
 		]
 
 		validations.push(ValidationService.validate_device_name_type(device_name)) if !device_name.nil?
-		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
 
 		ValidationService.raise_validation_errors(validations)
@@ -41,7 +39,6 @@ class SessionsController < ApplicationController
 		validations = []
 
 		validations.push(ValidationService.validate_device_name_length(device_name)) if !device_name.nil?
-		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
 
 		ValidationService.raise_validation_errors(validations)
@@ -76,11 +73,10 @@ class SessionsController < ApplicationController
 			app: app,
 			token: Cuid::generate,
 			device_name: device_name,
-			device_type: device_type,
 			device_os: device_os
 		)
 		ValidationService.raise_unexpected_error(!session.save)
-		
+
 		result = {
 			access_token: session.token
 		}
@@ -92,7 +88,6 @@ class SessionsController < ApplicationController
 				app: App.find_by(id: ENV["DAV_APPS_APP_ID"]),
 				token: Cuid.generate,
 				device_name: device_name,
-				device_type: device_type,
 				device_os: device_os
 			)
 			ValidationService.raise_unexpected_error(!website_session.save)
@@ -117,7 +112,6 @@ class SessionsController < ApplicationController
 		app_id = body["app_id"]
 		api_key = body["api_key"]
 		device_name = body["device_name"]
-		device_type = body["device_type"]
 		device_os = body["device_os"]
 
 		# Validate missing fields
@@ -135,7 +129,6 @@ class SessionsController < ApplicationController
 		]
 
 		validations.push(ValidationService.validate_device_name_type(device_name)) if !device_name.nil?
-		validations.push(ValidationService.validate_device_type_type(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_type(device_os)) if !device_os.nil?
 
 		ValidationService.raise_validation_errors(validations)
@@ -144,7 +137,6 @@ class SessionsController < ApplicationController
 		validations = []
 
 		validations.push(ValidationService.validate_device_name_length(device_name)) if !device_name.nil?
-		validations.push(ValidationService.validate_device_type_length(device_type)) if !device_type.nil?
 		validations.push(ValidationService.validate_device_os_length(device_os)) if !device_os.nil?
 
 		ValidationService.raise_validation_errors(validations)
@@ -180,7 +172,6 @@ class SessionsController < ApplicationController
 			app: app,
 			token: Cuid::generate,
 			device_name: device_name,
-			device_type: device_type,
 			device_os: device_os
 		)
 		ValidationService.raise_unexpected_error(!session.save)

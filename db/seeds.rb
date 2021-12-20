@@ -60,15 +60,15 @@ tables = Table.create([
 
 sessions = Session.create([
 	# user: dav, app: PocketLib
-	{user: users[0], app: apps[3], token: "ckktuujpl00028iw3s8ssrrsb", device_name: "Surface Duo", device_type: "Foldable", device_os: "Android"},
+	{user: users[0], app: apps[3], token: "ckktuujpl00028iw3s8ssrrsb", device_name: "Surface Duo", device_os: "Android"},
 	# user: Tester, app: PocketLib
-	{user: users[1], app: apps[3], token: "ckktuuqa100038iw385wrhl78", device_name: "Samsung Galaxy Book S", device_type: "Laptop", device_os: "Windows 10"},
+	{user: users[1], app: apps[3], token: "ckktuuqa100038iw385wrhl78", device_name: "Samsung Galaxy Book S", device_os: "Windows 10"},
 	# user: author, app: PocketLib
-	{user: users[2], app: apps[3], token: "ckktuub8p00018iw3hy7b5i0m", device_name: "Surface Neo", device_type: "Foldable", device_os: "Windows 10X"},
+	{user: users[2], app: apps[3], token: "ckktuub8p00018iw3hy7b5i0m", device_name: "Surface Neo", device_os: "Windows 10X"},
 	# user: Klaus, app: PocketLib
-	{user: users[3], app: apps[3], token: "ckktuuy2h00048iw3sfsfdv76", device_name: "PocketBook", device_type: "Book", device_os: "Windows Core"},
+	{user: users[3], app: apps[3], token: "ckktuuy2h00048iw3sfsfdv76", device_name: "PocketBook", device_os: "Windows Core"},
 	# user: Tester, app: TestApp
-	{user: users[1], app: apps[4], token: "ckktuu0gs00008iw3ctnrofzf", device_name: "Surface Book", device_type: "Laptop", device_os: "Windows 10"}
+	{user: users[1], app: apps[4], token: "ckktuu0gs00008iw3ctnrofzf", device_name: "Surface Book", device_os: "Windows 10"}
 ])
 
 apis = Api.create([
