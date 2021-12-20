@@ -64,6 +64,7 @@ describe AppUserActivitiesController do
 			app: app,
 			time: (Time.now - 3.days).beginning_of_day,
 			count_daily: 3,
+			count_weekly: 5,
 			count_monthly: 9,
 			count_yearly: 20
 		)
@@ -71,6 +72,7 @@ describe AppUserActivitiesController do
 			app: app,
 			time: (Time.now - 20.days).beginning_of_day,
 			count_daily: 4,
+			count_weekly: 2,
 			count_monthly: 7,
 			count_yearly: 18
 		)
@@ -85,11 +87,13 @@ describe AppUserActivitiesController do
 
 		assert_equal(first_user_activity.time.to_s, res["days"][0]["time"])
 		assert_equal(first_user_activity.count_daily, res["days"][0]["count_daily"])
+		assert_equal(first_user_activity.count_weekly, res["days"][0]["count_weekly"])
 		assert_equal(first_user_activity.count_monthly, res["days"][0]["count_monthly"])
 		assert_equal(first_user_activity.count_yearly, res["days"][0]["count_yearly"])
 
 		assert_equal(second_user_activity.time.to_s, res["days"][1]["time"])
 		assert_equal(second_user_activity.count_daily, res["days"][1]["count_daily"])
+		assert_equal(second_user_activity.count_weekly, res["days"][1]["count_weekly"])
 		assert_equal(second_user_activity.count_monthly, res["days"][1]["count_monthly"])
 		assert_equal(second_user_activity.count_yearly, res["days"][1]["count_yearly"])
 	end
@@ -111,11 +115,13 @@ describe AppUserActivitiesController do
 
 		assert_equal(first_user_activity.time.to_s, res["days"][0]["time"])
 		assert_equal(first_user_activity.count_daily, res["days"][0]["count_daily"])
+		assert_equal(first_user_activity.count_weekly, res["days"][0]["count_weekly"])
 		assert_equal(first_user_activity.count_monthly, res["days"][0]["count_monthly"])
 		assert_equal(first_user_activity.count_yearly, res["days"][0]["count_yearly"])
 
 		assert_equal(second_user_activity.time.to_s, res["days"][1]["time"])
 		assert_equal(second_user_activity.count_daily, res["days"][1]["count_daily"])
+		assert_equal(second_user_activity.count_weekly, res["days"][1]["count_weekly"])
 		assert_equal(second_user_activity.count_monthly, res["days"][1]["count_monthly"])
 		assert_equal(second_user_activity.count_yearly, res["days"][1]["count_yearly"])
 	end

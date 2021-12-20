@@ -2,6 +2,7 @@ first_cards_user_activity:
   app: cards
   time: <%= DateTime.parse("2019-06-10T00:00:00.000Z").beginning_of_day.to_s(:db) %>
   count_daily: 4
+  count_weekly: 2
   count_monthly: 7
   count_yearly: 16
 
@@ -9,5 +10,6 @@ second_cards_user_activity:
   app: cards
   time: <%= DateTime.parse("2019-06-11T00:00:00.000Z").beginning_of_day.to_s(:db) %>
   count_daily: 1
+  count_weekly: 4
   count_monthly: 5
   count_yearly: 9

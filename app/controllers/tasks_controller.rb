@@ -230,11 +230,13 @@ class TasksController < ApplicationController
 	private
 	def create_user_activity(users, app)
 		count_daily = 0
+		count_weekly = 0
 		count_monthly = 0
 		count_yearly = 0
 
 		users.each do |user|
 			count_daily += 1 if user_was_active(user.last_active, 1.day)
+			count_weekly += 1 if user_was_active(user.last_active, 1.week)
 			count_monthly += 1 if user_was_active(user.last_active, 1.month)
 			count_yearly += 1 if user_was_active(user.last_active, 1.year)
 		end
@@ -243,6 +245,7 @@ class TasksController < ApplicationController
 			UserActivity.create(
 				time: DateTime.now.beginning_of_day,
 				count_daily: count_daily,
+				count_weekly: count_weekly,
 				count_monthly: count_monthly,
 				count_yearly: count_yearly
 			)
@@ -251,6 +254,7 @@ class TasksController < ApplicationController
 				app: app,
 				time: DateTime.now.beginning_of_day,
 				count_daily: count_daily,
+				count_weekly: count_weekly,
 				count_monthly: count_monthly,
 				count_yearly: count_yearly
 			)

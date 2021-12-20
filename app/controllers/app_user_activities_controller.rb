@@ -36,6 +36,7 @@ class AppUserActivitiesController < ApplicationController
 			days.push({
 				time: user_activity.time.to_s,
 				count_daily: user_activity.count_daily,
+				count_weekly: user_activity.count_weekly,
 				count_monthly: user_activity.count_monthly,
 				count_yearly: user_activity.count_yearly
 			})
