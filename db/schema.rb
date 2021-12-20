@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_12_20_162103) do
+ActiveRecord::Schema.define(version: 2021_12_20_210005) do
 
   create_table "api_endpoint_request_cache_dependencies", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
     t.bigint "user_id"
@@ -178,7 +178,6 @@ ActiveRecord::Schema.define(version: 2021_12_20_162103) do
     t.string "token"
     t.string "old_token"
     t.string "device_name"
-    t.string "device_type"
     t.string "device_os"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
