@@ -123,4 +123,23 @@ class UtilsService
 
 		return value
 	end
+
+	def self.get_table_etag(user, table)
+		table_etag = TableEtag.find_by(user: user, table: table)
+		table_etag = TableEtag.create(user: user, table: table, etag: SecureRandom.hex(10)) if table_etag.nil?
+		return table_etag.etag
+	end
+
+	def self.update_table_etag(user, table)
+		table_etag = TableEtag.find_by(user: user, table: table)
+
+		if table_etag.nil?
+			table_etag = TableEtag.new(user: user, table: table, etag: SecureRandom.hex(10))
+		else
+			table_etag.etag = SecureRandom.hex(10)
+		end
+
+		table_etag.save
+		return table_etag.etag
+	end
 end

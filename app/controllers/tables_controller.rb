@@ -97,12 +97,15 @@ class TablesController < ApplicationController
 		pages = 1
 		pages = table_objects.count % count == 0 ? table_objects.count / count : (table_objects.count / count) + 1 if table_objects.count > 0
 
+		table_etag = UtilsService.get_table_etag(session.user, table)
+
 		# Return the data
 		result = {
 			id: table.id,
 			app_id: table.app_id,
 			name: table.name,
 			pages: pages,
+			etag: table_etag,
 			table_objects: Array.new
 		}
 

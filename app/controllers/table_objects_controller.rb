@@ -124,6 +124,9 @@ class TableObjectsController < ApplicationController
 			app_user.update_column(:last_active, Time.now)
 		end
 
+		# Update the TableEtag
+		table_etag = UtilsService.update_table_etag(session.user, table)
+
 		# Notify connected clients of the new table object
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
@@ -137,6 +140,7 @@ class TableObjectsController < ApplicationController
 			id: table_object.id,
 			user_id: table_object.user_id,
 			table_id: table_object.table_id,
+			table_etag: table_etag,
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
@@ -322,6 +326,9 @@ class TableObjectsController < ApplicationController
 		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
+		# Update the TableEtag
+		table_etag = UtilsService.update_table_etag(session.user, table_object.table)
+
 		# Notify connected clients of the updated table object
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
@@ -337,6 +344,7 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			table_etag: table_etag,
 			belongs_to_user: true,
 			purchase: nil,
 			properties: Hash.new
@@ -389,6 +397,9 @@ class TableObjectsController < ApplicationController
 
 		# Delete the table object
 		table_object.destroy!
+
+		# Update the TableEtag
+		UtilsService.update_table_etag(session.user, table_object.table)
 
 		# Notify connected clients of the deleted table object
 		TableObjectUpdateChannel.broadcast_to(
@@ -489,6 +500,9 @@ class TableObjectsController < ApplicationController
 		app_user = AppUser.find_by(user: session.user, app: table_object.table.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
+		# Update the TableEtag
+		table_etag = UtilsService.update_table_etag(session.user, table_object.table)
+
 		# Notify connected clients of the updated table object
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
@@ -505,6 +519,7 @@ class TableObjectsController < ApplicationController
 			uuid: table_object.uuid,
 			file: table_object.file,
 			etag: table_object.etag,
+			table_etag: table_etag,
 			belongs_to_user: true,
 			purchase: nil,
 			properties: Hash.new
@@ -581,7 +596,7 @@ class TableObjectsController < ApplicationController
 		uuid = params[:uuid]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
-		
+
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
@@ -601,9 +616,12 @@ class TableObjectsController < ApplicationController
 		app_user = AppUser.find_by(user: session.user, app: session.app)
 		app_user.update_column(:last_active, Time.now) if !app_user.nil?
 
+		# Update the TableEtag
+		UtilsService.update_table_etag(session.user, table_object.table)
+
 		# Delete the table object user access
 		access.destroy!
-		
+
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
 		render_errors(e)
