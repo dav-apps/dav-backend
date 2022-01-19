@@ -256,6 +256,7 @@ describe TableObjectsController do
 		third_property_value = 53.23
 		fourth_property_name = "test4"
 		fourth_property_value = true
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = post_request(
 			"/v1/table_object",
@@ -336,6 +337,12 @@ describe TableObjectsController do
 		fourth_property_type = TablePropertyType.find_by(table: table, name: fourth_property_name)
 		assert_not_nil(fourth_property_type)
 		assert_equal(1, fourth_property_type.data_type)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object with uuid" do
@@ -349,6 +356,7 @@ describe TableObjectsController do
 		third_property_value = 53.23
 		fourth_property_name = "test4"
 		fourth_property_value = true
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = post_request(
 			"/v1/table_object",
@@ -430,10 +438,17 @@ describe TableObjectsController do
 		fourth_property_type = TablePropertyType.find_by(table: table, name: fourth_property_name)
 		assert_not_nil(fourth_property_type)
 		assert_equal(1, fourth_property_type.data_type)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object without properties" do
 		table = tables(:card)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		
 		res = post_request(
 			"/v1/table_object",
@@ -466,10 +481,17 @@ describe TableObjectsController do
 
 		properties = TableObjectProperty.where(table_object: table_object)
 		assert_equal(0, properties.length)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object with uuid without properties" do
 		table = tables(:card)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		uuid = SecureRandom.uuid
 		
 		res = post_request(
@@ -504,10 +526,17 @@ describe TableObjectsController do
 
 		properties = TableObjectProperty.where(table_object: table_object)
 		assert_equal(0, properties.length)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object as file" do
 		table = tables(:card)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = post_request(
 			"/v1/table_object",
@@ -545,10 +574,17 @@ describe TableObjectsController do
 
 		properties = TableObjectProperty.where(table_object: table_object)
 		assert_equal(0, properties.length)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object with uuid as file" do
 		table = tables(:card)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		uuid = SecureRandom.uuid
 
 		res = post_request(
@@ -588,10 +624,17 @@ describe TableObjectsController do
 
 		properties = TableObjectProperty.where(table_object: table_object)
 		assert_equal(0, properties.length)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object as file with ext" do
 		table = tables(:testTable)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 		ext = "mp4"
 
 		res = post_request(
@@ -630,10 +673,17 @@ describe TableObjectsController do
 		ext_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
 		assert_not_nil(ext_property)
 		assert_equal(ext, ext_property.value)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should create table object and update last_active fields" do
 		table = tables(:card)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = post_request(
 			"/v1/table_object",
@@ -654,6 +704,12 @@ describe TableObjectsController do
 
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	# get_table_object
@@ -1018,6 +1074,7 @@ describe TableObjectsController do
 	it "should update table object" do
 		table = tables(:card)
 		table_object = table_objects(:mattSecondCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		first_property_name = table_object_properties(:mattSecondCardPage1).name
 		first_property_value = table_object_properties(:mattSecondCardPage1).value
 		second_property_name = "page2"
@@ -1108,10 +1165,17 @@ describe TableObjectsController do
 		fifth_property_type = TablePropertyType.find_by(table: table, name: fifth_property_name)
 		assert_not_nil(fifth_property_type)
 		assert_equal(1, fifth_property_type.data_type)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should update table object and remove properties using nil" do
 		table_object = table_objects(:mattSecondCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		first_property_name = table_object_properties(:mattSecondCardPage1).name
 		second_property_name = table_object_properties(:mattSecondCardPage2).name
 		second_property_value = table_object_properties(:mattSecondCardPage2).value
@@ -1152,10 +1216,17 @@ describe TableObjectsController do
 		second_property_type = TablePropertyType.find_by(table: table_object.table, name: second_property_name)
 		assert_not_nil(second_property_type)
 		assert_equal(0, second_property_type.data_type)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should update file table object with ext" do
 		table_object = table_objects(:sherlockTestFile)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 		ext = "mp3"
 
 		res = put_request(
@@ -1184,10 +1255,17 @@ describe TableObjectsController do
 		ext_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)
 		assert_not_nil(ext)
 		assert_equal(ext, ext_property.value)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should update table object and update last_active fields" do
 		table_object = table_objects(:mattSecondCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = put_request(
 			"/v1/table_object/#{table_object.uuid}",
@@ -1214,6 +1292,12 @@ describe TableObjectsController do
 
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	# delete_table_object
@@ -1251,6 +1335,7 @@ describe TableObjectsController do
 
 	it "should delete table object" do
 		table_object = table_objects(:mattSecondCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 		first_property = table_object_properties(:mattSecondCardPage1)
 		second_property = table_object_properties(:mattSecondCardPage2)
 
@@ -1269,10 +1354,16 @@ describe TableObjectsController do
 		
 		prop2 = TableObjectProperty.find_by(id: second_property.id)
 		assert_nil(prop2)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
 	end
 
 	it "should delete table object and update last_active fields" do
 		table_object = table_objects(:mattSecondCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}",
@@ -1286,10 +1377,16 @@ describe TableObjectsController do
 
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
 	end
 
 	it "should delete table object with file" do
 		table_object = table_objects(:sherlockTestFile)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 
 		# Upload a file for the table object
 		upload_blob(table_object, StringIO.new("Hello World"))
@@ -1307,6 +1404,11 @@ describe TableObjectsController do
 		rescue => e
 			assert(!e.nil?)
 		end
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
 	end
 
 	# set_table_object_file
@@ -1406,6 +1508,7 @@ describe TableObjectsController do
 
 	it "should set table object file" do
 		table_object = table_objects(:sherlockTestFile)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
@@ -1452,10 +1555,17 @@ describe TableObjectsController do
 
 		# Delete the blob
 		BlobOperationsService.delete_blob(table_object)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should set table object file with binary data" do
 		table_object = table_objects(:sherlockTestFile)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 		content_type = "image/png"
 
@@ -1502,10 +1612,17 @@ describe TableObjectsController do
 
 		# Delete the blob
 		BlobOperationsService.delete_blob(table_object)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	it "should set table object file and update last_active fields" do
 		table_object = table_objects(:sherlockTestFile)
+		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 		file_content = "<h1>Hello World</h1>"
 		content_type = "text/html"
 
@@ -1525,6 +1642,12 @@ describe TableObjectsController do
 
 		# Delete the blob
 		BlobOperationsService.delete_blob(table_object)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:sherlock), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
+		assert_equal(table_etag.etag, res["table_etag"])
 	end
 
 	# get_table_object_file
@@ -1723,6 +1846,7 @@ describe TableObjectsController do
 
 	it "should remove table object" do
 		table_object = table_objects(:davFirstCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}/access",
@@ -1733,10 +1857,16 @@ describe TableObjectsController do
 
 		access = TableObjectUserAccess.find_by(user: users(:matt), table_object: table_object)
 		assert_nil(access)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
 	end
 
 	it "should remove table object and update last_active fields" do
 		table_object = table_objects(:davFirstCard)
+		old_table_etag = table_etags(:mattCardEtag).etag
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}/access",
@@ -1750,5 +1880,10 @@ describe TableObjectsController do
 
 		app_user = app_users(:mattCards)
 		assert(Time.now.to_i - app_user.last_active.to_i < 10)
+
+		# The TableEtag should have changed
+		table_etag = TableEtag.find_by(user: users(:matt), table: table_object.table)
+		assert_not_nil(table_etag)
+		assert_not_equal(old_table_etag, table_etag.etag)
 	end
 end

@@ -1,0 +1,9 @@
+mattCardEtag:
+  user: matt
+  table: card
+  etag: asdasfjhhasdkashd
+
+sherlockTestTableEtag:
+  user: sherlock
+  table: testTable
+  etag: skdfhsdfhsfkdsfkd

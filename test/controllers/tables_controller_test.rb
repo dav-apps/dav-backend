@@ -245,6 +245,7 @@ describe TablesController do
 		assert_equal(table.app.id, res["app_id"])
 		assert_equal(table.name, res["name"])
 		assert_equal(1, res["pages"])
+		assert_equal(table_etags(:mattCardEtag).etag, res["etag"])
 		assert_equal(6, res["table_objects"].count)
 
 		first_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
@@ -307,6 +308,7 @@ describe TablesController do
 		assert_equal(table.app.id, res["app_id"])
 		assert_equal(table.name, res["name"])
 		assert_equal(3, res["pages"])
+		assert_equal(table_etags(:mattCardEtag).etag, res["etag"])
 		assert_equal(2, res["table_objects"].count)
 
 		third_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
@@ -328,6 +330,7 @@ describe TablesController do
 		assert_equal(table.app.id, res["app_id"])
 		assert_equal(table.name, res["name"])
 		assert_equal(3, res["pages"])
+		assert_equal(table_etags(:mattCardEtag).etag, res["etag"])
 		assert_equal(2, res["table_objects"].count)
 
 		fifth_table_object = TableObject.find_by(uuid: res["table_objects"][0]["uuid"])
