@@ -61,3 +61,10 @@ klaus:
   password_digest: "$2a$12$g4r3bVR1LEUmfOrfS1C9m.4oqPigfgEmruFsu9Nmh4oBP5flYT1ri"   # isadora
   stripe_customer_id: cus_H2NhsO2V8Lp2vp
   last_active: <%= DateTime.parse("2021-02-17T08:45:00.000Z").beginning_of_day.to_s(:db) %>
+
+violet:
+  first_name: Violet
+  email: violet.baudelaire@dav-apps.tech
+  password_digest: "$2a$12$UBxgQAbFLpOOCau5DEo9BeTmtTf/tpeLkCx5FBbJEjaWN0Ps77Dp." # sunny
+  plan: 1
+  last_active: <%= DateTime.parse("2022-01-17T08:45:00.000Z").beginning_of_day.to_s(:db) %>
