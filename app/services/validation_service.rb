@@ -294,6 +294,21 @@ class ValidationService
 		slot.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_plan_presence(plan)
+		error_code = 2132
+		plan.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_success_url_presence(success_url)
+		error_code = 2133
+		success_url.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_cancel_url_presence(cancel_url)
+		error_code = 2134
+		cancel_url.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Fields with wrong type
 	def self.validate_access_token_type(access_token)
 		error_code = 2200
@@ -555,6 +570,21 @@ class ValidationService
 	def self.validate_slot_type(slot)
 		error_code = 2249
 		!slot.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_plan_type(plan)
+		error_code = 2250
+		!plan.is_a?(Integer) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_success_url_type(success_url)
+		error_code = 2251
+		!success_url.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_cancel_url_type(cancel_url)
+		error_code = 2252
+		!cancel_url.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Too short & too long fields
@@ -850,6 +880,22 @@ class ValidationService
 		end
 	end
 
+	def self.validate_success_url_length(success_url)
+		if success_url.length < Constants::SUCCESS_URL_MIN_LENGTH
+			get_validation_hash(2329, 400)
+		else
+			get_validation_hash
+		end
+	end
+
+	def self.validate_cancel_url_length(cancel_url)
+		if cancel_url.length < Constants::CANCEL_URL_MIN_LENGTH
+			get_validation_hash(2330, 400)
+		else
+			get_validation_hash
+		end
+	end
+
 	# Invalid fields
 	def self.validate_email_validity(email)
 		error_code = 2500
@@ -884,6 +930,21 @@ class ValidationService
 	def self.validate_slot_validity(slot)
 		error_code = 2506
 		!validate_slot(slot) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_plan_validity(plan)
+		error_code = 2507
+		(plan != 1 && plan != 2) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_success_url_validity(success_url)
+		error_code = 2508
+		!validate_url(success_url) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_cancel_url_validity(cancel_url)
+		error_code = 2509
+		!validate_url(cancel_url) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Generic state errors
@@ -961,6 +1022,11 @@ class ValidationService
 	def self.validate_purchase_can_be_deleted(purchase)
 		error_code = 3010
 		purchase.price > 0 && purchase.completed ? get_validation_hash(error_code, 412) : get_validation_hash
+	end
+
+	def self.validate_user_is_below_plan(user, plan)
+		error_code = 3011
+		user.plan >= plan ? get_validation_hash(error_code, 422) : get_validation_hash
 	end
 
 	# Access token errors
@@ -1296,6 +1362,12 @@ class ValidationService
 			"Missing field: table_objects"
 		when 2131
 			"Missing field: slot"
+		when 2132
+			"Missing field: plan"
+		when 2133
+			"Missing field: success_url"
+		when 2134
+			"Missing field: cancel_url"
 		# Fields with wrong type
 		when 2200
 			"Field has wrong type: access_token"
@@ -1395,6 +1467,12 @@ class ValidationService
 			"Field has wrong type: table_objects"
 		when 2249
 			"Field has wrong type: slot"
+		when 2250
+			"Field has wrong type: plan"
+		when 2251
+			"Field has wrong type: success_url"
+		when 2252
+			"Field has wrong type: cancel_url"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1452,6 +1530,10 @@ class ValidationService
 			"Field too short: env_var value"
 		when 2328
 			"Field too short: slot"
+		when 2329
+			"Field too short: success_url"
+		when 2330
+			"Field too short: cancel_url"
 		# Too long fields
 		when 2400
 			"Field too long: first_name"
@@ -1524,6 +1606,12 @@ class ValidationService
 			"Field invalid: method"
 		when 2506
 			"Field invalid: slot"
+		when 2507
+			"Field invalid: plan"
+		when 2508
+			"Field invalid: success_url"
+		when 2509
+			"Field invalid: cancel_url"
 		# Generic state errors
 		when 3000
 			"The user is already confirmed"
@@ -1547,6 +1635,8 @@ class ValidationService
 			"The table objects need to belong to the same user"
 		when 3010
 			"The purchase cannot be deleted"
+		when 3011
+			"The user is already on this or a higher plan"
 		# Access token errors
 		when 3100
 			"Can't use old access token"
