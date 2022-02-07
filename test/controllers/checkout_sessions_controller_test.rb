@@ -67,6 +67,22 @@ describe UsersController do
 		assert_equal(ErrorCodes::CANCEL_URL_WRONG_TYPE, res["errors"][2]["code"])
 	end
 
+	it "should not create checkout session with properties with wrong types with different mode" do
+		res = post_request(
+			"/v1/checkout_session",
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
+			{
+				mode: 1234,
+				success_url: 12,
+				cancel_url: true
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::MODE_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
 	it "should not create checkout session with too short properties" do
 		res = post_request(
 			"/v1/checkout_session",
@@ -100,6 +116,22 @@ describe UsersController do
 		assert_equal(ErrorCodes::PLAN_INVALID, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::SUCCESS_URL_INVALID, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::CANCEL_URL_INVALID, res["errors"][2]["code"])
+	end
+
+	it "should not create checkout session with invalid properties with different mode" do
+		res = post_request(
+			"/v1/checkout_session",
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
+			{
+				mode: "asdasd",
+				success_url: "ftp://bla.com",
+				cancel_url: "ljskdfklsdf"
+			}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::MODE_INVALID, res["errors"][0]["code"])
 	end
 
 	it "should not create checkout session for user that is already on the plan" do
@@ -140,6 +172,7 @@ describe UsersController do
 
 		session = sessions.data[0]
 		assert_equal(session.url, res["session_url"])
+		assert_equal(session.mode, "subscription")
 		assert_equal(session.success_url, success_url)
 		assert_equal(session.cancel_url, cancel_url)
 	end
@@ -175,9 +208,37 @@ describe UsersController do
 
 		session = sessions.data[0]
 		assert_equal(session.url, res["session_url"])
+		assert_equal(session.mode, "subscription")
 		assert_equal(session.success_url, success_url)
 		assert_equal(session.cancel_url, cancel_url)
 
 		Stripe::Customer.delete(customer.id)
+	end
+
+	it "should create checkout session in setup mode" do
+		success_url = "https://dav-apps.tech/user?success=true#plans"
+		cancel_url = "https://dav-apps.tech/user#plans"
+
+		res = post_request(
+			"/v1/checkout_session",
+			{Authorization: sessions(:mattCardsSession).token, 'Content-Type': 'application/json'},
+			{
+				mode: "setup",
+				success_url: success_url,
+				cancel_url: cancel_url
+			}
+		)
+
+		assert_response 201
+
+		# Get the checkout session
+		sessions = Stripe::Checkout::Session.list({ limit: 1 })
+		assert_equal(sessions.data.length, 1)
+
+		session = sessions.data[0]
+		assert_equal(session.url, res["session_url"])
+		assert_equal(session.mode, "setup")
+		assert_equal(session.success_url, success_url)
+		assert_equal(session.cancel_url, cancel_url)
 	end
 end

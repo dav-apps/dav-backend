@@ -587,6 +587,11 @@ class ValidationService
 		!cancel_url.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_mode_type(mode)
+		error_code = 2253
+		!mode.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Too short & too long fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -947,6 +952,11 @@ class ValidationService
 		!validate_url(cancel_url) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_mode_validity(mode)
+		error_code = 2510
+		(mode != "setup" && mode != "subscription") ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Generic state errors
 	def self.validate_user_not_confirmed(user)
 		error_code = 3000
@@ -1225,7 +1235,7 @@ class ValidationService
 	end
 
 	def self.validate_url(url)
-		/^(https?:\/\/)?[\w.-]+(\.[\w.-]+)+[\w\-._~\/?#@&\+,;=]+$/.match?(url)
+		/^(https?:\/\/)?([\w.-]+(\.[\w.-]+)+|localhost:[0-9]{1,4})[\w\-._~\/?#@&\+,;=]+$/.match?(url)
 	end
 
 	def self.validate_slot(slot)
@@ -1473,6 +1483,8 @@ class ValidationService
 			"Field has wrong type: success_url"
 		when 2252
 			"Field has wrong type: cancel_url"
+		when 2253
+			"Field has wrong type: mode"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1612,6 +1624,8 @@ class ValidationService
 			"Field invalid: success_url"
 		when 2509
 			"Field invalid: cancel_url"
+		when 2510
+			"Field invalid: mode"
 		# Generic state errors
 		when 3000
 			"The user is already confirmed"
