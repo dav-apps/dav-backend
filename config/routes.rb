@@ -103,6 +103,9 @@ Rails.application.routes.draw do
 	# CheckoutSessionsController
 	match '/v1/checkout_session', to: 'checkout_sessions#create_checkout_session', via: :post
 
+	# CustomerPortalSessionsController
+	match '/v1/customer_portal_session', to: 'customer_portal_sessions#create_customer_portal_session', via: :post
+
 	# TasksController
 	match '/v1/tasks/create_user_activities', to: 'tasks#create_user_activities', via: :put
 	match '/v1/tasks/update_api_caches', to: 'tasks#update_api_caches', via: :put

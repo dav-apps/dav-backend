@@ -1,6 +1,6 @@
 require "test_helper"
 
-describe UsersController do
+describe CheckoutSessionsController do
 	setup do
 		setup
 	end
