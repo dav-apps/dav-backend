@@ -109,17 +109,19 @@ class TablesController < ApplicationController
 			table_objects: Array.new
 		}
 
-		selected_table_objects.each do |obj|
-			# Generate the etag if the table object has none
-			if obj.etag.nil?
-				obj.etag = UtilsService.generate_table_object_etag(obj)
-				obj.save
-			end
+		if !selected_table_objects.nil?
+			selected_table_objects.each do |obj|
+				# Generate the etag if the table object has none
+				if obj.etag.nil?
+					obj.etag = UtilsService.generate_table_object_etag(obj)
+					obj.save
+				end
 
-			result[:table_objects].push({
-				uuid: obj.uuid,
-				etag: obj.etag
-			})
+				result[:table_objects].push({
+					uuid: obj.uuid,
+					etag: obj.etag
+				})
+			end
 		end
 
 		render json: result, status: 200
