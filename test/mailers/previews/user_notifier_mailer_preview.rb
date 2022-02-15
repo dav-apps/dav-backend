@@ -18,4 +18,8 @@ class UserNotifierMailerPreview < ActionMailer::Preview
 	def reset_email
 		UserNotifierMailer.reset_email(User.first)
 	end
+
+	def payment_failed
+		UserNotifierMailer.payment_failed(User.first)
+	end
 end
