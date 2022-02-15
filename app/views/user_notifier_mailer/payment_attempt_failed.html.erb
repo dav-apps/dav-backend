@@ -1,0 +1,20 @@
+<div class="container py-3">
+	<div class="card my-5">
+		<div class="card-body">
+			<a href="https://dav-apps.tech"
+				class="navbar-brand ml-3"
+				style="color: black; font-size: 35px; font-weight: bold; font-family: 'MV Boli', Kalam"
+				target="blank">
+				dav
+			</a>
+			<h2 class="text-center mt-3 mb-3">Payment failed</h2>
+			<h5 class="card-text text-muted text-center">
+				We were unable to charge your card for your subscription.
+				<br>
+				Please update your payment method to continue using dav <%= @plan %>.
+			</h5>
+
+			<%= link_to "Update payment method", @link, class: "btn btn-primary ax-center mt-4", target: "blank" %>
+		</div>
+	</div>
+</div>

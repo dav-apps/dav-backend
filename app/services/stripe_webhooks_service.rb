@@ -101,20 +101,26 @@ class StripeWebhooksService
 
 	def self.InvoicePaymentFailedEvent(event)
 		paid = event.data.object.paid
+		attempt_count = event.data.object.attempt_count
       next_payment_attempt = event.data.object.next_payment_attempt
 
-		if !paid && next_payment_attempt.nil?
-			# Change the plan to free
-			user = User.find_by(stripe_customer_id: event.data.object.customer)
-
-			if !user.nil?
-				user.plan = 0
-				user.subscription_status = 0
-				user.period_end = nil
-				user.save
-
-				# Send failed payment email
-				UserNotifierMailer.payment_failed(user).deliver_later
+		if !paid
+			if next_payment_attempt.nil?
+				# Change the plan to free
+				user = User.find_by(stripe_customer_id: event.data.object.customer)
+	
+				if !user.nil?
+					user.plan = 0
+					user.subscription_status = 0
+					user.period_end = nil
+					user.save
+	
+					# Send failed payment email
+					UserNotifierMailer.payment_failed(user).deliver_later
+				end
+			elsif attempt_count == 2
+				# Send email for failed payment attempt
+				UserNotifierMailer.payment_attempt_failed(user).deliver_later
 			end
 		end
 

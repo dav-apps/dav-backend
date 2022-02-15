@@ -51,6 +51,28 @@ class UserNotifierMailer < ApplicationMailer
 		)
 	end
 
+	def payment_attempt_failed(user)
+		@user = user
+		@link = "#{ENV['WEBSITE_BASE_URL']}/user#plans"
+		@plan = "Plus"
+		@plan = "Pro" if user.plan == 2
+
+		begin
+			# Create the session
+			portal_session = Stripe::BillingPortal::Session.create({
+				customer: user.stripe_customer_id
+			})
+			@link = portal_session.url
+		rescue => e
+			RorVsWild.record_error(e)
+		end
+
+		make_bootstrap_mail(
+			to: @user.email,
+			subject: "Payment failed"
+		)
+	end
+
 	def payment_failed(user)
 		@user = user
 		@link = "#{ENV['WEBSITE_BASE_URL']}/user#plans"
