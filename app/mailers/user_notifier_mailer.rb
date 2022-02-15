@@ -53,11 +53,20 @@ class UserNotifierMailer < ApplicationMailer
 
 	def payment_failed(user)
 		@user = user
-		@link = "#{ENV['WEBSITE_BASE_URL']}/login?redirect=user%23plans"
 
-		make_bootstrap_mail(
-			to: @user.email,
-			subject: "Subscription renewal not possible"
-		)
+		begin
+			# Create the session
+			portal_session = Stripe::BillingPortal::Session.create({
+				customer: user.stripe_customer_id
+			})
+			@link = portal_session.url
+
+			make_bootstrap_mail(
+				to: @user.email,
+				subject: "Subscription renewal not possible"
+			)
+		rescue => e
+			RorVsWild.record_error(e)
+		end
 	end
 end
