@@ -66,7 +66,7 @@ class ApisController < ApplicationController
 
 		if api_endpoint.caching && Rails.env.production? && request.headers["Authorization"].nil? && request.method.downcase == "get"
 			cache_params = url_params.sort.to_h
-			cache_key = path
+			cache_key = "api_endpoint_request:#{path}"
 
 			cache_params.each do |key, value|
 				cache_key += ";#{key}:#{value}"
@@ -135,6 +135,7 @@ class ApisController < ApplicationController
 		if cache_response && result[:status] == 200
 			# Save the response in the cache
 			redis.set(cache_key, result[:data].to_json)
+			redis.expire(cache_key, 172800)	# Expire in 2 days
 		end
 
 		# Send the result
