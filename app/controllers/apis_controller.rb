@@ -1,5 +1,6 @@
 class ApisController < ApplicationController
 	def api_call
+		redis = get_redis
 		api_id = params[:id]
 		slot_name = params[:slot]
 		path = params[:path]
@@ -64,26 +65,18 @@ class ApisController < ApplicationController
 		cache_response = false
 
 		if api_endpoint.caching && Rails.env.production? && request.headers["Authorization"].nil? && request.method.downcase == "get"
-			# Try to find a cache of the endpoint with this combination of params
-			cache = nil
 			cache_params = url_params.sort.to_h
+			cache_key = path
 
-			api_endpoint.api_endpoint_request_caches.each do |request_cache|
-				request_cache_params = request_cache.api_endpoint_request_cache_params
-				next if cache_params.size != request_cache_params.size
-
-				# Convert the params to hash
-				request_cache_params_hash = Hash.new
-				request_cache_params.each { |param| request_cache_params_hash[param.name] = param.value }
-
-				next if request_cache_params_hash != cache_params
-				cache = request_cache
-				break
+			cache_params.each do |key, value|
+				cache_key += ";#{key}:#{value}"
 			end
+
+			cache = redis.get(cache_key)
 
 			if !cache.nil?
 				# Render the cached response
-				render json: cache.response, status: 200
+				render json: cache, status: 200
 				return
 			else
 				cache_response = true
@@ -141,16 +134,7 @@ class ApisController < ApplicationController
 
 		if cache_response && result[:status] == 200
 			# Save the response in the cache
-			cache = ApiEndpointRequestCache.new(api_endpoint: api_endpoint, response: result[:data].to_json)
-
-			if cache.save
-				# Create the cache params
-				cache_params.each do |var|
-					# var = ["key", "value"]
-					param = ApiEndpointRequestCacheParam.new(api_endpoint_request_cache: cache, name: var[0], value: var[1])
-					param.save
-				end
-			end
+			redis.set(cache_key, result[:data].to_json)
 		end
 
 		# Send the result

@@ -16,4 +16,8 @@ class ApplicationController < ActionController::API
 		validations = JSON.parse(e.message)
 		render json: {"errors" => ValidationService.get_errors_of_validations(validations)}, status: validations.first["status"]
 	end
+
+	def get_redis
+		Redis.new(url: ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" })
+	end
 end
