@@ -50,6 +50,26 @@ class DavExpressionCompiler
 						\"code\" => error.code,
 						\"message\" => error.message
 					}
+				when 'get_app'
+					id = params[:id].to_i
+					app = @vars[:apps][id]
+
+					if app.nil?
+						app = App.find_by(id: id)
+						@vars[:apps][id] = app if !app.nil?
+					end
+
+					return app
+				when 'get_table'
+					id = params[:id].to_i
+					table = @vars[:tables][id]
+
+					if table.nil?
+						table = Table.find_by(id: id)
+						@vars[:tables][id] = table if !table.nil?
+					end
+
+					return table
 				when 'render_json'
 					data = params[:data]
 					status = params[:status]
@@ -122,9 +142,9 @@ class DavExpressionCompiler
 				when 'Table.get'
 					id = params[:id]
 
-					table = Table.find_by(id: id)
+					table = _method_call('get_table', id: id)
 
-					if !table.nil? && table.app != @vars[:api_slot].api.app
+					if !table.nil? && _method_call('get_app', id: table.app_id) != @vars[:api_slot].api.app
 						# Action not allowed
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
@@ -134,10 +154,13 @@ class DavExpressionCompiler
 					id = params[:id]
 					user_id = params[:user_id]
 
-					table = Table.find_by(id: id.to_i)
+					table = _method_call('get_table', id: id)
 					return nil if !table
 
-					if table.app != @vars[:api_slot].api.app
+					table_app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
+					if table_app != api_app
 						# Action not allowed error
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
@@ -171,15 +194,18 @@ class DavExpressionCompiler
 					properties = params[:properties]
 
 					# Get the table
-					table = Table.find_by(id: table_id)
+					table = _method_call('get_table', id: table_id)
 
 					# Check if the table exists
 					if table.nil?
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					table_app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table belongs to the same app as the api
-					if table.app != @vars[:api_slot].api.app
+					if table_app != api_app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -222,15 +248,18 @@ class DavExpressionCompiler
 					file = params[:file]
 
 					# Get the table
-					table = Table.find_by(id: table_id)
+					table = _method_call('get_table', id: table_id)
 
 					# Check if the table exists
 					if table.nil?
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					table_app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table belongs to the same app as the api
-					if table.app != @vars[:api_slot].api.app
+					if table_app != api_app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -308,8 +337,12 @@ class DavExpressionCompiler
 					obj = TableObject.find_by(uuid: uuid)
 					return nil if obj.nil?
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -326,8 +359,12 @@ class DavExpressionCompiler
 					obj = TableObject.find_by(uuid: uuid)
 					return nil if obj.nil? || !obj.file
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -354,8 +391,12 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 2}].to_json
 					end
 
@@ -403,8 +444,12 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 2}].to_json
 					end
 
@@ -460,7 +505,7 @@ class DavExpressionCompiler
 					end
 
 					# Update the used storage
-					UtilsService.update_used_storage(obj.user, obj.table.app, file_size_diff)
+					UtilsService.update_used_storage(obj.user, app, file_size_diff)
 
 					# Save the properties
 					if !ext_prop.save || !etag_prop.save || !size_prop.save || !type_prop.save
@@ -481,8 +526,12 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -514,8 +563,12 @@ class DavExpressionCompiler
 					# Check if the table object exists
 					return nil if obj.nil?
 
+					table = _method_call('get_table', id: obj.table_id)
+					app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
 					# Check if the table of the table object belongs to the same app as the api
-					if obj.table.app != @vars[:api_slot].api.app
+					if app != api_app
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
@@ -541,7 +594,7 @@ class DavExpressionCompiler
 					end
 
 					# Try to find the table
-					table = Table.find_by(id: table_alias)
+					table = _method_call('get_table', id: table_alias)
 
 					if table.nil?
 						raise RuntimeError, [{\"code\" => 1}].to_json
@@ -579,12 +632,14 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					table = _method_call('get_table', id: obj.table_id)
+
 					# Try to find the collection
-					collection = Collection.find_by(name: collection_name, table: obj.table)
+					collection = Collection.find_by(name: collection_name, table: table)
 
 					if !collection
 						# Create the collection
-						collection = Collection.new(name: collection_name, table: obj.table)
+						collection = Collection.new(name: collection_name, table: table)
 						collection.save
 					end
 
@@ -617,8 +672,10 @@ class DavExpressionCompiler
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
 
+					table = _method_call('get_table', id: obj.table_id)
+
 					# Find the collection
-					collection = Collection.find_by(name: collection_name, table: obj.table)
+					collection = Collection.find_by(name: collection_name, table: table)
 
 					if collection.nil?
 						raise RuntimeError, [{\"code\" => 1}].to_json
@@ -635,7 +692,7 @@ class DavExpressionCompiler
 					collection_name = params[:collection_name]
 
 					# Try to find the table
-					table = Table.find_by(id: table_id)
+					table = _method_call('get_table', id: table_id)
 
 					if table.nil?
 						raise RuntimeError, [{\"code\" => 0}].to_json
@@ -981,6 +1038,8 @@ class DavExpressionCompiler
 		end
 
 		@vars[:dependencies] = Array.new
+		@vars[:apps] = Hash.new
+		@vars[:tables] = Hash.new
 
 		eval props[:code]
 	end
