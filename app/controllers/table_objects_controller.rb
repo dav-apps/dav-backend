@@ -109,6 +109,9 @@ class TableObjectsController < ApplicationController
 		# Save the table object
 		ValidationService.raise_unexpected_error(!table_object.save)
 
+		# Save the table object in redis
+		UtilsService.save_table_object_in_redis(table_object)
+
 		# Save that the user was active
 		session.user.update_column(:last_active, Time.now)
 
@@ -329,6 +332,9 @@ class TableObjectsController < ApplicationController
 		# Update the TableEtag
 		table_etag = UtilsService.update_table_etag(session.user, table_object.table)
 
+		# Update the table object in redis
+		UtilsService.save_table_object_in_redis(table_object)
+
 		# Notify connected clients of the updated table object
 		TableObjectUpdateChannel.broadcast_to(
 			"#{session.user.id},#{session.app.id}",
@@ -397,6 +403,9 @@ class TableObjectsController < ApplicationController
 
 		# Delete the table object
 		table_object.destroy!
+
+		# Remove the table object from redis
+		UtilsService.remove_table_object_from_redis(table_object.uuid)
 
 		# Update the TableEtag
 		UtilsService.update_table_etag(session.user, table_object.table)
@@ -493,6 +502,9 @@ class TableObjectsController < ApplicationController
 		# Update the etag of the table object
 		table_object.etag = UtilsService.generate_table_object_etag(table_object)
 		ValidationService.raise_unexpected_error(!table_object.save)
+
+		# Update the table object in redis
+		UtilsService.save_table_object_in_redis(table_object)
 
 		# Save that the user was active
 		session.user.update_column(:last_active, Time.now)

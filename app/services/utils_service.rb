@@ -1,4 +1,42 @@
 class UtilsService
+	def self.get_redis
+		Redis.new(url: ENV["REDIS_URL"])
+	end
+
+	def self.save_table_object_in_redis(obj)
+		obj_data = {
+			'id' => obj.id,
+			'user_id' => obj.user_id,
+			'table_id' => obj.table_id,
+			'file' => obj.file,
+			'etag' => obj.etag,
+			'properties' => Hash.new
+		}
+
+		obj.table_object_properties.each do |prop|
+			prop_type = TablePropertyType.find_by(table_id: obj.table_id, name: prop.name)
+			type = 0
+			type = prop_type.data_type if !prop_type.nil?
+			value = prop.value
+
+			if type == 1
+				value = value == 'true'
+			elsif type == 2
+				value = Integer value rescue value
+			elsif type == 3
+				Float value rescue value
+			end
+
+			obj_data['properties'][prop.name] = value
+		end
+
+		get_redis.set("table_object:#{obj.uuid}", obj_data.to_json)
+	end
+
+	def self.remove_table_object_from_redis(uuid)
+		get_redis.del("table_object:#{uuid}")
+	end
+	
 	def self.get_total_storage(plan, confirmed)
 		storage_unconfirmed = 1000000000 	# 1 GB
       storage_on_free_plan = 2000000000 	# 2 GB
