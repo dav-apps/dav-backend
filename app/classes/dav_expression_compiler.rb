@@ -70,6 +70,53 @@ class DavExpressionCompiler
 					end
 
 					return table
+				when 'get_table_object'
+					uuid = params[:uuid]
+					return nil if !uuid.is_a?(String)
+
+					key = 'table_object:' + uuid
+					obj_json = @vars[:redis].get(key)
+
+					if obj_json.nil?
+						# Get the table object from the database
+						obj = TableObject.find_by(uuid: uuid)
+						return nil if obj.nil?
+
+						# Save the table object in redis
+						obj_data = {
+							'id' => obj.id,
+							'user_id' => obj.user_id,
+							'table_id' => obj.table_id,
+							'file' => obj.file,
+							'etag' => obj.etag,
+							'properties' => Hash.new
+						}
+
+						obj.table_object_properties.each do |prop|
+							prop_type = TablePropertyType.find_by(table_id: obj.table_id, name: prop.name)
+							type = 0
+							type = prop_type.data_type if !prop_type.nil?
+							value = prop.value
+
+							if type == 1
+								value = value == 'true'
+							elsif type == 2
+								value = Integer value rescue value
+							elsif type == 3
+								Float value rescue value
+							end
+
+							obj_data['properties'][prop.name] = value
+						end
+
+						@vars[:redis].set(key, obj_data.to_json)
+						obj_data['uuid'] = uuid
+						return TableObjectHolder.new(obj_data)
+					else
+						obj_data = JSON.parse(obj_json)
+						obj_data['uuid'] = uuid
+						return TableObjectHolder.new(obj_data)
+					end
 				when 'render_json'
 					data = params[:data]
 					status = params[:status]
@@ -334,7 +381,7 @@ class DavExpressionCompiler
 				when 'TableObject.get'
 					uuid = params[:uuid]
 
-					obj = TableObject.find_by(uuid: uuid)
+					obj = _method_call('get_table_object', uuid: uuid)
 					return nil if obj.nil?
 
 					table = _method_call('get_table', id: obj.table_id)
@@ -352,12 +399,12 @@ class DavExpressionCompiler
 						table_object_id: obj.id
 					})
 
-					return TableObjectHolder.new(obj)
+					return obj
 				when 'TableObject.get_file'
 					uuid = params[:uuid]
 
-					obj = TableObject.find_by(uuid: uuid)
-					return nil if obj.nil? || !obj.file
+					obj = _method_call('get_table_object', uuid: uuid)
+					return nil if obj.nil? || !obj.obj.file
 
 					table = _method_call('get_table', id: obj.table_id)
 					app = _method_call('get_app', id: table.app_id)
@@ -369,7 +416,7 @@ class DavExpressionCompiler
 					end
 
 					begin
-						download_result = BlobOperationsService.download_blob(obj)
+						download_result = BlobOperationsService.download_blob(obj.obj)
 						return download_result[1]
 					rescue => e
 						return nil
@@ -379,7 +426,7 @@ class DavExpressionCompiler
 					properties = params[:properties]
 
 					# Get the table object
-					obj = TableObject.find_by(uuid: uuid)
+					obj = _method_call('get_table_object', uuid: uuid)
 
 					# Check if the table object exists
 					if obj.nil?
@@ -387,7 +434,7 @@ class DavExpressionCompiler
 					end
 
 					# Make sure the object is not a file
-					if obj.file
+					if obj.obj.file
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -403,28 +450,13 @@ class DavExpressionCompiler
 					# Update the properties of the table object
 					properties.each do |key, value|
 						next if !value
-						prop = TableObjectProperty.find_by(table_object: obj, name: key)
-
-						if value.length > 0
-							if prop.nil?
-								# Create the property
-								new_prop = TableObjectProperty.new(name: key, value: value, table_object: obj)
-								ValidationService.raise_validation_errors(ValidationService.raise_unexpected_error(!new_prop.save))
-							else
-								# Update the property
-								prop.value = value
-								ValidationService.raise_validation_errors(ValidationService.raise_unexpected_error(!prop.save))
-							end
-						elsif !prop.nil?
-							# Delete the property
-							prop.destroy!
-						end
+						obj[key] = value
 					end
 
 					# Create the TableObjectChange
-					TableObjectChange.create(table_object: obj)
+					TableObjectChange.create(table_object_id: obj.id)
 
-					return TableObjectHolder.new(obj)
+					return obj
 				when 'TableObject.update_file'
 					uuid = params[:uuid]
 					ext = params[:ext]
@@ -432,7 +464,7 @@ class DavExpressionCompiler
 					file = params[:file]
 
 					# Get the table object
-					obj = TableObject.find_by(uuid: uuid)
+					obj = _method_call('get_table_object', uuid: uuid)
 
 					# Check if the table object exists
 					if obj.nil?
@@ -440,7 +472,7 @@ class DavExpressionCompiler
 					end
 
 					# Check if the table object is a file
-					if !obj.file
+					if !obj.obj.file
 						raise RuntimeError, [{\"code\" => 1}].to_json
 					end
 
@@ -454,14 +486,11 @@ class DavExpressionCompiler
 					end
 
 					# Get the properties
-					ext_prop = TableObjectProperty.find_by(table_object: obj, name: Constants::EXT_PROPERTY_NAME)
-					etag_prop = TableObjectProperty.find_by(table_object: obj, name: Constants::ETAG_PROPERTY_NAME)
-					size_prop = TableObjectProperty.find_by(table_object: obj, name: Constants::SIZE_PROPERTY_NAME)
-					type_prop = TableObjectProperty.find_by(table_object: obj, name: Constants::TYPE_PROPERTY_NAME)
+					size = obj[Constants::SIZE_PROPERTY_NAME].to_i
 
 					user = obj.user
 					file_size = file.size
-					old_file_size = size_prop ? size_prop.value.to_i : 0
+					old_file_size = size
 					file_size_diff = file_size - old_file_size
 					free_storage = UtilsService.get_total_storage(user.plan, user.confirmed) - user.used_storage
 
@@ -472,54 +501,30 @@ class DavExpressionCompiler
 
 					begin
 						# Upload the new file
-						blob = BlobOperationsService.upload_blob(obj, StringIO.new(file))
+						blob = BlobOperationsService.upload_blob(obj.obj, StringIO.new(file))
 						etag = blob.properties[:etag]
 						etag = etag[1...etag.size-1]
 					rescue Exception => e
 						raise RuntimeError, [{\"code\" => 4}].to_json
 					end
 
-					# Update or create the properties
-					if ext_prop.nil?
-						ext_prop = TableObjectProperty.new(table_object: obj, name: Constants::EXT_PROPERTY_NAME, value: ext)
-					else
-						ext_prop.value = ext
-					end
-
-					if etag_prop.nil?
-						etag_prop = TableObjectProperty.new(table_object: obj, name: Constants::ETAG_PROPERTY_NAME, value: etag)
-					else
-						etag_prop.value = etag
-					end
-
-					if size_prop.nil?
-						size_prop = TableObjectProperty.new(table_object: obj, name: Constants::SIZE_PROPERTY_NAME, value: file_size)
-					else
-						size_prop.value = file_size
-					end
-
-					if type_prop.nil?
-						type_prop = TableObjectProperty.new(table_object: obj, name: Constants::TYPE_PROPERTY_NAME, value: type)
-					else
-						type_prop.value = type
-					end
+					# Update the properties
+					obj[Constants::EXT_PROPERTY_NAME] = ext
+					obj[Constants::ETAG_PROPERTY_NAME] = etag
+					obj[Constants::SIZE_PROPERTY_NAME] = file_size
+					obj[Constants::TYPE_PROPERTY_NAME] = type
 
 					# Update the used storage
 					UtilsService.update_used_storage(obj.user, app, file_size_diff)
 
-					# Save the properties
-					if !ext_prop.save || !etag_prop.save || !size_prop.save || !type_prop.save
-						raise RuntimeError, [{\"code\" => 5}].to_json
-					end
-
-					return TableObjectHolder.new(obj)
+					return obj
 				when 'TableObject.set_price'
 					uuid = params[:uuid]
 					price = params[:price]
 					currency = params[:currency]
 
 					# Get the table object
-					obj = TableObject.find_by(uuid: uuid)
+					obj = _method_call('get_table_object', uuid: uuid)
 
 					# Check if the table object exists
 					if obj.nil?
@@ -536,12 +541,12 @@ class DavExpressionCompiler
 					end
 
 					# Try to get the price of the table object with the currency
-					obj_price = obj.table_object_prices.find_by(currency: currency.downcase)
+					obj_price = obj.obj.table_object_prices.find_by(currency: currency.downcase)
 
 					if obj_price.nil?
 						# Create a new price
 						obj_price = TableObjectPrice.new(
-							table_object: obj,
+							table_object_id: obj.id,
 							price: price,
 							currency: currency
 						)
@@ -558,7 +563,7 @@ class DavExpressionCompiler
 					currency = params[:currency]
 
 					# Get the table object
-					obj = TableObject.find_by(uuid: uuid)
+					obj = _method_call('get_table_object', uuid: uuid)
 
 					# Check if the table object exists
 					return nil if obj.nil?
@@ -573,7 +578,7 @@ class DavExpressionCompiler
 					end
 
 					# Try to get the price of the table object with the currency
-					obj_price = obj.table_object_prices.find_by(currency: currency.downcase)
+					obj_price = obj.obj.table_object_prices.find_by(currency: currency.downcase)
 					return nil if obj_price.nil?
 					return obj_price.price
 				when 'TableObjectUserAccess.create'
@@ -584,7 +589,7 @@ class DavExpressionCompiler
 					# Check if there is already a TableObjectUserAccess object
 					if table_object_id.is_a?(String)
 						# Get the id of the table object
-						obj = TableObject.find_by(uuid: table_object_id)
+						obj = _method_call('get_table_object', uuid: table_object_id)
 
 						if obj.nil?
 							raise RuntimeError, [{\"code\" => 0}].to_json
@@ -622,7 +627,7 @@ class DavExpressionCompiler
 
 					if table_object_id.is_a?(String)
 						# Get the table object by uuid
-						obj = TableObject.find_by(uuid: table_object_id)
+						obj = _method_call('get_table_object', uuid: table_object_id)
 					else
 						# Get the table object by id
 						obj = TableObject.find_by(id: table_object_id)
@@ -631,6 +636,8 @@ class DavExpressionCompiler
 					if obj.nil?
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
+
+					obj = TableObjectHolder.new(obj) if obj.is_a?(TableObject)
 
 					table = _method_call('get_table', id: obj.table_id)
 
@@ -644,11 +651,11 @@ class DavExpressionCompiler
 					end
 
 					# Try to find the TableObjectCollection
-					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
+					obj_collection = TableObjectCollection.find_by(table_object_id: obj.id, collection: collection)
 
 					if obj_collection.nil?
 						# Create the TableObjectCollection
-						obj_collection = TableObjectCollection.new(table_object: obj, collection: collection)
+						obj_collection = TableObjectCollection.new(table_object_id: obj.id, collection: collection)
 						obj_collection.save
 					end
 
@@ -662,7 +669,7 @@ class DavExpressionCompiler
 
 					if table_object_id.is_a?(String)
 						# Get the table object by uuid
-						obj = TableObject.find_by(uuid: table_object_id)
+						obj = _method_call('get_table_object', uuid: table_object_id)
 					else
 						# Get the table object by id
 						obj = TableObject.find_by(id: table_object_id)
@@ -671,6 +678,8 @@ class DavExpressionCompiler
 					if obj.nil?
 						raise RuntimeError, [{\"code\" => 0}].to_json
 					end
+
+					obj = TableObjectHolder.new(obj) if obj.is_a?(TableObject)
 
 					table = _method_call('get_table', id: obj.table_id)
 
@@ -682,7 +691,7 @@ class DavExpressionCompiler
 					end
 
 					# Find and delete the TableObjectCollection
-					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
+					obj_collection = TableObjectCollection.find_by(table_object_id: obj.id, collection: collection)
 					obj_collection.destroy! if !obj_collection.nil?
 
 					# Create the TableObjectChange
@@ -760,7 +769,7 @@ class DavExpressionCompiler
 							else
 								# Look for properties that contain the property value
 								properties = TableObjectProperty.where(table_object: table_object, name: property_name)
-		
+
 								contains_value = false
 								properties.each do |prop|
 									if prop.value.include? property_value
@@ -1040,6 +1049,7 @@ class DavExpressionCompiler
 		@vars[:dependencies] = Array.new
 		@vars[:apps] = Hash.new
 		@vars[:tables] = Hash.new
+		@vars[:redis] = Redis.new(url: ENV["REDIS_URL"])
 
 		eval props[:code]
 	end
@@ -1059,6 +1069,12 @@ class DavExpressionCompiler
 			when :var
 				# Check usage of []
 				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
+				val = compile_command(command[2])
+				val.strip! if val.is_a?(String)
+
+				if val.is_a?(String) && val.start_with?("if")
+					val = "(#{val})"
+				end
 
 				if !matchdata.nil?
 					matchdata_varname = matchdata["varname"]
@@ -1067,24 +1083,24 @@ class DavExpressionCompiler
 					if !matchdata_value.nil?
 						if matchdata_value[0] == "\"" && matchdata_value[-1] == "\""
 							# value is a string
-							return "#{matchdata_varname}[#{matchdata_value}] = #{compile_command(command[2])}"
+							return "#{matchdata_varname}[#{matchdata_value}] = #{val}"
 						else
 							# value is an expression or var name
-							return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}] = #{compile_command(command[2])}"
+							return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}] = #{val}"
 						end
 					end
 				elsif command[1].to_s.include?('..')
 					parts = command[1].to_s.split('..')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{compile_command(command[2])}"
+					return "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{val}"
 				elsif command[1].to_s.include?('.')
 					parts = command[1].to_s.split('.')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"] = #{compile_command(command[2])}"
+					return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"] = #{val}"
 				else
-					return "#{command[1]} = #{compile_command(command[2])}"
+					return "#{command[1]} = #{val}"
 				end
 			when :return
 				return "return #{compile_command(command[1], true)}"
