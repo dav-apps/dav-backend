@@ -64,7 +64,7 @@ class ApisController < ApplicationController
 
 		cache_response = false
 
-		if api_endpoint.caching && Rails.env.production? && request.headers["Authorization"].nil? && request.method.downcase == "get"
+		if api_endpoint.caching && ENV["USE_API_ENDPOINT_REQUEST_CACHING"] == "true" && request.headers["Authorization"].nil? && request.method.downcase == "get"
 			cache_params = url_params.sort.to_h
 			cache_key = "api_endpoint_request:#{path}"
 
