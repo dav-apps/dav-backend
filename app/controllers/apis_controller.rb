@@ -17,7 +17,9 @@ class ApisController < ApplicationController
 
 		# Find the appropriate api endpoint
 		api_endpoint = ApiEndpoint.find_by(api_slot: slot, method: request.method, path: path)
+
 		url_params = Hash.new
+		url_query_params = Hash.new
 
 		if api_endpoint.nil?
 			# Try to find the appropriate endpoint with a variable in the url
@@ -60,12 +62,13 @@ class ApisController < ApplicationController
 		# Get the url params
 		request.query_parameters.each do |key, value|
 			url_params[key] = value
+			url_query_params[key] = value
 		end
 
 		cache_response = false
 
 		if api_endpoint.caching && ENV["USE_API_ENDPOINT_REQUEST_CACHING"] == "true" && request.headers["Authorization"].nil? && request.method.downcase == "get"
-			cache_params = url_params.sort.to_h
+			cache_params = url_query_params.sort.to_h
 			cache_key = "api_endpoint_request:#{path}"
 
 			cache_params.each do |key, value|
