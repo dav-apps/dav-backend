@@ -1,6 +1,6 @@
 class UtilsService
 	def self.get_redis
-		Redis.new(url: ENV["REDIS_URL"])
+		Redis.new(url: ENV["REDIS_URL"], db: 1)
 	end
 
 	def self.save_table_object_in_redis(obj)
