@@ -74,6 +74,9 @@ class DavExpressionCompiler
 					uuid = params[:uuid]
 					return nil if !uuid.is_a?(String)
 
+					obj = @vars[:table_objects][uuid]
+					return obj if !obj.nil?
+
 					key = 'table_object:' + uuid
 					obj_json = @vars[:redis].get(key)
 
@@ -111,11 +114,17 @@ class DavExpressionCompiler
 
 						@vars[:redis].set(key, obj_data.to_json)
 						obj_data['uuid'] = uuid
-						return TableObjectHolder.new(obj_data)
+
+						obj_holder = TableObjectHolder.new(obj_data)
+						@vars[:table_objects][uuid] = obj_holder
+						return obj_holder
 					else
 						obj_data = JSON.parse(obj_json)
 						obj_data['uuid'] = uuid
-						return TableObjectHolder.new(obj_data)
+
+						obj_holder = TableObjectHolder.new(obj_data)
+						@vars[:table_objects][uuid] = obj_holder
+						return obj_holder
 					end
 				when 'render_json'
 					data = params[:data]
@@ -1049,6 +1058,7 @@ class DavExpressionCompiler
 		@vars[:dependencies] = Array.new
 		@vars[:apps] = Hash.new
 		@vars[:tables] = Hash.new
+		@vars[:table_objects] = Hash.new
 		@vars[:redis] = UtilsService.redis
 
 		eval props[:code]
