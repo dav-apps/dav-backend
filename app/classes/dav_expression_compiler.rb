@@ -1049,7 +1049,7 @@ class DavExpressionCompiler
 		@vars[:dependencies] = Array.new
 		@vars[:apps] = Hash.new
 		@vars[:tables] = Hash.new
-		@vars[:redis] = Redis.new(url: ENV["REDIS_URL"], db: 1)
+		@vars[:redis] = UtilsService.redis
 
 		eval props[:code]
 	end

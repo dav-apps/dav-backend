@@ -1,6 +1,6 @@
 class UtilsService
-	def self.get_redis
-		Redis.new(url: ENV["REDIS_URL"], db: 1)
+	def self.redis
+		@redis ||= Redis.new(url: ENV["REDIS_URL"], db: 1)
 	end
 
 	def self.save_table_object_in_redis(obj)
@@ -30,11 +30,11 @@ class UtilsService
 			obj_data['properties'][prop.name] = value
 		end
 
-		get_redis.set("table_object:#{obj.uuid}", obj_data.to_json)
+		redis.set("table_object:#{obj.uuid}", obj_data.to_json)
 	end
 
 	def self.remove_table_object_from_redis(uuid)
-		get_redis.del("table_object:#{uuid}")
+		redis.del("table_object:#{uuid}")
 	end
 	
 	def self.get_total_storage(plan, confirmed)

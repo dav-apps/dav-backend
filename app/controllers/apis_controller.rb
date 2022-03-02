@@ -1,6 +1,6 @@
 class ApisController < ApplicationController
 	def api_call
-		redis = get_redis
+		redis = UtilsService.redis
 		api_id = params[:id]
 		slot_name = params[:slot]
 		path = params[:path]
