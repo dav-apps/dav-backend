@@ -126,6 +126,28 @@ class DavExpressionCompiler
 						@vars[:table_objects][uuid] = obj_holder
 						return obj_holder
 					end
+				when 'get_table_objects_by_table'
+					table_id = params[:table_id]
+					return [] if !table_id.is_a?(Integer)
+
+					objs = @vars[:table_objects_table_id][table_id]
+					return objs if !objs.nil?
+
+					objs = TableObject.where(table_id: table_id)
+					@vars[:table_objects_table_id][table_id] = objs
+					return objs
+				when 'get_table_objects_by_table_and_user'
+					table_id = params[:table_id]
+					user_id = params[:user_id]
+					return [] if !table_id.is_a?(Integer) || !user_id.is_a?(Integer)
+					key = table_id.to_s + ':' + user_id.to_s
+
+					objs = @vars[:table_objects_user_id_table_id][key]
+					return objs if !objs.nil?
+
+					objs = TableObject.where(user_id: user_id, table_id: table_id)
+					@vars[:table_objects_user_id_table_id][key] = objs
+					return objs
 				when 'render_json'
 					data = params[:data]
 					status = params[:status]
@@ -743,7 +765,7 @@ class DavExpressionCompiler
 					objects = Array.new
 
 					if all_user
-						TableObject.where(table_id: table_id).each do |table_object|
+						_method_call('get_table_objects_by_table', table_id: table_id).each do |table_object|
 							if exact
 								# Look for the exact property value
 								property = TableObjectProperty.find_by(table_object: table_object, name: property_name, value: property_value)
@@ -770,7 +792,7 @@ class DavExpressionCompiler
 							table_id: table_id
 						})
 					else
-						TableObject.where(user_id: user_id, table_id: table_id).each do |table_object|
+						_method_call('get_table_objects_by_table_and_user', table_id: table_id, user_id: user_id).each do |table_object|
 							if exact
 								# Look for the exact property value
 								property = TableObjectProperty.find_by(table_object: table_object, name: property_name, value: property_value)
@@ -1059,6 +1081,8 @@ class DavExpressionCompiler
 		@vars[:apps] = Hash.new
 		@vars[:tables] = Hash.new
 		@vars[:table_objects] = Hash.new
+		@vars[:table_objects_table_id] = Hash.new
+		@vars[:table_objects_user_id_table_id] = Hash.new
 		@vars[:redis] = UtilsService.redis
 
 		eval props[:code]
