@@ -126,6 +126,32 @@ class DavExpressionCompiler
 						@vars[:table_objects][uuid] = obj_holder
 						return obj_holder
 					end
+				when 'get_table_object_properties'
+					user_id = params[:user_id]
+					table_id = params[:table_id]
+					table_object_uuid = params[:table_object_uuid]
+					name = params[:name]
+					return nil if !user_id.is_a?(Integer)
+					return nil if !table_id.is_a?(Integer)
+					return nil if !table_object_uuid.is_a?(String) && !table_object_uuid.nil?
+					return nil if !name.is_a?(String) && !name.nil?
+
+					if user_id <= 0
+						user_id_str = '*'
+					else
+						user_id_str = user_id.to_s
+					end
+
+					if table_id <= 0
+						table_id_str = '*'
+					else
+						table_id_str = table_id.to_s
+					end
+
+					table_object_uuid = '*' if table_object_uuid.nil?
+					name = '*' if name.nil?
+
+					return @vars[:redis].keys('table_object_property:' + user_id_str + ':' + table_id_str + ':' + table_object_uuid + ':' + name + ':*')
 				when 'render_json'
 					data = params[:data]
 					status = params[:status]
@@ -157,6 +183,14 @@ class DavExpressionCompiler
 					comparing_array = params[:comparing_array]
 					intersecting_array = original_array & comparing_array
 					return intersecting_array.size == comparing_array.size
+				when 'convert_value_to_data_type'
+					value = params[:value]
+					data_type = params[:data_type]
+
+					return value == 'true' if data_type == 1
+					return Integer value rescue value if data_type == 2
+					return Float value rescue value if data_type == 3
+					return value
 				when 'User.get'
 					id = params[:id]
 					return User.find_by(id: id)
@@ -739,69 +773,51 @@ class DavExpressionCompiler
 					property_name = params[:property_name]
 					property_value = params[:property_value]
 					exact = params[:exact].nil? ? true : params[:exact]
-
-					objects = Array.new
+					objects = Hash.new
 
 					if all_user
-						TableObject.where(table_id: table_id).each do |table_object|
-							if exact
-								# Look for the exact property value
-								property = TableObjectProperty.find_by(table_object: table_object, name: property_name, value: property_value)
-								objects.push(table_object) if property
-							else
-								# Look for the properties that contain the property value
-								properties = TableObjectProperty.where(table_object: table_object, name: property_name)
-
-								contains_value = false
-								properties.each do |prop|
-									if prop.value.include? property_value
-										contains_value = true
-										break
-									end
-								end
-
-								objects.push(table_object) if contains_value
-							end
-						end
-
-						# Add the dependency to the dependencies of the response
-						@vars[:dependencies].push({
-							name: 'TableObject.find_by_property',
-							table_id: table_id
-						})
+						property_keys = _method_call('get_table_object_properties', user_id: 0, table_id: table_id, table_object_uuid: nil, name: property_name)
 					else
-						TableObject.where(user_id: user_id, table_id: table_id).each do |table_object|
-							if exact
-								# Look for the exact property value
-								property = TableObjectProperty.find_by(table_object: table_object, name: property_name, value: property_value)
-								objects.push(table_object) if !property.nil?
-							else
-								# Look for properties that contain the property value
-								properties = TableObjectProperty.where(table_object: table_object, name: property_name)
-
-								contains_value = false
-								properties.each do |prop|
-									if prop.value.include? property_value
-										contains_value = true
-										break
-									end
-								end
-
-								objects.push(table_object) if contains_value
-							end
-						end
-
-						# Add the dependency to the dependencies of the response
-						@vars[:dependencies].push({
-							name: 'TableObject.find_by_property',
-							user_id: user_id,
-							table_id: table_id
-						})
+						property_keys = _method_call('get_table_object_properties', user_id: user_id, table_id: table_id, table_object_uuid: nil, name: property_name)
 					end
 
-					holders = Array.new
-					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
-					return holders
+					if exact
+						property_keys.each do |key|
+							value = @vars[:redis].get(key)
+							value = _method_call('convert_value_to_data_type', value: value, data_type: key.split(':').last.to_i)
+
+							if value == property_value
+								# Get the table object id from the key
+								table_object_uuid = key.split(':')[3]
+								next if objects.include?(table_object_uuid)
+
+								# Add the table object to the list of objects
+								obj = _method_call('get_table_object', uuid: table_object_uuid)
+								next if obj.nil?
+
+								objects[table_object_uuid] = obj
+							end
+						end
+					else
+						property_keys.each do |key|
+							value = @vars[:redis].get(key)
+							value = _method_call('convert_value_to_data_type', value: value, data_type: key.split(':').last.to_i)
+
+							if value.include?(property_value)
+								# Get the table object id from the key
+								table_object_uuid = key.split(':')[3]
+								next if objects.include?(table_object_uuid)
+
+								# Add the table object to the list of objects
+								obj = _method_call('get_table_object', uuid: table_object_uuid)
+								next if obj.nil?
+
+								objects[table_object_uuid] = obj
+							end
+						end
+					end
+
+					return objects.values
 				when 'Purchase.create'
 					user_id = params[:user_id]
 					provider_name = params[:provider_name]
