@@ -13,7 +13,10 @@ class UtilsService
 			'properties' => Hash.new
 		}
 
-		obj.table_object_properties.each do |prop|
+		# Find the existing properties
+		property_keys = redis.keys("table_object_property:#{obj.user_id}:#{obj.table_id}:#{obj.uuid}:*")
+
+		TableObjectProperty.where(table_object_id: obj.id).each do |prop|
 			prop_type = TablePropertyType.find_by(table_id: obj.table_id, name: prop.name)
 			type = 0
 			type = prop_type.data_type if !prop_type.nil?
@@ -28,15 +31,33 @@ class UtilsService
 			end
 
 			obj_data['properties'][prop.name] = value
+
+			# Save the property
+			key = "table_object_property:#{obj.user_id}:#{obj.table_id}:#{obj.uuid}:#{prop.name}:#{type}"
+			redis.set(key, value)
+			property_keys.delete(key)
 		end
 
 		redis.set("table_object:#{obj.uuid}", obj_data.to_json)
+
+		# Remove old properties
+		property_keys.each do |key|
+			redis.del(key)
+		end
 	end
 
-	def self.remove_table_object_from_redis(uuid)
-		redis.del("table_object:#{uuid}")
+	def self.remove_table_object_from_redis(obj)
+		# Remove the table object
+		redis.del("table_object:#{obj.uuid}")
+
+		# Remove the properties of the table object
+		property_keys = redis.keys("table_object_property:#{obj.user_id}:#{obj.table_id}:#{obj.uuid}:*")
+
+		property_keys.each do |key|
+			redis.del(key)
+		end
 	end
-	
+
 	def self.get_total_storage(plan, confirmed)
 		storage_unconfirmed = 1000000000 	# 1 GB
       storage_on_free_plan = 2000000000 	# 2 GB

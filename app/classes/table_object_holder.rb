@@ -28,8 +28,7 @@ class TableObjectHolder
 			@obj = obj
 
 			# Try to get the table object from redis
-			redis = UtilsService.redis
-			obj_data_json = redis.get("table_object:#{obj.uuid}")
+			obj_data_json = UtilsService.redis.get("table_object:#{obj.uuid}")
 
 			if obj_data_json.nil?
 				obj.table_object_properties.each do |prop|
@@ -121,6 +120,10 @@ class TableObjectHolder
 
 			# Delete the property
 			prop.destroy!
+
+			# Remove the property from @properties
+			prop = @properties.find { |p| p.name == name }
+			@properties.delete(prop) if !prop.nil?
 		else
 			return value if prop.value == value
 			save_new_value = true
@@ -158,9 +161,8 @@ class TableObjectHolder
 		# Create the TableObjectChange
 		TableObjectChange.create(table_object: @obj)
 
-		# Remove the table object from redis
-		redis = UtilsService.redis
-		redis.del("table_object:#{@obj.uuid}")
+		# Update the table object in redis
+		UtilsService.save_table_object_in_redis(@obj)
 
 		return value
 	end

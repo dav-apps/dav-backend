@@ -405,7 +405,7 @@ class TableObjectsController < ApplicationController
 		table_object.destroy!
 
 		# Remove the table object from redis
-		UtilsService.remove_table_object_from_redis(table_object.uuid)
+		UtilsService.remove_table_object_from_redis(table_object)
 
 		# Update the TableEtag
 		UtilsService.update_table_etag(session.user, table_object.table)
