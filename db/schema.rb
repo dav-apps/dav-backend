@@ -10,13 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_03_05_193115) do
-
-  create_table "api_endpoint_request_cache_params", charset: "utf8", force: :cascade do |t|
-    t.bigint "api_endpoint_request_cache_id"
-    t.string "name"
-    t.string "value"
-  end
+ActiveRecord::Schema.define(version: 2022_03_05_193641) do
 
   create_table "api_endpoint_request_caches", charset: "utf8", force: :cascade do |t|
     t.bigint "api_endpoint_id"
