@@ -9,9 +9,7 @@ class DavExpressionRunner
 		@functions = Hash.new
 		@errors = Array.new
 		@request = props[:request]
-		@response = {
-			dependencies: Array.new
-		}
+		@response = Hash.new
 
 		# Parse and execute the commands
 		@parser = Sexpistol.new
@@ -443,21 +441,8 @@ class DavExpressionRunner
 					user_id = execute_command(command[2], vars)
 					if user_id.nil?
 						objects = table.table_objects.to_a
-
-						# Add the dependency to the dependencies of the response
-						@response[:dependencies].push({
-							name: "Table.get_table_objects",
-							table_id: table.id
-						})
 					else
 						objects = table.table_objects.where(user_id: user_id.to_i).to_a
-
-						# Add the dependency to the dependencies of the response
-						@response[:dependencies].push({
-							name: "Table.get_table_objects",
-							user_id: user_id.to_i,
-							table_id: table.id
-						})
 					end
 
 					holders = Array.new
@@ -628,12 +613,6 @@ class DavExpressionRunner
 						@errors.push(error)
 						return @errors
 					end
-
-					# Add the dependency to the dependencies of the response
-					@response[:dependencies].push({
-						name: "TableObject.get",
-						table_object_id: obj.id
-					})
 
 					return TableObjectHolder.new(obj)
 				when "TableObject.get_file"	# uuid
@@ -1005,12 +984,6 @@ class DavExpressionRunner
 					if collection.nil?
 						return Array.new
 					else
-						# Add the dependency to the dependencies of the response
-						@response[:dependencies].push({
-							name: "Collection.get_table_objects",
-							collection_id: collection.id
-						})
-
 						holders = Array.new
 						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 						return holders
@@ -1046,12 +1019,6 @@ class DavExpressionRunner
 								objects.push(table_object) if contains_value
 							end
 						end
-
-						# Add the dependency to the dependencies of the response
-						@response[:dependencies].push({
-							name: "TableObject.find_by_property",
-							table_id: table_id
-						})
 					else
 						TableObject.where(user_id: user_id, table_id: table_id).each do |table_object|
 							if exact
@@ -1073,13 +1040,6 @@ class DavExpressionRunner
 								objects.push(table_object) if contains_value
 							end
 						end
-
-						# Add the dependency to the dependencies of the response
-						@response[:dependencies].push({
-							name: "TableObject.find_by_property",
-							user_id: user_id,
-							table_id: table_id
-						})
 					end
 
 					holders = Array.new

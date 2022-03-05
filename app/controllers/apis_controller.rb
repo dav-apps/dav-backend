@@ -138,7 +138,7 @@ class ApisController < ApplicationController
 		if cache_response && result[:status] == 200
 			# Save the response in the cache
 			redis.set(cache_key, result[:data].to_json)
-			redis.expire(cache_key, 172800)	# Expire in 2 days
+			redis.expire(cache_key, 1.day.to_i)
 		end
 
 		# Send the result
