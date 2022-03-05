@@ -4,11 +4,6 @@ class TasksController < ApplicationController
 		head 204, content_type: "application/json"
 	end
 
-	def update_api_caches
-		UpdateApiCachesJob.perform_later
-		head 204, content_type: "application/json"
-	end
-
 	def send_notifications
 		SendNotificationsJob.perform_later
 		head 204, content_type: "application/json"
