@@ -2,17 +2,17 @@
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
 #
-# This file is the source Rails uses to define your schema when running `rails
-# db:schema:load`. When creating a new database, `rails db:schema:load` tends to
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
 # be faster and is potentially less error prone than running all of your
 # migrations from scratch. Old migrations may fail to apply correctly if those
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_01_19_175524) do
+ActiveRecord::Schema.define(version: 2022_03_05_191919) do
 
-  create_table "api_endpoint_request_cache_dependencies", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
+  create_table "api_endpoint_request_cache_dependencies", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.bigint "table_object_id"
@@ -23,13 +23,13 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "api_endpoint_request_cache_params", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_endpoint_request_cache_params", charset: "utf8", force: :cascade do |t|
     t.bigint "api_endpoint_request_cache_id"
     t.string "name"
     t.string "value"
   end
 
-  create_table "api_endpoint_request_caches", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_endpoint_request_caches", charset: "utf8", force: :cascade do |t|
     t.bigint "api_endpoint_id"
     t.text "response"
     t.datetime "created_at", precision: 6, null: false
@@ -37,7 +37,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.boolean "old", default: true
   end
 
-  create_table "api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "path"
     t.string "method"
@@ -47,20 +47,20 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "api_env_vars", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_env_vars", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "name"
     t.string "value"
     t.string "class_name"
   end
 
-  create_table "api_errors", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_errors", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.integer "code"
     t.string "message"
   end
 
-  create_table "api_functions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_functions", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "name"
     t.string "params"
@@ -69,21 +69,21 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "api_slots", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "api_slots", charset: "utf8", force: :cascade do |t|
     t.bigint "api_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "apis", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "apis", charset: "utf8", force: :cascade do |t|
     t.bigint "app_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "app_user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "app_user_activities", charset: "utf8", force: :cascade do |t|
     t.bigint "app_id"
     t.datetime "time"
     t.integer "count_daily", default: 0
@@ -92,7 +92,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.integer "count_weekly", default: 0
   end
 
-  create_table "app_users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "app_users", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.bigint "used_storage", default: 0
@@ -101,7 +101,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "apps", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "apps", charset: "utf8", force: :cascade do |t|
     t.bigint "dev_id"
     t.string "name"
     t.string "description"
@@ -113,21 +113,21 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "collections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "collections", charset: "utf8", force: :cascade do |t|
     t.bigint "table_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "compiled_api_endpoints", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "compiled_api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_endpoint_id"
     t.text "code"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "devs", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "devs", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "api_key"
     t.string "secret_key"
@@ -136,7 +136,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "notifications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "notifications", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "uuid"
@@ -149,14 +149,14 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
 
-  create_table "providers", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "providers", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "stripe_account_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "purchases", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "purchases", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "payment_intent_id"
     t.string "provider_name"
@@ -172,7 +172,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.index ["uuid"], name: "index_purchases_on_uuid", unique: true
   end
 
-  create_table "sessions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "sessions", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "token"
@@ -187,7 +187,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.index ["token"], name: "index_sessions_on_token", unique: true
   end
 
-  create_table "table_etags", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
+  create_table "table_etags", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.string "etag"
@@ -195,46 +195,38 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "table_object_changes", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
-    t.bigint "user_id"
-    t.bigint "table_id"
+  create_table "table_object_collections", charset: "utf8", force: :cascade do |t|
     t.bigint "table_object_id"
     t.bigint "collection_id"
     t.datetime "created_at", precision: 6, null: false
   end
 
-  create_table "table_object_collections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
-    t.bigint "table_object_id"
-    t.bigint "collection_id"
-    t.datetime "created_at", precision: 6, null: false
-  end
-
-  create_table "table_object_prices", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_object_prices", charset: "utf8", force: :cascade do |t|
     t.bigint "table_object_id"
     t.integer "price", default: 0
     t.string "currency", default: "eur"
   end
 
-  create_table "table_object_properties", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_object_properties", charset: "utf8", force: :cascade do |t|
     t.bigint "table_object_id"
     t.string "name"
     t.text "value"
   end
 
-  create_table "table_object_purchases", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_object_purchases", charset: "utf8", force: :cascade do |t|
     t.bigint "table_object_id"
     t.bigint "purchase_id"
     t.datetime "created_at", precision: 6, null: false
   end
 
-  create_table "table_object_user_accesses", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_object_user_accesses", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_object_id"
     t.bigint "table_alias"
     t.datetime "created_at", precision: 6, null: false
   end
 
-  create_table "table_objects", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_objects", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.string "uuid"
@@ -245,20 +237,20 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
   end
 
-  create_table "table_property_types", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "table_property_types", charset: "utf8", force: :cascade do |t|
     t.bigint "table_id"
     t.string "name"
     t.integer "data_type", default: 0
   end
 
-  create_table "tables", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "tables", charset: "utf8", force: :cascade do |t|
     t.bigint "app_id"
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "user_activities", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "user_activities", charset: "utf8", force: :cascade do |t|
     t.datetime "time"
     t.integer "count_daily", default: 0
     t.integer "count_monthly", default: 0
@@ -266,7 +258,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.integer "count_weekly", default: 0
   end
 
-  create_table "user_profile_images", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "user_profile_images", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "ext"
     t.string "mime_type"
@@ -275,7 +267,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "users", charset: "utf8", force: :cascade do |t|
     t.string "email"
     t.string "first_name"
     t.string "password_digest"
@@ -295,7 +287,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "web_push_subscriptions", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "web_push_subscriptions", charset: "utf8", force: :cascade do |t|
     t.bigint "session_id"
     t.string "uuid"
     t.text "endpoint"
@@ -305,7 +297,7 @@ ActiveRecord::Schema.define(version: 2022_01_19_175524) do
     t.index ["uuid"], name: "index_web_push_subscriptions_on_uuid", unique: true
   end
 
-  create_table "websocket_connections", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
+  create_table "websocket_connections", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "token", null: false
