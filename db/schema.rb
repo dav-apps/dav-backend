@@ -10,15 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_03_05_193641) do
-
-  create_table "api_endpoint_request_caches", charset: "utf8", force: :cascade do |t|
-    t.bigint "api_endpoint_id"
-    t.text "response"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.boolean "old", default: true
-  end
+ActiveRecord::Schema.define(version: 2022_03_05_195207) do
 
   create_table "api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
