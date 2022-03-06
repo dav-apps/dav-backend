@@ -499,9 +499,6 @@ class DavExpressionRunner
 						prop.save
 					end
 
-					# Create the TableObjectChange
-					TableObjectChange.create(table_object: obj)
-
 					# Return the table object
 					return TableObjectHolder.new(obj)
 				when "TableObject.create_file"	# user_id, table_id, ext, type, file
@@ -679,9 +676,6 @@ class DavExpressionRunner
 							prop.destroy!
 						end
 					end
-
-					# Create the TableObjectChange
-					TableObjectChange.create(table_object: obj)
 
 					return TableObjectHolder.new(obj)
 				when "TableObject.update_file"	# uuid, ext, type, file
@@ -926,9 +920,6 @@ class DavExpressionRunner
 						obj_collection.save
 					end
 
-					# Create the TableObjectChange
-					TableObjectChange.create(collection: collection)
-
 					return obj_collection
 				when "Collection.remove_table_object"	# collection_name, table_object_id
 					error = Hash.new
@@ -961,9 +952,6 @@ class DavExpressionRunner
 					# Find and delete the TableObjectCollection
 					obj_collection = TableObjectCollection.find_by(table_object: obj, collection: collection)
 					obj_collection.destroy! if !obj_collection.nil?
-
-					# Create the TableObjectChange
-					TableObjectChange.create(collection: collection)
 				when "Collection.get_table_objects"	# table_id, collection_name
 					error = Hash.new
 					table_id = execute_command(command[1], vars)

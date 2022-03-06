@@ -158,9 +158,6 @@ class TableObjectHolder
 		# Update the local values
 		@values[name] = value
 
-		# Create the TableObjectChange
-		TableObjectChange.create(table_object: @obj)
-
 		# Update the table object in redis
 		UtilsService.save_table_object_in_redis(@obj)
 

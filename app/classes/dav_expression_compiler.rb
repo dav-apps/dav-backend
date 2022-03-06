@@ -311,9 +311,6 @@ class DavExpressionCompiler
 						prop.save
 					end
 
-					# Create the TableObjectChange
-					TableObjectChange.create(table_object: obj)
-
 					# Return the table object
 					return TableObjectHolder.new(obj)
 				when 'TableObject.create_file'
@@ -475,9 +472,6 @@ class DavExpressionCompiler
 						next if !value
 						obj[key] = value
 					end
-
-					# Create the TableObjectChange
-					TableObjectChange.create(table_object_id: obj.id)
 
 					return obj
 				when 'TableObject.update_file'
@@ -682,9 +676,6 @@ class DavExpressionCompiler
 						obj_collection.save
 					end
 
-					# Create the TableObjectChange
-					TableObjectChange.create(collection: collection)
-
 					return obj_collection
 				when 'Collection.remove_table_object'
 					collection_name = params[:collection_name]
@@ -716,9 +707,6 @@ class DavExpressionCompiler
 					# Find and delete the TableObjectCollection
 					obj_collection = TableObjectCollection.find_by(table_object_id: obj.id, collection: collection)
 					obj_collection.destroy! if !obj_collection.nil?
-
-					# Create the TableObjectChange
-					TableObjectChange.create(collection: collection)
 				when 'Collection.get_table_objects'
 					table_id = params[:table_id]
 					collection_name = params[:collection_name]
