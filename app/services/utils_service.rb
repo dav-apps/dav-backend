@@ -1,6 +1,12 @@
 class UtilsService
 	def self.redis
-		@redis ||= Redis.new(url: ENV["REDIS_URL"], db: 1)
+		@redis ||= Redis.new(
+			url: ENV["REDIS_URL"],
+			db: 1,
+			:reconnect_attempts => 10,
+			:reconnect_delay => 1,
+			:reconnect_delay_max => 5
+		)
 	end
 
 	def self.save_table_object_in_redis(obj)
