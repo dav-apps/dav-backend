@@ -728,6 +728,27 @@ class DavExpressionCompiler
 						collection.table_objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 						return holders
 					end
+				when 'Collection.get_table_object_uuids'
+					table_id = params[:table_id]
+					collection_name = params[:collection_name]
+
+					# Try to find the table
+					table = _method_call('get_table', id: table_id)
+
+					if table.nil?
+						raise RuntimeError, [{\"code\" => 0}].to_json
+					end
+
+					# Try to find the collection
+					collection = Collection.find_by(name: collection_name, table: table)
+
+					if collection.nil?
+						return Array.new
+					else
+						uuids = Array.new
+						collection.table_objects.each { |obj| uuids.push(obj.uuid) }
+						return uuids
+					end
 				when 'TableObject.find_by_property'
 					all_user = params[:user_id] == \"*\"
 					user_id = all_user ? -1 : params[:user_id]
@@ -1360,6 +1381,11 @@ class DavExpressionCompiler
 					)"
 				when "Collection.get_table_objects"
 					return "_method_call('Collection.get_table_objects',
+						table_id: #{compile_command(command[1], true)},
+						collection_name: #{compile_command(command[2], true)}
+					)"
+				when "Collection.get_table_object_uuids"
+					return "_method_call('Collection.get_table_object_uuids',
 						table_id: #{compile_command(command[1], true)},
 						collection_name: #{compile_command(command[2], true)}
 					)"
