@@ -315,13 +315,15 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
-				(var list (list 1 2))
+				(var list (list 1 2 3))
 
-				(list.push 3)
+				(list.push 4)
 
 				(if (list.contains 1) (
-					(list.push 4)
+					(list.push 5)
 				))
+
+				(list.pop)
 
 				(var result 0)
 
@@ -341,14 +343,16 @@ class DavExpressionRunnerTest < ActiveSupport::TestCase
 			api_slot: api_slots(:pocketlibApiMaster),
 			vars: Hash.new,
 			commands: '
-				(var hash (hash (root (list 1 2))))
+				(var hash (hash (root (list 1 2 3))))
 				(var listname "root")
 
-				(hash["root"].push 3)
+				(hash["root"].push 4)
 
 				(if (hash["root"].contains 1) (
-					(hash["root"].push 4)
+					(hash["root"].push 5)
 				))
+
+				(hash["root"].pop)
 
 				(var result 0)
 

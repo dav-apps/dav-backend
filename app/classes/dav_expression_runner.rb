@@ -1383,6 +1383,8 @@ class DavExpressionRunner
 								var.push(result) if result != nil
 								i += 1
 							end
+						elsif function_name == "pop"
+							return var.pop
 						elsif function_name == "contains"
 							return var.include?(execute_command(command[1], vars))
 						elsif function_name == "contains_all"
