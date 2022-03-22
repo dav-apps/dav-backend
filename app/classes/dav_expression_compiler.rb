@@ -1079,7 +1079,7 @@ class DavExpressionCompiler
 			when :var
 				# Check usage of []
 				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
-				val = compile_command(command[2])
+				val = compile_command(command[2], true)
 				val.strip! if val.is_a?(String)
 
 				if val.is_a?(String) && val.start_with?("if")
@@ -1093,25 +1093,29 @@ class DavExpressionCompiler
 					if !matchdata_value.nil?
 						if matchdata_value[0] == "\"" && matchdata_value[-1] == "\""
 							# value is a string
-							return "#{matchdata_varname}[#{matchdata_value}] = #{val}"
+							result = "#{matchdata_varname}[#{matchdata_value}] = #{val}"
 						else
 							# value is an expression or var name
-							return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}] = #{val}"
+							result = "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym, true)}] = #{val}"
 						end
 					end
 				elsif command[1].to_s.include?('..')
 					parts = command[1].to_s.split('..')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{val}"
+					result = "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{val}"
 				elsif command[1].to_s.include?('.')
 					parts = command[1].to_s.split('.')
 					last_part = parts.pop
 
-					return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"] = #{val}"
+					result = "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"] = #{val}"
 				else
-					return "#{command[1]} = #{val}"
+					result = "#{command[1]} = #{val}"
 				end
+
+				result += "\nreturn @vars[:response] if !@vars[:response].nil?" if !nested
+
+				return result
 			when :return
 				return "return #{compile_command(command[1], true)}"
 			when :hash
@@ -1227,7 +1231,7 @@ class DavExpressionCompiler
 				i = 0
 				command[2].each do |parameter|
 					result += ", " if i != 0
-					result += compile_command(parameter, true).to_s
+					result += compile_command(parameter).to_s
 					i += 1
 				end
 
