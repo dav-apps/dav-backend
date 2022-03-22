@@ -55,7 +55,11 @@ tables = Table.create([
 	{name: "SecondTestTable", app: apps[4]},
 	# PocketLib tables
 	{name: "StoreBookSeries", app: apps[3]},
-	{name: "StoreBookSeriesName", app: apps[3]}
+	{name: "StoreBookSeriesName", app: apps[3]},
+	{name: "BookOrder", app: apps[3]},
+	{name: "StoreBookRelease", app: apps[3]},
+	{name: "StoreBookCoverItem", app: apps[3]},
+	{name: "StoreBookFileItem", app: apps[3]}
 ])
 
 sessions = Session.create([
