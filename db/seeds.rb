@@ -59,7 +59,8 @@ tables = Table.create([
 	{name: "BookOrder", app: apps[3]},
 	{name: "StoreBookRelease", app: apps[3]},
 	{name: "StoreBookCoverItem", app: apps[3]},
-	{name: "StoreBookFileItem", app: apps[3]}
+	{name: "StoreBookFileItem", app: apps[3]},
+	{name: "AuthorProfileImageItem", app: apps[3]}
 ])
 
 sessions = Session.create([
