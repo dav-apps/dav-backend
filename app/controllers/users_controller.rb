@@ -392,12 +392,12 @@ class UsersController < ApplicationController
 
 		# Upload the file
 		begin
-			blob = BlobOperationsService.upload_profile_image(user, request.body)
+			upload_result = BlobOperationsService.upload_profile_image(user, request.body, image.mime_type)
 		rescue => e
 			ValidationService.raise_unexpected_error
 		end
 
-		etag = blob.properties[:etag]
+		etag = upload_result.etag
 
 		user_profile_image.ext = image.type.downcase
 		user_profile_image.mime_type = image.mime_type

@@ -135,7 +135,7 @@ class TableObjectsController < ApplicationController
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
 			change: 0,
-			access_token_md5: (Digest::MD5.new << session.token).hexdigest
+			access_token_md5: UtilsService.generate_md5(session.token)
 		)
 
 		# Return the data
@@ -340,7 +340,7 @@ class TableObjectsController < ApplicationController
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
 			change: 1,
-			access_token_md5: (Digest::MD5.new << session.token).hexdigest
+			access_token_md5: UtilsService.generate_md5(session.token)
 		)
 
 		result = {
@@ -391,10 +391,7 @@ class TableObjectsController < ApplicationController
 
 		# Delete the file if there is one
 		if table_object.file
-			begin
-				BlobOperationsService.delete_blob(table_object)
-			rescue => e
-			end
+			BlobOperationsService.delete_blob(table_object)
 
 			# Update the used storage
 			size_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::SIZE_PROPERTY_NAME)
@@ -415,7 +412,7 @@ class TableObjectsController < ApplicationController
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
 			change: 2,
-			access_token_md5: (Digest::MD5.new << session.token).hexdigest
+			access_token_md5: UtilsService.generate_md5(session.token)
 		)
 
 		head 204, content_type: "application/json"
@@ -427,10 +424,10 @@ class TableObjectsController < ApplicationController
 		access_token = get_auth
 		content_type = get_content_type
 		uuid = params[:uuid]
-		
+
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_supported(content_type))
-		
+
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
@@ -456,12 +453,12 @@ class TableObjectsController < ApplicationController
 
 		# Upload the file
 		begin
-			blob = BlobOperationsService.upload_blob(table_object, request.body)
+			upload_result = BlobOperationsService.upload_blob(table_object, request.body, content_type)
 		rescue => e
 			ValidationService.raise_unexpected_error
 		end
 
-		etag = blob.properties[:etag]
+		etag = upload_result.etag
 		etag = etag[1...etag.size - 1]
 
 		# Set the size property
@@ -520,7 +517,7 @@ class TableObjectsController < ApplicationController
 			"#{session.user.id},#{session.app.id}",
 			uuid: table_object.uuid,
 			change: 1,
-			access_token_md5: (Digest::MD5.new << session.token).hexdigest
+			access_token_md5: UtilsService.generate_md5(session.token)
 		)
 
 		# Return the data
@@ -579,6 +576,8 @@ class TableObjectsController < ApplicationController
 		rescue => e
 			ValidationService.raise_table_object_has_no_file
 		end
+
+		ValidationService.raise_table_object_has_no_file if content.nil? || content.length == 0
 
 		# Get the ext and type properties
 		ext_prop = TableObjectProperty.find_by(table_object: table_object, name: Constants::EXT_PROPERTY_NAME)

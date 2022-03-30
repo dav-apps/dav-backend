@@ -1550,7 +1550,7 @@ describe TableObjectsController do
 		# Etag property
 		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
 		assert_not_nil(etag_property)
-		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(blob.etag[1...blob.etag.size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob
@@ -1607,7 +1607,7 @@ describe TableObjectsController do
 		# Etag property
 		etag_property = TableObjectProperty.find_by(table_object: table_object, name: Constants::ETAG_PROPERTY_NAME)
 		assert_not_nil(etag_property)
-		assert_equal(blob.properties[:etag][1...blob.properties[:etag].size - 1], etag_property.value)
+		assert_equal(blob.etag[1...blob.etag.size - 1], etag_property.value)
 		assert_equal(etag_property.value, res["properties"]["etag"])
 
 		# Delete the blob

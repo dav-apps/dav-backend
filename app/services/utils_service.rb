@@ -216,4 +216,16 @@ class UtilsService
 		table_etag.save
 		return table_etag.etag
 	end
+
+	def self.generate_md5(data)
+		content = data
+
+		if data.is_a?(StringIO)
+			content = data.string
+		elsif data.is_a?(File)
+			content = File.open(data, "rb").read
+		end
+
+		(Digest::MD5.new << content).hexdigest
+	end
 end
