@@ -264,6 +264,30 @@ class DavExpressionCompiler
 					objects.each { |obj| holders.push(TableObjectHolder.new(obj)) }
 
 					return holders
+				when 'Table.get_table_object_uuids'
+					id = params[:id]
+					user_id = params[:user_id]
+
+					table = _method_call('get_table', id: id)
+					return nil if !table
+
+					table_app = _method_call('get_app', id: table.app_id)
+					api_app = _method_call('get_app', id: @vars[:api_slot].api.app_id)
+
+					if table_app != api_app
+						# Action not allowed error
+						raise RuntimeError, [{\"code\" => 1}].to_json
+					end
+
+					if user_id.nil?
+						objects = table.table_objects.to_a
+					else
+						objects = table.table_objects.where(user_id: user_id.to_i).to_a
+					end
+
+					uuids = Array.new
+					objects.each { |obj| uuids.push(obj.uuid) }
+					return uuids
 				when 'TableObject.create'
 					user_id = params[:user_id]
 					table_id = params[:table_id]
@@ -1099,11 +1123,6 @@ class DavExpressionCompiler
 							result = "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym, true)}] = #{val}"
 						end
 					end
-				elsif command[1].to_s.include?('..')
-					parts = command[1].to_s.split('..')
-					last_part = parts.pop
-
-					result = "#{compile_command(parts.join('..').to_sym, true)}[\"#{last_part}\"] = #{val}"
 				elsif command[1].to_s.include?('.')
 					parts = command[1].to_s.split('.')
 					last_part = parts.pop
@@ -1319,6 +1338,11 @@ class DavExpressionCompiler
 					)"
 				when "Table.get_table_objects"
 					return "_method_call('Table.get_table_objects',
+						id: #{compile_command(command[1], true)},
+						user_id: #{compile_command(command[2], true)}
+					)"
+				when "Table.get_table_object_uuids"
+					return "_method_call('Table.get_table_object_uuids',
 						id: #{compile_command(command[1], true)},
 						user_id: #{compile_command(command[2], true)}
 					)"
@@ -1567,8 +1591,8 @@ class DavExpressionCompiler
 			return command.inspect
 		elsif command.is_a?(NilClass)
 			return "nil"
-		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.]{0,}\]$/
-			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
+		elsif command.to_s.match /^[a-zA-Z0-9_-]{1,}\[[a-zA-Z0-9_\-\"\.#\[\]]{0,}\]$/
+			matchdata = command.to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.#\[\]]{0,})\]$/
 			matchdata_varname = matchdata["varname"]
 			matchdata_value = matchdata["value"]
 
@@ -1579,15 +1603,14 @@ class DavExpressionCompiler
 				# value is an expression or var name
 				return "#{matchdata_varname}[#{compile_command(matchdata_value.to_sym)}]"
 			end
-		elsif command.to_s.include?('..')
-			parts = command.to_s.split('..')
-			last_part = parts.pop
-
-			# The first part of the command is probably a variable / hash
-			return "#{compile_command(parts.join('..').to_sym, true)}[#{last_part}]"
 		elsif command.to_s.include?('.')
 			parts = command.to_s.split('.')
 			last_part = parts.pop
+			index = nil
+
+			if last_part.include?("#")
+				last_part, index = last_part.split('#')
+			end
 
 			# Check if the last part is a method call
 			valid = [
@@ -1600,6 +1623,8 @@ class DavExpressionCompiler
 				"to_i",
 				"to_f",
 				"round",
+				"keys",
+				"values",
 				"table_objects",
 				"properties"
 			].include?(last_part)
@@ -1611,13 +1636,19 @@ class DavExpressionCompiler
 				elsif last_part == "properties"
 					# Return the TableObjectHolder directly
 					return parts.join('.').to_sym
-				else
+				elsif index.nil?
 					return "#{compile_command(parts.join('.').to_sym, true)}.#{last_part}"
+				else
+					return "#{compile_command(parts.join('.').to_sym, true)}.#{last_part}[#{index}]"
 				end
 			end
 
 			# The first part of the command is probably a variable / hash
-			return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"]"
+			if index.nil?
+				return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"]"
+			else
+				return "#{compile_command(parts.join('.').to_sym, true)}[#{last_part}[#{index}]]"
+			end
 		elsif command.to_s.include?('#')
 			parts = command.to_s.split('#')
 			last_part = parts.pop

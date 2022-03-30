@@ -304,33 +304,6 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal(2, result)
 	end
 
-	it "should be able to create a hash and set and read values" do
-		code = @compiler.compile({
-			commands: '
-				(var hash (hash (test "Hello") (bla "World")))
-				(var varname "test")
-				(var result (list))
-
-				(var hash.bla "World2")
-
-				(result.push hash.test)
-				(result.push hash.bla)
-				(result.push hash..varname)
-
-				(return result)
-			'
-		})
-
-		result = @compiler.run({
-			api_slot: api_slots(:pocketlibApiMaster),
-			code: code
-		})
-
-		assert_equal("Hello", result[0])
-		assert_equal("World2", result[1])
-		assert_equal("Hello", result[2])
-	end
-
 	it "should be able to create a hash and set and read values using []" do
 		code = @compiler.compile({
 			commands: '
@@ -356,6 +329,32 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal("Hello", result[0])
 		assert_equal("World2", result[1])
 		assert_equal("Hello", result[2])
+	end
+
+	it "should be able to create a hash and get the length, keys and values of the hash" do
+		code = @compiler.compile({
+			commands: '
+				(var hash (hash (test "Hello") (bla "World")))
+				(var result (list))
+
+				(result.push hash.length)
+				(result.push hash.keys)
+				(result.push hash.values)
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal(2, result[0])
+		assert_equal("test", result[1][0])
+		assert_equal("bla", result[1][1])
+		assert_equal("Hello", result[2][0])
+		assert_equal("World", result[2][1])
 	end
 
 	it "should be able to use list" do
