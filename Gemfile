@@ -44,6 +44,9 @@ gem 'sass-rails'
 # Azure Blob Storage
 gem 'azure-storage-blob'
 
+# AWS S3 SDK for DigitalOcean Spaces
+gem 'aws-sdk-s3'
+
 # S-Expression parser
 gem 'sexpistol', git: 'https://github.com/dav-apps/sexpistol'
 

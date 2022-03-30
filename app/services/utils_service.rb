@@ -64,6 +64,15 @@ class UtilsService
 		end
 	end
 
+	def self.s3
+		@s3 ||= Aws::S3::Client.new(
+			access_key_id: ENV['SPACES_KEY'],
+			secret_access_key: ENV['SPACES_SECRET'],
+			endpoint: 'https://fra1.digitaloceanspaces.com',
+			region: 'us-east-1'
+		)
+	end
+
 	def self.get_total_storage(plan, confirmed)
 		storage_unconfirmed = 1000000000 	# 1 GB
       storage_on_free_plan = 2000000000 	# 2 GB
