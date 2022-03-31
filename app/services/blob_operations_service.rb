@@ -29,8 +29,8 @@ class BlobOperationsService
 					storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 					storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
 				)
-		
-				client.get_blob(
+
+				return client.get_blob(
 					ENV['AZURE_FILES_CONTAINER_NAME'],
 					"#{table_object.table.app.id}/#{table_object.id}"
 				)
@@ -47,7 +47,7 @@ class BlobOperationsService
 				storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 				storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
 			)
-	
+
 			client.delete_blob(
 				ENV['AZURE_FILES_CONTAINER_NAME'],
 				"#{table_object.table.app.id}/#{table_object.id}"
@@ -93,7 +93,7 @@ class BlobOperationsService
 				storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
 				storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
 			)
-	
+
 			client.get_blob(
 				ENV['AZURE_AVATAR_CONTAINER_NAME'],
 				"#{user.id}.png"
