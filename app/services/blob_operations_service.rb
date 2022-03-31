@@ -42,21 +42,26 @@ class BlobOperationsService
 	end
 
 	def self.delete_blob(table_object)
-		client = Azure::Storage::Blob::BlobService.create(
-			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
-			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
-		)
+		begin
+			client = Azure::Storage::Blob::BlobService.create(
+				storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
+				storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+			)
+	
+			client.delete_blob(
+				ENV['AZURE_FILES_CONTAINER_NAME'],
+				"#{table_object.table.app.id}/#{table_object.id}"
+			)
+		rescue => e
+		end
 
-		client.delete_blob(
-			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{table_object.table.app.id}/#{table_object.id}"
-		)
-
-		UtilsService.s3.delete_object({
-			bucket: ENV["SPACE_NAME"],
-			key: table_object.uuid
-		})
-	rescue => e
+		begin
+			UtilsService.s3.delete_object({
+				bucket: ENV["SPACE_NAME"],
+				key: table_object.uuid
+			})
+		rescue => e
+		end
 	end
 
 	def self.upload_profile_image(user, blob, content_type)
