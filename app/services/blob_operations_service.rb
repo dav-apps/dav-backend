@@ -94,7 +94,7 @@ class BlobOperationsService
 				storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
 			)
 
-			client.get_blob(
+			return client.get_blob(
 				ENV['AZURE_AVATAR_CONTAINER_NAME'],
 				"#{user.id}.png"
 			)
