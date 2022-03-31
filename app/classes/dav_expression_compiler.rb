@@ -620,6 +620,10 @@ class DavExpressionCompiler
 					obj_price = obj.obj.table_object_prices.find_by(currency: currency.downcase)
 					return nil if obj_price.nil?
 					return obj_price.price
+				when 'TableObject.get_cdn_url'
+					uuid = params[:uuid]
+					return nil if uuid.nil?
+					return 'https://' + ENV['SPACE_NAME'] + '.fra1.cdn.digitaloceanspaces.com/' + uuid
 				when 'TableObjectUserAccess.create'
 					table_object_id = params[:table_object_id]
 					user_id = params[:user_id]
@@ -1388,6 +1392,10 @@ class DavExpressionCompiler
 					return "_method_call('TableObject.get_price',
 						uuid: #{compile_command(command[1], true)},
 						currency: #{compile_command(command[2], true)}
+					)"
+				when "TableObject.get_cdn_url"
+					return "_method_call('TableObject.get_cdn_url',
+						uuid: #{compile_command(command[1], true)}
 					)"
 				when "TableObjectUserAccess.create"
 					return "_method_call('TableObjectUserAccess.create',
