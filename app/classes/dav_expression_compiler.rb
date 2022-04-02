@@ -390,8 +390,8 @@ class DavExpressionCompiler
 
 					begin
 						# Upload the file
-						blob = BlobOperationsService.upload_blob(obj, StringIO.new(file), type)
-						etag = blob.etag
+						result = BlobOperationsService.upload_blob(obj, StringIO.new(file), type)
+						etag = result.etag
 						etag = etag[1...etag.size-1]
 					rescue Exception => e
 						raise RuntimeError, [{\"code\" => 5}].to_json
@@ -540,8 +540,8 @@ class DavExpressionCompiler
 
 					begin
 						# Upload the new file
-						blob = BlobOperationsService.upload_blob(obj.obj, StringIO.new(file), type)
-						etag = blob.properties[:etag]
+						result = BlobOperationsService.upload_blob(obj.obj, StringIO.new(file), type)
+						etag = result.etag
 						etag = etag[1...etag.size-1]
 					rescue Exception => e
 						raise RuntimeError, [{\"code\" => 4}].to_json
