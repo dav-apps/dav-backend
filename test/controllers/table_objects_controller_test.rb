@@ -1389,7 +1389,7 @@ describe TableObjectsController do
 		old_table_etag = table_etags(:sherlockTestTableEtag).etag
 
 		# Upload a file for the table object
-		upload_blob(table_object, StringIO.new("Hello World"))
+		upload_blob(table_object, StringIO.new("Hello World"), "plain/text")
 
 		res = delete_request(
 			"/v1/table_object/#{table_object.uuid}",

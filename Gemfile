@@ -41,9 +41,6 @@ gem 'bcrypt'
 gem 'bootstrap-email', ">= 1.1.2"
 gem 'sass-rails'
 
-# Azure Blob Storage
-gem 'azure-storage-blob'
-
 # AWS S3 SDK for DigitalOcean Spaces
 gem 'aws-sdk-s3'
 

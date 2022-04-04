@@ -71,47 +71,50 @@ class ActiveSupport::TestCase
 		end
 	end
 
-	def upload_blob(table_object, blob)
-		client = Azure::Storage::Blob::BlobService.create(
-			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
-			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+	def s3
+		@s3 ||= Aws::S3::Client.new(
+			access_key_id: ENV['SPACES_KEY'],
+			secret_access_key: ENV['SPACES_SECRET'],
+			endpoint: 'https://fra1.digitaloceanspaces.com',
+			region: 'us-east-1'
 		)
+	end
 
+	def upload_blob(table_object, blob, content_type)
 		# Read the file
-		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
-		client.create_block_blob(
-			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{table_object.table.app.id}/#{table_object.id}",
-			contents
-		)
+		s3.put_object({
+			bucket: ENV["SPACE_NAME"],
+			key: table_object.uuid,
+			body: contents,
+			acl: table_object.table.cdn ? "public-read" : "private",
+			content_type: content_type
+		})
 	end
 
 	def download_blob(table_object)
-		client = Azure::Storage::Blob::BlobService.create(
-			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
-			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
+		tempfile = Tempfile.new
+
+		result = s3.get_object(
+			bucket: ENV["SPACE_NAME"],
+			key: table_object.uuid,
+			response_target: tempfile.path
 		)
 
-		client.get_blob(
-			ENV['AZURE_FILES_CONTAINER_NAME'],
-			"#{table_object.table.app.id}/#{table_object.id}"
-		)
+		return result, File.open(tempfile.path, "rb").read
 	end
 
-	def upload_profile_image(user, blob)
-		client = Azure::Storage::Blob::BlobService.create(
-			storage_account_name: ENV["AZURE_STORAGE_ACCOUNT"],
-			storage_access_key: ENV["AZURE_STORAGE_ACCESS_KEY"]
-		)
-
+	def upload_profile_image(user, blob, content_type)
 		# Read the file
-		contents = blob.class == StringIO ? blob.read : File.open(blob, "rb")
+		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
-		client.create_block_blob(
-			ENV["AZURE_AVATAR_CONTAINER_NAME"],
-			"#{user.id}.png",
-			contents
-		)
+		UtilsService.s3.put_object({
+			bucket: ENV["SPACE_NAME"],
+			key: "profileImages/#{user.id}",
+			body: contents,
+			acl: "public-read",
+			content_type: content_type
+		})
 	end
 end

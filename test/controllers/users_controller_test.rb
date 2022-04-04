@@ -1348,7 +1348,7 @@ describe UsersController do
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 
 		# Upload the profile image
-		upload_profile_image(matt, StringIO.new(file_content))
+		upload_profile_image(matt, StringIO.new(file_content), "image/png")
 
 		res = get_request(
 			"/v1/user/profile_image",
@@ -1403,7 +1403,7 @@ describe UsersController do
 		file_content = File.open("test/fixtures/files/favicon.png", "rb").read
 
 		# Upload the profile image
-		upload_profile_image(matt, StringIO.new(file_content))
+		upload_profile_image(matt, StringIO.new(file_content), "image/png")
 
 		res = get_request(
 			"/v1/user/#{matt.id}/profile_image",
