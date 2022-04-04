@@ -446,7 +446,7 @@ class UsersController < ApplicationController
 			rescue => e
 			end
 		end
-		
+
 		# Download the default profile image
 		if content.nil? || content.length == 0
 			begin
