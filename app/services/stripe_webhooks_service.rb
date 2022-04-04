@@ -105,16 +105,16 @@ class StripeWebhooksService
       next_payment_attempt = event.data.object.next_payment_attempt
 
 		if !paid
+			user = User.find_by(stripe_customer_id: event.data.object.customer)
+
 			if next_payment_attempt.nil?
 				# Change the plan to free
-				user = User.find_by(stripe_customer_id: event.data.object.customer)
-	
 				if !user.nil?
 					user.plan = 0
 					user.subscription_status = 0
 					user.period_end = nil
 					user.save
-	
+
 					# Send failed payment email
 					UserNotifierMailer.payment_failed(user).deliver_later
 				end
