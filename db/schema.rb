@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_03_30_184104) do
+ActiveRecord::Schema.define(version: 2022_04_07_141249) do
 
   create_table "api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
@@ -145,6 +145,13 @@ ActiveRecord::Schema.define(version: 2022_03_30_184104) do
     t.datetime "updated_at", precision: 6, null: false
     t.string "uuid"
     t.index ["uuid"], name: "index_purchases_on_uuid", unique: true
+  end
+
+  create_table "redis_table_object_operations", charset: "utf8mb4", force: :cascade do |t|
+    t.string "table_object_uuid"
+    t.string "operation"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "sessions", charset: "utf8", force: :cascade do |t|
