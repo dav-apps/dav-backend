@@ -50,6 +50,11 @@ class UtilsService
 		property_keys.each do |key|
 			redis.del(key)
 		end
+	rescue => e
+		RorVsWild.record_error(e)
+
+		# Create a new RedisTableObjectOperation
+		RedisTableObjectOperation.create(table_object_uuid: obj.uuid, operation: "save")
 	end
 
 	def self.remove_table_object_from_redis(obj)
@@ -62,6 +67,11 @@ class UtilsService
 		property_keys.each do |key|
 			redis.del(key)
 		end
+	rescue => e
+		RorVsWild.record_error(e)
+
+		# Create a new RedisTableObjectOperation
+		RedisTableObjectOperation.create(table_object_uuid: obj.uuid, operation: "delete")
 	end
 
 	def self.s3
