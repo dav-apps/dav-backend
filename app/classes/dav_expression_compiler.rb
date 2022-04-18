@@ -622,8 +622,27 @@ class DavExpressionCompiler
 					return obj_price.price
 				when 'TableObject.get_cdn_url'
 					uuid = params[:uuid]
+					query_params = params[:params]
 					return nil if uuid.nil?
-					return 'https://' + ENV['SPACE_NAME'] + '.fra1.cdn.digitaloceanspaces.com/' + uuid
+
+					i = 0
+					url = 'https://' + ENV['SPACE_NAME'] + '.fra1.cdn.digitaloceanspaces.com/' + uuid
+
+					if !query_params.nil?
+						query_params.each do |key, value|
+							next if key.nil? || value.nil?
+
+							if i == 0
+								url += '?' + key + '=' + value
+							else
+								url += '&' + key + '=' + value
+							end
+	
+							i += 1
+						end
+					end
+
+					return url
 				when 'TableObjectUserAccess.create'
 					table_object_id = params[:table_object_id]
 					user_id = params[:user_id]
@@ -1395,7 +1414,8 @@ class DavExpressionCompiler
 					)"
 				when "TableObject.get_cdn_url"
 					return "_method_call('TableObject.get_cdn_url',
-						uuid: #{compile_command(command[1], true)}
+						uuid: #{compile_command(command[1], true)},
+						params: #{compile_command(command[2], true)}
 					)"
 				when "TableObjectUserAccess.create"
 					return "_method_call('TableObjectUserAccess.create',
