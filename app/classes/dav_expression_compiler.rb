@@ -1004,6 +1004,8 @@ class DavExpressionCompiler
 
 						return table_object.purchases.find_by(user_id: user_id, completed: true)
 					end
+				when 'DateTime.now'
+					return DateTime.now
 				when 'Math.round'
 					var = params[:var]
 					rounding = params[:rounding].nil? ? 2 : params[:rounding]
@@ -1472,6 +1474,8 @@ class DavExpressionCompiler
 						user_id: #{compile_command(command[1], true)},
 						table_object_id: #{compile_command(command[2], true)}
 					)"
+				when "DateTime.now"
+					return "_method_call('DateTime.now')"
 				when "Math.round"
 					return "_method_call('Math.round',
 						var: #{compile_command(command[1], true)},

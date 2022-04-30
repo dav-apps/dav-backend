@@ -560,4 +560,26 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal("Integer", result[1])
 		assert_equal("Float", result[2])
 	end
+
+	test "DateTime.now should return the current DateTime" do
+		code = @compiler.compile({
+			commands: '
+				(var result (list))
+				(var current_time (DateTime.now))
+
+				(result.push current_time)
+				(result.push (to_int current_time))
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal(DateTime, result[0].class)
+		assert_equal(result[0].to_i, result[1])
+	end
 end
