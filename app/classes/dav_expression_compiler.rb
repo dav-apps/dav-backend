@@ -21,7 +21,7 @@ class DavExpressionCompiler
 		end
 
 		# Define built-in methods
-		methods_code = "
+		methods_code = %{
 			def _method_call(method_name, **params)
 				errors = Array.new
 
@@ -47,8 +47,8 @@ class DavExpressionCompiler
 				when 'get_error'
 					error = ApiError.find_by(api_slot: @vars[:api_slot], code: params[:code])
 					return {
-						\"code\" => error.code,
-						\"message\" => error.message
+						"code" => error.code,
+						"message" => error.message
 					}
 				when 'get_app'
 					id = params[:id].to_i
@@ -77,7 +77,7 @@ class DavExpressionCompiler
 					obj = @vars[:table_objects][uuid]
 					return obj if !obj.nil?
 
-					key = 'table_object:' + uuid
+					key = "table_object:\#\{uuid\}"
 					obj_json = @vars[:redis].get(key)
 
 					if obj_json.nil?
@@ -151,7 +151,7 @@ class DavExpressionCompiler
 					table_object_uuid = '*' if table_object_uuid.nil?
 					name = '*' if name.nil?
 
-					return @vars[:redis].keys('table_object_property:' + user_id_str + ':' + table_id_str + ':' + table_object_uuid + ':' + name + ':*')
+					return @vars[:redis].keys("table_object_property:\#\{user_id_str\}:\#\{table_id_str\}:\#\{table_object_uuid\}:\#\{name\}:*")
 				when 'render_json'
 					data = params[:data]
 					status = params[:status]
@@ -172,7 +172,7 @@ class DavExpressionCompiler
 						status: status,
 						file: true,
 						headers: {
-							\"Content-Length\" => data == nil ? 0 : data.size
+							"Content-Length" => data == nil ? 0 : data.size
 						},
 						type: type,
 						filename: filename
@@ -199,7 +199,7 @@ class DavExpressionCompiler
 					user = User.find_by(id: user_id)
 
 					if user.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					return !user.provider.nil?
@@ -213,17 +213,17 @@ class DavExpressionCompiler
 
 						if session.nil?
 							# Session does not exist
-							raise RuntimeError, [{\"code\" => 0}].to_json
+							raise RuntimeError, [{"code" => 0}].to_json
 						else
 							# The old token was used
 							# Delete the session, as the token may be stolen
 							session.destroy!
-							raise RuntimeError, [{\"code\" => 1}].to_json
+							raise RuntimeError, [{"code" => 1}].to_json
 						end
 					else
 						# Check if the session needs to be renewed
 						if Rails.env.production? && (Time.now - session.updated_at) > 1.day
-							raise RuntimeError, [{\"code\" => 2}].to_json
+							raise RuntimeError, [{"code" => 2}].to_json
 						end
 					end
 
@@ -235,7 +235,7 @@ class DavExpressionCompiler
 
 					if !table.nil? && _method_call('get_app', id: table.app_id) != @vars[:api_slot].api.app
 						# Action not allowed
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					return table
@@ -251,7 +251,7 @@ class DavExpressionCompiler
 
 					if table_app != api_app
 						# Action not allowed error
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					if user_id.nil?
@@ -276,7 +276,7 @@ class DavExpressionCompiler
 
 					if table_app != api_app
 						# Action not allowed error
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					if user_id.nil?
@@ -298,7 +298,7 @@ class DavExpressionCompiler
 
 					# Check if the table exists
 					if table.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					table_app = _method_call('get_app', id: table.app_id)
@@ -306,13 +306,13 @@ class DavExpressionCompiler
 
 					# Check if the table belongs to the same app as the api
 					if table_app != api_app
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Check if the user exists
 					user = User.find_by(id: user_id)
 					if user.nil?
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					# Create the table object
@@ -323,7 +323,7 @@ class DavExpressionCompiler
 
 					if !obj.save
 						# Unexpected error
-						raise RuntimeError, [{\"code\" => 3}].to_json
+						raise RuntimeError, [{"code" => 3}].to_json
 					end
 
 					# Create the properties
@@ -349,7 +349,7 @@ class DavExpressionCompiler
 
 					# Check if the table exists
 					if table.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					table_app = _method_call('get_app', id: table.app_id)
@@ -357,14 +357,14 @@ class DavExpressionCompiler
 
 					# Check if the table belongs to the same app as the api
 					if table_app != api_app
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Check if the user exists
 					user = User.find_by(id: user_id)
 
 					if user.nil?
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					# Create the table object
@@ -380,12 +380,12 @@ class DavExpressionCompiler
 					free_storage = UtilsService.get_total_storage(user.plan, user.confirmed) - user.used_storage
 
 					if free_storage < file_size
-						raise RuntimeError, [{\"code\" => 3}].to_json
+						raise RuntimeError, [{"code" => 3}].to_json
 					end
 
 					# Save the table object
 					if !obj.save
-						raise RuntimeError, [{\"code\" => 4}].to_json
+						raise RuntimeError, [{"code" => 4}].to_json
 					end
 
 					begin
@@ -394,7 +394,7 @@ class DavExpressionCompiler
 						etag = result.etag
 						etag = etag[1...etag.size-1]
 					rescue Exception => e
-						raise RuntimeError, [{\"code\" => 5}].to_json
+						raise RuntimeError, [{"code" => 5}].to_json
 					end
 
 					# Save extension as property
@@ -422,7 +422,7 @@ class DavExpressionCompiler
 
 					# Create the properties
 					if !ext_prop.save || !etag_prop.save || !size_prop.save || !type_prop.save
-						raise RuntimeError, [{\"code\" => 6}].to_json
+						raise RuntimeError, [{"code" => 6}].to_json
 					end
 
 					return TableObjectHolder.new(obj)
@@ -438,7 +438,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					return obj
@@ -454,7 +454,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					begin
@@ -472,12 +472,12 @@ class DavExpressionCompiler
 
 					# Check if the table object exists
 					if obj.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Make sure the object is not a file
 					if obj.obj.file
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					table = _method_call('get_table', id: obj.table_id)
@@ -486,7 +486,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					# Update the properties of the table object
@@ -507,12 +507,12 @@ class DavExpressionCompiler
 
 					# Check if the table object exists
 					if obj.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Check if the table object is a file
 					if !obj.obj.file
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					table = _method_call('get_table', id: obj.table_id)
@@ -521,7 +521,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					# Get the properties
@@ -535,7 +535,7 @@ class DavExpressionCompiler
 
 					# Check if the user has enough free storage
 					if free_storage < file_size_diff
-						raise RuntimeError, [{\"code\" => 3}].to_json
+						raise RuntimeError, [{"code" => 3}].to_json
 					end
 
 					begin
@@ -544,7 +544,7 @@ class DavExpressionCompiler
 						etag = result.etag
 						etag = etag[1...etag.size-1]
 					rescue Exception => e
-						raise RuntimeError, [{\"code\" => 4}].to_json
+						raise RuntimeError, [{"code" => 4}].to_json
 					end
 
 					# Update the properties
@@ -567,7 +567,7 @@ class DavExpressionCompiler
 
 					# Check if the table object exists
 					if obj.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					table = _method_call('get_table', id: obj.table_id)
@@ -576,7 +576,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Try to get the price of the table object with the currency
@@ -595,7 +595,7 @@ class DavExpressionCompiler
 					end
 
 					if !obj_price.save
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 				when 'TableObject.get_price'
 					uuid = params[:uuid]
@@ -613,7 +613,7 @@ class DavExpressionCompiler
 
 					# Check if the table of the table object belongs to the same app as the api
 					if app != api_app
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Try to get the price of the table object with the currency
@@ -626,16 +626,16 @@ class DavExpressionCompiler
 					return nil if uuid.nil?
 
 					i = 0
-					url = 'https://' + ENV['SPACE_NAME'] + '.fra1.cdn.digitaloceanspaces.com/' + uuid
+					url = "https://\#\{ENV['SPACE_NAME']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}"
 
 					if !query_params.nil?
 						query_params.each do |key, value|
 							next if key.nil? || value.nil?
 
 							if i == 0
-								url += '?' + key + '=' + value
+								url += "?\#\{key\}=\#\{value\}"
 							else
-								url += '&' + key + '=' + value
+								url += "&\#\{key\}=\#\{value\}"
 							end
 	
 							i += 1
@@ -654,7 +654,7 @@ class DavExpressionCompiler
 						obj = _method_call('get_table_object', uuid: table_object_id)
 
 						if obj.nil?
-							raise RuntimeError, [{\"code\" => 0}].to_json
+							raise RuntimeError, [{"code" => 0}].to_json
 						end
 
 						table_object_id = obj.id
@@ -664,7 +664,7 @@ class DavExpressionCompiler
 					table = _method_call('get_table', id: table_alias)
 
 					if table.nil?
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Find the access and return it
@@ -696,7 +696,7 @@ class DavExpressionCompiler
 					end
 
 					if obj.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					obj = TableObjectHolder.new(obj) if obj.is_a?(TableObject)
@@ -735,7 +735,7 @@ class DavExpressionCompiler
 					end
 
 					if obj.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					obj = TableObjectHolder.new(obj) if obj.is_a?(TableObject)
@@ -746,7 +746,7 @@ class DavExpressionCompiler
 					collection = Collection.find_by(name: collection_name, table: table)
 
 					if collection.nil?
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Find and delete the TableObjectCollection
@@ -760,7 +760,7 @@ class DavExpressionCompiler
 					table = _method_call('get_table', id: table_id)
 
 					if table.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Try to find the collection
@@ -781,7 +781,7 @@ class DavExpressionCompiler
 					table = _method_call('get_table', id: table_id)
 
 					if table.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Try to find the collection
@@ -795,7 +795,7 @@ class DavExpressionCompiler
 						return uuids
 					end
 				when 'TableObject.find_by_property'
-					all_user = params[:user_id] == \"*\"
+					all_user = params[:user_id] == "*"
 					user_id = all_user ? -1 : params[:user_id]
 					table_id = params[:table_id]
 					property_name = params[:property_name]
@@ -860,22 +860,22 @@ class DavExpressionCompiler
 					user = User.find_by(id: user_id)
 
 					if user.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Check the property types
 					if !provider_name.is_a?(String) || !provider_image.is_a?(String) || !product_name.is_a?(String) || !product_image.is_a?(String) || !price.is_a?(Integer) || !currency.is_a?(String) || !table_objects.is_a?(Array)
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					# Validate the price
 					if price < 0
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					# Make sure there is at least one table object
 					if table_objects.count == 0
-						raise RuntimeError, [{\"code\" => 3}].to_json
+						raise RuntimeError, [{"code" => 3}].to_json
 					end
 
 					# Get the table objects
@@ -885,7 +885,7 @@ class DavExpressionCompiler
 						obj = TableObject.find_by(uuid: uuid)
 
 						if obj.nil?
-							raise RuntimeError, [{\"code\" => 4}].to_json
+							raise RuntimeError, [{"code" => 4}].to_json
 						end
 
 						objs.push(obj)
@@ -897,7 +897,7 @@ class DavExpressionCompiler
 
 					while i < objs.count
 						if objs[i].user != obj_user
-							raise RuntimeError, [{\"code\" => 5}].to_json
+							raise RuntimeError, [{"code" => 5}].to_json
 						end
 
 						i += 1
@@ -905,7 +905,7 @@ class DavExpressionCompiler
 
 					# Check if the user of the table objects has a provider
 					if price > 0 && obj_user.provider.nil?
-						raise RuntimeError, [{\"code\" => 6}].to_json
+						raise RuntimeError, [{"code" => 6}].to_json
 					end
 
 					# Create the purchase
@@ -943,7 +943,7 @@ class DavExpressionCompiler
 								}
 							})
 						rescue Stripe::CardError => e
-							raise RuntimeError, [{\"code\" => 7}].to_json
+							raise RuntimeError, [{"code" => 7}].to_json
 						end
 
 						purchase.payment_intent_id = payment_intent.id
@@ -957,7 +957,7 @@ class DavExpressionCompiler
 						)
 
 						if !obj_purchase.save
-							raise RuntimeError, [{\"code\" => 8}].to_json
+							raise RuntimeError, [{"code" => 8}].to_json
 						end
 					end
 
@@ -969,21 +969,21 @@ class DavExpressionCompiler
 					purchase = Purchase.find_by(id: purchase_id)
 
 					if purchase.nil?
-						raise RuntimeError, [{\"code\" => 0}].to_json
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					user = User.find_by(id: user_id)
 
 					if user.nil?
-						raise RuntimeError, [{\"code\" => 1}].to_json
+						raise RuntimeError, [{"code" => 1}].to_json
 					end
 
 					if purchase.user != user
-						raise RuntimeError, [{\"code\" => 2}].to_json
+						raise RuntimeError, [{"code" => 2}].to_json
 					end
 
 					if !purchase.completed
-						raise RuntimeError, [{\"code\" => 3}].to_json
+						raise RuntimeError, [{"code" => 3}].to_json
 					end
 
 					return TableObjectHolder.new(purchase.table_object)
@@ -1070,7 +1070,7 @@ class DavExpressionCompiler
 					end
 				end
 			end
-		"
+		}
 
 		return functions_code + methods_code + code
 	end
