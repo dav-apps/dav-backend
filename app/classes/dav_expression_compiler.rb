@@ -624,25 +624,7 @@ class DavExpressionCompiler
 					uuid = params[:uuid]
 					query_params = params[:params]
 					return nil if uuid.nil?
-
-					i = 0
-					url = "https://\#\{ENV['SPACE_NAME']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}"
-
-					if !query_params.nil?
-						query_params.each do |key, value|
-							next if key.nil? || value.nil?
-
-							if i == 0
-								url += "?\#\{key\}=\#\{value\}"
-							else
-								url += "&\#\{key\}=\#\{value\}"
-							end
-	
-							i += 1
-						end
-					end
-
-					return url
+					return "https://\#\{ENV['SPACE_NAME']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}?\#\{query_params.to_query\}"
 				when 'TableObjectUserAccess.create'
 					table_object_id = params[:table_object_id]
 					user_id = params[:user_id]
@@ -1649,6 +1631,8 @@ class DavExpressionCompiler
 				"reverse",
 				"upcase",
 				"downcase",
+				"escape",
+				"unescape",
 				"to_s",
 				"to_i",
 				"to_f",
@@ -1663,6 +1647,10 @@ class DavExpressionCompiler
 				if last_part == "class"
 					# Return the class as string
 					return "#{command}.to_s"
+				elsif last_part == "escape"
+					return "CGI.escape(#{compile_command(parts.join('.').to_sym, true)})"
+				elsif last_part == "unescape"
+					return "CGI.unescape(#{compile_command(parts.join('.').to_sym, true)})"
 				elsif last_part == "properties"
 					# Return the TableObjectHolder directly
 					return parts.join('.').to_sym

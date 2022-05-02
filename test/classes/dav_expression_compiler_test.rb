@@ -304,6 +304,31 @@ class DavExpressionCompilerTest < ActiveSupport::TestCase
 		assert_equal(2, result)
 	end
 
+	it "should be able to escape and unescape strings" do
+		code = @compiler.compile({
+			commands: '
+				(var result (list))
+
+				(var str "Hällo Wörld")
+				(var str_escaped str.escape)
+				(var str_unescaped str_escaped.unescape)
+
+				(result.push str_escaped)
+				(result.push str_unescaped)
+
+				(return result)
+			'
+		})
+
+		result = @compiler.run({
+			api_slot: api_slots(:pocketlibApiMaster),
+			code: code
+		})
+
+		assert_equal("H%C3%A4llo+W%C3%B6rld", result[0])
+		assert_equal("Hällo Wörld", result[1])
+	end
+
 	it "should be able to create a hash and set and read values using []" do
 		code = @compiler.compile({
 			commands: '
