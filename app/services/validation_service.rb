@@ -199,16 +199,6 @@ class ValidationService
 		properties.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_provider_name_presence(provider_name)
-		error_code = 2113
-		provider_name.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
-	end
-
-	def self.validate_provider_image_presence(provider_image)
-		error_code = 2114
-		provider_image.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
-	end
-
 	def self.validate_product_name_presence(product_name)
 		error_code = 2115
 		product_name.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
@@ -434,16 +424,6 @@ class ValidationService
 	def self.validate_ext_type(ext)
 		error_code = 2224
 		!ext.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
-	end
-
-	def self.validate_provider_name_type(provider_name)
-		error_code = 2225
-		!provider_name.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
-	end
-
-	def self.validate_provider_image_type(provider_image)
-		error_code = 2226
-		!provider_image.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	def self.validate_product_name_type(product_name)
@@ -720,26 +700,6 @@ class ValidationService
 			get_validation_hash(2312, 400)
 		elsif ext.length > Constants::EXT_MAX_LENGTH
 			get_validation_hash(2412, 400)
-		else
-			get_validation_hash
-		end
-	end
-
-	def self.validate_provider_name_length(provider_name)
-		if provider_name.length < Constants::PROVIDER_NAME_MIN_LENGTH
-			get_validation_hash(2313, 400)
-		elsif provider_name.length > Constants::PROVIDER_NAME_MAX_LENGTH
-			get_validation_hash(2413, 400)
-		else
-			get_validation_hash
-		end
-	end
-
-	def self.validate_provider_image_length(provider_image)
-		if provider_image.length < Constants::PROVIDER_IMAGE_MIN_LENGTH
-			get_validation_hash(2314, 400)
-		elsif provider_image.length > Constants::PROVIDER_IMAGE_MAX_LENGTH
-			get_validation_hash(2414, 400)
 		else
 			get_validation_hash
 		end
@@ -1316,10 +1276,6 @@ class ValidationService
 			"Missing field: description"
 		when 2112
 			"Missing field: properties"
-		when 2113
-			"Missing field: provider_name"
-		when 2114
-			"Missing field: provider_image"
 		when 2115
 			"Missing field: product_name"
 		when 2116
@@ -1409,10 +1365,6 @@ class ValidationService
 			"Field has wrong type: property value"
 		when 2224
 			"Field has wrong type: ext"
-		when 2225
-			"Field has wrong type: provider_name"
-		when 2226
-			"Field has wrong type: provider_image"
 		when 2227
 			"Field has wrong type: product_name"
 		when 2228
@@ -1492,10 +1444,6 @@ class ValidationService
 			"Field too short: property value"
 		when 2312
 			"Field too short: ext"
-		when 2313
-			"Field too short: provider_name"
-		when 2314
-			"Field too short: provider_image"
 		when 2315
 			"Field too short: product_name"
 		when 2316
@@ -1549,10 +1497,6 @@ class ValidationService
 			"Field too long: property value"
 		when 2412
 			"Field too long: ext"
-		when 2413
-			"Field too long: provider_name"
-		when 2414
-			"Field too long: provider_image"
 		when 2415
 			"Field too long: product_name"
 		when 2416
