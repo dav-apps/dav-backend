@@ -91,11 +91,10 @@ describe PurchasesController do
 		)
 
 		assert_response 400
-		assert_equal(4, res["errors"].length)
+		assert_equal(3, res["errors"].length)
 		assert_equal(ErrorCodes::PROVIDER_NAME_TOO_SHORT, res["errors"][0]["code"])
 		assert_equal(ErrorCodes::PROVIDER_IMAGE_TOO_SHORT, res["errors"][1]["code"])
 		assert_equal(ErrorCodes::PRODUCT_NAME_TOO_SHORT, res["errors"][2]["code"])
-		assert_equal(ErrorCodes::PRODUCT_IMAGE_TOO_SHORT, res["errors"][3]["code"])
 	end
 
 	it "should not create purchase with too long properties" do
@@ -193,6 +192,10 @@ describe PurchasesController do
 				]
 			}
 		)
+
+		assert_response 412
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECTS_NEED_TO_BELONG_TO_THE_SAME_USER, res["errors"][0]["code"])
 	end
 
 	it "should not create purchase for table object that is already purchased" do
