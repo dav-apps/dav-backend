@@ -996,11 +996,6 @@ class ValidationService
 		free_storage < file_size ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
-	def self.validate_purchase_not_completed(purchase)
-		error_code = 3008
-		purchase.completed ? get_validation_hash(error_code, 412) : get_validation_hash
-	end
-
 	def self.validate_table_objects_belong_to_same_user(table_objects)
 		error_code = 3009
 		return get_validation_hash if table_objects.count == 0
@@ -1628,8 +1623,6 @@ class ValidationService
 			"The table object has no file"
 		when 3007
 			"Not sufficient storage available"
-		when 3008
-			"The purchase is already completed"
 		when 3009
 			"The table objects need to belong to the same user"
 		when 3010
