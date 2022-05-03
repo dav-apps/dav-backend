@@ -656,7 +656,7 @@ class ValidationService
 	def self.validate_description_length(description)
 		if description.length < Constants::DESCRIPTION_MIN_LENGTH
 			get_validation_hash(2306, 400)
-		elsif description.length > Constants::DESCRIPTiON_MAX_LENGTH
+		elsif description.length > Constants::DESCRIPTION_MAX_LENGTH
 			get_validation_hash(2406, 400)
 		else
 			get_validation_hash
@@ -756,9 +756,7 @@ class ValidationService
 	end
 
 	def self.validate_product_image_length(product_image)
-		if product_image.length < Constants::PRODUCT_IMAGE_MIN_LENGTH
-			get_validation_hash(2316, 400)
-		elsif product_image.length > Constants::PRODUCT_IMAGE_MAX_LENGTH
+		if product_image.length > Constants::PRODUCT_IMAGE_MAX_LENGTH
 			get_validation_hash(2416, 400)
 		else
 			get_validation_hash
@@ -885,22 +883,6 @@ class ValidationService
 		end
 	end
 
-	def self.validate_success_url_length(success_url)
-		if success_url.length < Constants::SUCCESS_URL_MIN_LENGTH
-			get_validation_hash(2329, 400)
-		else
-			get_validation_hash
-		end
-	end
-
-	def self.validate_cancel_url_length(cancel_url)
-		if cancel_url.length < Constants::CANCEL_URL_MIN_LENGTH
-			get_validation_hash(2330, 400)
-		else
-			get_validation_hash
-		end
-	end
-
 	# Invalid fields
 	def self.validate_email_validity(email)
 		error_code = 2500
@@ -954,7 +936,12 @@ class ValidationService
 
 	def self.validate_mode_validity(mode)
 		error_code = 2510
-		(mode != "setup" && mode != "subscription") ? get_validation_hash(error_code, 400) : get_validation_hash
+		(mode != "setup" && mode != "subscription" && mode != "payment") ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_product_image_validity(product_image)
+		error_code = 2511
+		!validate_url(product_image) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Generic state errors
@@ -1542,10 +1529,6 @@ class ValidationService
 			"Field too short: env_var value"
 		when 2328
 			"Field too short: slot"
-		when 2329
-			"Field too short: success_url"
-		when 2330
-			"Field too short: cancel_url"
 		# Too long fields
 		when 2400
 			"Field too long: first_name"
@@ -1626,6 +1609,8 @@ class ValidationService
 			"Field invalid: cancel_url"
 		when 2510
 			"Field invalid: mode"
+		when 2511
+			"Field invalid: product_image"
 		# Generic state errors
 		when 3000
 			"The user is already confirmed"
