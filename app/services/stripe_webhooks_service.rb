@@ -127,6 +127,20 @@ class StripeWebhooksService
 		200
 	end
 
+	def self.PaymentIntentSucceededEvent(event)
+		payment_intent_id = event.data.object.id
+
+		# Find the purchase with the payment intent
+		purchase = Purchase.find_by(payment_intent_id: payment_intent_id)
+
+		if !purchase.nil?
+			purchase.completed = true
+			purchase.save
+		end
+
+		200
+	end
+
 	def self.CustomerSubscriptionCreatedEvent(event)
 		period_end = event.data.object.current_period_end
 		product_id = event.data.object.items.data[0].plan.product if event.data.object.items.data.count > 0
