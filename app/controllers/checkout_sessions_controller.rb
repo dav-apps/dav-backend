@@ -101,7 +101,7 @@ class CheckoutSessionsController < ApplicationController
 			# If the object belongs to the user, set the price to 0
 			price = 0 if table_objects.first.user == user
 
-			if price > 0
+			if price > 0 && obj_user != User.first
 				# Check if the user of the table object has a provider
 				ValidationService.raise_validation_errors(ValidationService.validate_user_is_provider(obj_user))
 			end
@@ -148,7 +148,7 @@ class CheckoutSessionsController < ApplicationController
 					cancel_url: cancel_url
 				})
 			elsif mode == "payment" && price > 0
-				session = Stripe::Checkout::Session.create({
+				create_session_options = {
 					customer: user.stripe_customer_id,
 					mode: "payment",
 					line_items: [{
@@ -162,16 +162,20 @@ class CheckoutSessionsController < ApplicationController
 							}
 						}
 					}],
-					payment_intent_data: {
+					success_url: success_url,
+					cancel_url: cancel_url
+				}
+
+				if obj_user != User.first
+					create_session_options[:payment_intent_data] = {
 						application_fee_amount: (price * 0.2).round,
 						transfer_data: {
 							destination: obj_user.provider.stripe_account_id
 						}
-					},
-					success_url: success_url,
-					cancel_url: cancel_url
-				})
+					}
+				end
 
+				session = Stripe::Checkout::Session.create(create_session_options)
 				purchase.payment_intent_id = session.payment_intent
 			elsif mode == "setup"
 				session = Stripe::Checkout::Session.create({
