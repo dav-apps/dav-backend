@@ -131,13 +131,15 @@ class CheckoutSessionsController < ApplicationController
 			ValidationService.raise_unexpected_error(!user.save)
 		end
 
+		checkout_session_url = nil
+
 		begin
 			if mode == "subscription"
 				# Create the checkout session
 				plan_id = ENV["STRIPE_DAV_PLUS_EUR_PLAN_ID"]
 				plan_id = ENV["STRIPE_DAV_PRO_EUR_PLAN_ID"] if plan == 2
 	
-				session = Stripe::Checkout::Session.create({
+				checkout_session = Stripe::Checkout::Session.create({
 					customer: user.stripe_customer_id,
 					mode: "subscription",
 					line_items: [{
@@ -147,6 +149,8 @@ class CheckoutSessionsController < ApplicationController
 					success_url: success_url,
 					cancel_url: cancel_url
 				})
+
+				checkout_session_url = checkout_session.url
 			elsif mode == "payment" && price > 0
 				create_session_options = {
 					customer: user.stripe_customer_id,
@@ -175,16 +179,19 @@ class CheckoutSessionsController < ApplicationController
 					}
 				end
 
-				session = Stripe::Checkout::Session.create(create_session_options)
-				purchase.payment_intent_id = session.payment_intent
+				checkout_session = Stripe::Checkout::Session.create(create_session_options)
+				checkout_session_url = checkout_session.url
+				purchase.payment_intent_id = checkout_session.payment_intent
 			elsif mode == "setup"
-				session = Stripe::Checkout::Session.create({
+				checkout_session = Stripe::Checkout::Session.create({
 					customer: user.stripe_customer_id,
 					payment_method_types: ["card"],
 					mode: "setup",
 					success_url: success_url,
 					cancel_url: cancel_url
 				})
+
+				checkout_session_url = checkout_session.url
 			end
 		rescue => e
 			RorVsWild.record_error(e)
@@ -205,7 +212,7 @@ class CheckoutSessionsController < ApplicationController
 
 		# Return the data
 		result = {
-			session_url: session.url
+			session_url: checkout_session_url
 		}
 
 		render json: result, status: 201
