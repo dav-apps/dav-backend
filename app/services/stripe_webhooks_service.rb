@@ -167,21 +167,29 @@ class StripeWebhooksService
 
 	def self.CustomerSubscriptionUpdatedEvent(event)
 		period_end = event.data.object.current_period_end
-		cancelled = event.data.object.cancel_at_period_end
+		cancel_at_period_end = event.data.object.cancel_at_period_end
+      status = event.data.object.status
 		product_id = event.data.object.items.data[0].plan.product if event.data.object.items.data.count > 0
 
 		user = User.find_by(stripe_customer_id: event.data.object.customer)
 
 		if !user.nil?
-			# Update plan, period_end and subscription_status of the user
-			user.period_end = Time.at(period_end) if !period_end.nil?
-			user.subscription_status = cancelled ? 1 : 0
+         if status == "active"
+            # Update plan, period_end and subscription_status of the user
+            user.period_end = Time.at(period_end) if !period_end.nil?
+            user.subscription_status = cancel_at_period_end ? 1 : 0
 
-			case product_id
-         when ENV['STRIPE_DAV_PLUS_PRODUCT_ID']
-            user.plan = 1
-         when ENV['STRIPE_DAV_PRO_PRODUCT_ID']
-            user.plan = 2
+            case product_id
+            when ENV['STRIPE_DAV_PLUS_PRODUCT_ID']
+               user.plan = 1
+            when ENV['STRIPE_DAV_PRO_PRODUCT_ID']
+               user.plan = 2
+            end
+         elsif status == "incomplete_expired"
+            # Immediately cancel the subscription
+            user.plan = 0
+			   user.subscription_status = 0
+			   user.period_end = nil
          end
 
 			user.save

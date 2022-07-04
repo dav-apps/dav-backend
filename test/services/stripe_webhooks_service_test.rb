@@ -569,6 +569,32 @@ class StripeWebhooksServiceTest < ActiveSupport::TestCase
       assert_equal(period_end.to_i, torera.period_end.to_i)
 	end
 
+   it "should call CustomerSubscriptionUpdatedEvent and cancel the subscription with incomplete expired status" do
+      torera = users(:torera)
+      period_end = Time.now + 10.days
+
+      torera.plan = 1
+      torera.subscription_status = 0
+      torera.period_end = period_end
+      torera.save
+
+      # Create the event
+      event = StripeMock.mock_webhook_event('customer.subscription.updated')
+      event.data.object.cancel_at_period_end = false
+      event.data.object.current_period_end = period_end
+      event.data.object.status = "incomplete_expired"
+      event.data.object.customer = torera.stripe_customer_id
+
+      # Trigger the event
+      StripeWebhooksService.CustomerSubscriptionUpdatedEvent(event)
+
+      # The user should be on the free plan
+      torera = User.find_by(id: torera.id)
+      assert_equal(0, torera.plan)
+      assert_equal(0, torera.subscription_status)
+      assert_nil(torera.period_end)
+   end
+
 	# CustomerSubscriptionDeletedEvent
 	it "should call CustomerSubscriptionDeletedEvent and update the active plus plan to active free plan" do
 		torera = users(:torera)
