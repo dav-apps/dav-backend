@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_04_07_141249) do
+ActiveRecord::Schema.define(version: 2022_07_27_211529) do
 
   create_table "api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
@@ -58,7 +58,7 @@ ActiveRecord::Schema.define(version: 2022_04_07_141249) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "app_user_activities", charset: "utf8", force: :cascade do |t|
+  create_table "app_user_snapshots", charset: "utf8", force: :cascade do |t|
     t.bigint "app_id"
     t.datetime "time"
     t.integer "count_daily", default: 0
@@ -231,14 +231,6 @@ ActiveRecord::Schema.define(version: 2022_04_07_141249) do
     t.boolean "cdn", default: false
   end
 
-  create_table "user_activities", charset: "utf8", force: :cascade do |t|
-    t.datetime "time"
-    t.integer "count_daily", default: 0
-    t.integer "count_monthly", default: 0
-    t.integer "count_yearly", default: 0
-    t.integer "count_weekly", default: 0
-  end
-
   create_table "user_profile_images", charset: "utf8", force: :cascade do |t|
     t.bigint "user_id"
     t.string "ext"
@@ -246,6 +238,14 @@ ActiveRecord::Schema.define(version: 2022_04_07_141249) do
     t.string "etag"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "user_snapshots", charset: "utf8", force: :cascade do |t|
+    t.datetime "time"
+    t.integer "count_daily", default: 0
+    t.integer "count_monthly", default: 0
+    t.integer "count_yearly", default: 0
+    t.integer "count_weekly", default: 0
   end
 
   create_table "users", charset: "utf8", force: :cascade do |t|
