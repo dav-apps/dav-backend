@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_07_27_213312) do
+ActiveRecord::Schema.define(version: 2022_07_27_213752) do
 
   create_table "api_endpoints", charset: "utf8", force: :cascade do |t|
     t.bigint "api_slot_id"
@@ -246,6 +246,9 @@ ActiveRecord::Schema.define(version: 2022_07_27_213312) do
     t.integer "monthly_active", default: 0
     t.integer "yearly_active", default: 0
     t.integer "weekly_active", default: 0
+    t.integer "free_plan", default: 0
+    t.integer "plus_plan", default: 0
+    t.integer "pro_plan", default: 0
   end
 
   create_table "users", charset: "utf8", force: :cascade do |t|
