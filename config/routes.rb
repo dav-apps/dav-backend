@@ -94,11 +94,11 @@ Rails.application.routes.draw do
 	# AppUsersController
 	match '/v1/app/:id/users', to: 'app_users#get_app_users', via: :get
 
-	# UserActivitiesController
-	match '/v1/user_activities', to: 'user_activities#get_user_activities', via: :get
+	# UserSnapshotsController
+	match '/v1/user_snapshots', to: 'user_snapshots#get_user_snapshots', via: :get
 
-	# AppUserActivitiesController
-	match '/v1/app/:id/user_activities', to: 'app_user_activities#get_app_user_activities', via: :get
+	# AppUserSnapshotsController
+	match '/v1/app/:id/user_snapshots', to: 'app_user_snapshots#get_app_user_snapshots', via: :get
 
 	# CheckoutSessionsController
 	match '/v1/checkout_session', to: 'checkout_sessions#create_checkout_session', via: :post

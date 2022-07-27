@@ -1,7 +1,6 @@
-class AppUserActivitiesController < ApplicationController
-	def get_app_user_activities
+class UserSnapshotsController < ApplicationController
+	def get_user_snapshots
 		access_token = get_auth
-		id = params[:id]
 
 		if params[:start].nil?
 			start_timestamp = (Time.now - 1.month).beginning_of_day
@@ -23,27 +22,27 @@ class AppUserActivitiesController < ApplicationController
 		# Make sure this was called from the website
 		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
 
-		# Get the app
-		app = App.find_by(id: id)
-		ValidationService.raise_validation_errors(ValidationService.validate_app_existence(app))
-
-		# Make sure the app belongs to the dev of the user
-		ValidationService.raise_validation_errors(ValidationService.validate_app_belongs_to_dev(app, session.user.dev))
+		# Make sure the user is the first dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(session.user.dev))
 
 		# Collect and return the data
-		days = Array.new
-		AppUserActivity.where("app_id = ? AND time >= ? AND time <= ?", app.id, start_timestamp, end_timestamp).each do |user_activity|
-			days.push({
-				time: user_activity.time.to_s,
-				count_daily: user_activity.count_daily,
-				count_weekly: user_activity.count_weekly,
-				count_monthly: user_activity.count_monthly,
-				count_yearly: user_activity.count_yearly
+		snapshots = Array.new
+
+		UserSnapshot.where("time >= ? AND time <= ?", start_timestamp, end_timestamp).each do |user_snapshot|
+			snapshots.push({
+				time: user_snapshot.time.to_s,
+				daily_active: user_snapshot.daily_active,
+				weekly_active: user_snapshot.weekly_active,
+				monthly_active: user_snapshot.monthly_active,
+				yearly_active: user_snapshot.yearly_active,
+            free_plan: user_snapshot.free_plan,
+            plus_plan: user_snapshot.plus_plan,
+            pro_plan: user_snapshot.pro_plan
 			})
 		end
 
 		result = {
-			days: days
+			snapshots: snapshots
 		}
 
 		render json: result, status: 200
