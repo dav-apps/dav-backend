@@ -107,7 +107,7 @@ Rails.application.routes.draw do
 	match '/v1/customer_portal_session', to: 'customer_portal_sessions#create_customer_portal_session', via: :post
 
 	# TasksController
-	match '/v1/tasks/create_user_activities', to: 'tasks#create_user_activities', via: :put
+	match '/v1/tasks/create_user_snapshots', to: 'tasks#create_user_snapshots', via: :put
 	match '/v1/tasks/send_notifications', to: 'tasks#send_notifications', via: :put
 	match '/v1/tasks/delete_sessions', to: 'tasks#delete_sessions', via: :put
 	match '/v1/tasks/delete_purchases', to: 'tasks#delete_purchases', via: :put

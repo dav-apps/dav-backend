@@ -1,6 +1,6 @@
 class TasksController < ApplicationController
-	def create_user_activities
-		CreateUserActivitiesJob.perform_later
+	def create_user_snapshots
+		CreateUserSnapshotsJob.perform_later
 		head 204, content_type: "application/json"
 	end
 
