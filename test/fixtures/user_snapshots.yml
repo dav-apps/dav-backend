@@ -1,0 +1,19 @@
+first_user_snapshot:
+  time: <%= DateTime.parse("2019-06-10T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  daily_active: 2
+  weekly_active: 7
+  monthly_active: 5
+  yearly_active: 20
+  free_plan: 2
+  plus_plan: 2
+  pro_plan: 0
+
+second_user_snapshot:
+  time: <%= DateTime.parse("2019-06-11T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  daily_active: 3
+  weekly_active: 12
+  monthly_active: 4
+  yearly_active: 17
+  free_plan: 1
+  plus_plan: 1
+  pro_plan: 2

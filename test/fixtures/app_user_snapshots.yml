@@ -1,0 +1,21 @@
+first_cards_user_snapshot:
+  app: cards
+  time: <%= DateTime.parse("2019-06-10T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  daily_active: 4
+  weekly_active: 2
+  monthly_active: 7
+  yearly_active: 16
+  free_plan: 2
+  plus_plan: 2
+  pro_plan: 0
+
+second_cards_user_snapshot:
+  app: cards
+  time: <%= DateTime.parse("2019-06-11T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  daily_active: 1
+  weekly_active: 4
+  monthly_active: 5
+  yearly_active: 9
+  free_plan: 1
+  plus_plan: 1
+  pro_plan: 2

@@ -1,0 +1,142 @@
+require "test_helper"
+
+describe UserSnapshotsController do
+	setup do
+		setup
+	end
+
+	# get_user_snapshots
+	it "should not get user snapshots without access token" do
+		res = get_request("/v1/user_snapshots")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not get user snapshots with access token of session that does not exist" do
+		res = get_request(
+			"/v1/user_snapshots",
+			{Authorization: "asdasdasdasdads"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not get user snapshots from another app than the website" do
+		res = get_request(
+			"/v1/user_snapshots",
+			{Authorization: sessions(:sherlockTestAppSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get user snapshots with another dev than the first one" do
+		res = get_request(
+			"/v1/user_snapshots",
+			{Authorization: sessions(:davWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not get user snapshots if the user is not a dev" do
+		res = get_request(
+			"/v1/user_snapshots",
+			{Authorization: sessions(:mattWebsiteSession).token}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should get user snapshots" do
+		first_user_snapshot = UserSnapshot.create(
+			time: (Time.now - 3.days).beginning_of_day,
+			daily_active: 3,
+			weekly_active: 6,
+			monthly_active: 9,
+			yearly_active: 20,
+         free_plan: 23,
+         plus_plan: 12,
+         pro_plan: 2
+		)
+		second_user_snapshot = UserSnapshot.create(
+			time: (Time.now - 20.days).beginning_of_day,
+			daily_active: 4,
+			weekly_active: 2,
+			monthly_active: 7,
+			yearly_active: 18,
+         free_plan: 19,
+         plus_plan: 15,
+         pro_plan: 7
+		)
+
+		res = get_request(
+			"/v1/user_snapshots",
+			{Authorization: sessions(:sherlockWebsiteSession).token}
+		)
+
+		assert_response 200
+		assert_equal(2, res["snapshots"].length)
+
+		assert_equal(first_user_snapshot.time.to_s, res["snapshots"][0]["time"])
+		assert_equal(first_user_snapshot.daily_active, res["snapshots"][0]["daily_active"])
+		assert_equal(first_user_snapshot.weekly_active, res["snapshots"][0]["weekly_active"])
+		assert_equal(first_user_snapshot.monthly_active, res["snapshots"][0]["monthly_active"])
+		assert_equal(first_user_snapshot.yearly_active, res["snapshots"][0]["yearly_active"])
+      assert_equal(first_user_snapshot.free_plan, res["snapshots"][0]["free_plan"])
+      assert_equal(first_user_snapshot.plus_plan, res["snapshots"][0]["plus_plan"])
+      assert_equal(first_user_snapshot.pro_plan, res["snapshots"][0]["pro_plan"])
+
+		assert_equal(second_user_snapshot.time.to_s, res["snapshots"][1]["time"])
+		assert_equal(second_user_snapshot.daily_active, res["snapshots"][1]["daily_active"])
+		assert_equal(second_user_snapshot.weekly_active, res["snapshots"][1]["weekly_active"])
+		assert_equal(second_user_snapshot.monthly_active, res["snapshots"][1]["monthly_active"])
+		assert_equal(second_user_snapshot.yearly_active, res["snapshots"][1]["yearly_active"])
+      assert_equal(second_user_snapshot.free_plan, res["snapshots"][1]["free_plan"])
+      assert_equal(second_user_snapshot.plus_plan, res["snapshots"][1]["plus_plan"])
+      assert_equal(second_user_snapshot.pro_plan, res["snapshots"][1]["pro_plan"])
+	end
+
+	it "should get user snapshots in the specified timeframe" do
+		start_timestamp = DateTime.parse("2019-06-09T00:00:00.000Z").to_i
+		end_timestamp = DateTime.parse("2019-06-12T00:00:00.000Z").to_i
+		first_user_snapshot = user_snapshots(:first_user_snapshot)
+		second_user_snapshot = user_snapshots(:second_user_snapshot)
+
+		res = get_request(
+			"/v1/user_snapshots?start=#{start_timestamp}&end=#{end_timestamp}",
+			{Authorization: sessions(:sherlockWebsiteSession).token}
+		)
+
+		assert_response 200
+		assert_equal(2, res["snapshots"].length)
+
+		assert_equal(first_user_snapshot.time.to_s, res["snapshots"][0]["time"])
+		assert_equal(first_user_snapshot.daily_active, res["snapshots"][0]["daily_active"])
+		assert_equal(first_user_snapshot.weekly_active, res["snapshots"][0]["weekly_active"])
+		assert_equal(first_user_snapshot.monthly_active, res["snapshots"][0]["monthly_active"])
+		assert_equal(first_user_snapshot.yearly_active, res["snapshots"][0]["yearly_active"])
+      assert_equal(first_user_snapshot.free_plan, res["snapshots"][0]["free_plan"])
+      assert_equal(first_user_snapshot.plus_plan, res["snapshots"][0]["plus_plan"])
+      assert_equal(first_user_snapshot.pro_plan, res["snapshots"][0]["pro_plan"])
+
+		assert_equal(second_user_snapshot.time.to_s, res["snapshots"][1]["time"])
+		assert_equal(second_user_snapshot.daily_active, res["snapshots"][1]["daily_active"])
+		assert_equal(second_user_snapshot.weekly_active, res["snapshots"][1]["weekly_active"])
+		assert_equal(second_user_snapshot.monthly_active, res["snapshots"][1]["monthly_active"])
+		assert_equal(second_user_snapshot.yearly_active, res["snapshots"][1]["yearly_active"])
+      assert_equal(second_user_snapshot.free_plan, res["snapshots"][1]["free_plan"])
+      assert_equal(second_user_snapshot.plus_plan, res["snapshots"][1]["plus_plan"])
+      assert_equal(second_user_snapshot.pro_plan, res["snapshots"][1]["pro_plan"])
+	end
+end
