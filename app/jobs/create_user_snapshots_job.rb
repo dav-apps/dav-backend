@@ -22,6 +22,8 @@ class CreateUserSnapshotsJob < ApplicationJob
       pro_plan = 0
 
 		users.each do |user|
+         user = user.user if user.is_a?(AppUser)
+
 			daily_active += 1 if user_was_active(user.last_active, 1.day)
 			weekly_active += 1 if user_was_active(user.last_active, 1.week)
 			monthly_active += 1 if user_was_active(user.last_active, 1.month)
