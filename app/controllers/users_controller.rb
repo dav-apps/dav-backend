@@ -133,41 +133,6 @@ class UsersController < ApplicationController
 		render_errors(e)
 	end
 
-	def get_users
-		access_token = get_auth
-
-		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
-
-		# Get the session
-		session = ValidationService.get_session_from_token(access_token)
-
-		# Make sure this was called from the website
-		ValidationService.raise_validation_errors(ValidationService.validate_app_is_dav_app(session.app))
-
-		# Make sure the user is the first dev
-		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(session.user.dev))
-
-		# Collect and return the data
-		users = Array.new
-		User.all.each do |user|
-			users.push({
-				id: user.id,
-				confirmed: user.confirmed,
-				last_active: user.last_active,
-				plan: user.plan,
-				created_at: user.created_at
-			})
-		end
-
-		result = {
-			users: users
-		}
-
-		render json: result, status: 200
-	rescue RuntimeError => e
-		render_errors(e)
-	end
-
 	def get_user
 		access_token = get_auth
 
