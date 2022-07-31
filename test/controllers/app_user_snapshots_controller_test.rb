@@ -69,7 +69,9 @@ describe AppUserSnapshotsController do
 			yearly_active: 20,
          free_plan: 23,
          plus_plan: 5,
-         pro_plan: 2
+         pro_plan: 2,
+         email_confirmed: 43,
+         email_unconfirmed: 12
 		)
 		second_user_snapshot = AppUserSnapshot.create(
 			app: app,
@@ -80,7 +82,9 @@ describe AppUserSnapshotsController do
 			yearly_active: 18,
          free_plan: 26,
          plus_plan: 2,
-         pro_plan: 6
+         pro_plan: 6,
+         email_confirmed: 19,
+         email_unconfirmed: 43
 		)
 
 		res = get_request(
@@ -99,6 +103,8 @@ describe AppUserSnapshotsController do
       assert_equal(first_user_snapshot.free_plan, res["snapshots"][0]["free_plan"])
       assert_equal(first_user_snapshot.plus_plan, res["snapshots"][0]["plus_plan"])
       assert_equal(first_user_snapshot.pro_plan, res["snapshots"][0]["pro_plan"])
+      assert_equal(first_user_snapshot.email_confirmed, res["snapshots"][0]["email_confirmed"])
+      assert_equal(first_user_snapshot.email_unconfirmed, res["snapshots"][0]["email_unconfirmed"])
 
 		assert_equal(second_user_snapshot.time.to_s, res["snapshots"][1]["time"])
 		assert_equal(second_user_snapshot.daily_active, res["snapshots"][1]["daily_active"])
@@ -108,6 +114,8 @@ describe AppUserSnapshotsController do
       assert_equal(second_user_snapshot.free_plan, res["snapshots"][1]["free_plan"])
       assert_equal(second_user_snapshot.plus_plan, res["snapshots"][1]["plus_plan"])
       assert_equal(second_user_snapshot.pro_plan, res["snapshots"][1]["pro_plan"])
+      assert_equal(second_user_snapshot.email_confirmed, res["snapshots"][1]["email_confirmed"])
+      assert_equal(second_user_snapshot.email_unconfirmed, res["snapshots"][1]["email_unconfirmed"])
 	end
 
 	it "should get app user snapshots in the specified timeframe" do
@@ -133,6 +141,8 @@ describe AppUserSnapshotsController do
       assert_equal(first_user_snapshot.free_plan, res["snapshots"][0]["free_plan"])
       assert_equal(first_user_snapshot.plus_plan, res["snapshots"][0]["plus_plan"])
       assert_equal(first_user_snapshot.pro_plan, res["snapshots"][0]["pro_plan"])
+      assert_equal(first_user_snapshot.email_confirmed, res["snapshots"][0]["email_confirmed"])
+      assert_equal(first_user_snapshot.email_unconfirmed, res["snapshots"][0]["email_unconfirmed"])
 
 		assert_equal(second_user_snapshot.time.to_s, res["snapshots"][1]["time"])
 		assert_equal(second_user_snapshot.daily_active, res["snapshots"][1]["daily_active"])
@@ -142,5 +152,7 @@ describe AppUserSnapshotsController do
       assert_equal(second_user_snapshot.free_plan, res["snapshots"][1]["free_plan"])
       assert_equal(second_user_snapshot.plus_plan, res["snapshots"][1]["plus_plan"])
       assert_equal(second_user_snapshot.pro_plan, res["snapshots"][1]["pro_plan"])
+      assert_equal(second_user_snapshot.email_confirmed, res["snapshots"][1]["email_confirmed"])
+      assert_equal(second_user_snapshot.email_unconfirmed, res["snapshots"][1]["email_unconfirmed"])
 	end
 end

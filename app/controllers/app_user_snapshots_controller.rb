@@ -42,7 +42,9 @@ class AppUserSnapshotsController < ApplicationController
 				yearly_active: user_snapshot.yearly_active,
             free_plan: user_snapshot.free_plan,
             plus_plan: user_snapshot.plus_plan,
-            pro_plan: user_snapshot.pro_plan
+            pro_plan: user_snapshot.pro_plan,
+            email_confirmed: user_snapshot.email_confirmed,
+            email_unconfirmed: user_snapshot.email_unconfirmed
 			})
 		end
 
