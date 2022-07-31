@@ -20,6 +20,8 @@ class CreateUserSnapshotsJob < ApplicationJob
       free_plan = 0
       plus_plan = 0
       pro_plan = 0
+      email_confirmed = 0
+      email_unconfirmed = 0
 
 		users.each do |user|
          user = user.user if user.is_a?(AppUser)
@@ -37,6 +39,12 @@ class CreateUserSnapshotsJob < ApplicationJob
          else
             free_plan += 1
          end
+
+         if user.confirmed
+            email_confirmed += 1
+         else
+            email_unconfirmed += 1
+         end
 		end
 
 		if app.nil?
@@ -48,7 +56,9 @@ class CreateUserSnapshotsJob < ApplicationJob
 				yearly_active: yearly_active,
             free_plan: free_plan,
             plus_plan: plus_plan,
-            pro_plan: pro_plan
+            pro_plan: pro_plan,
+            email_confirmed: email_confirmed,
+            email_unconfirmed: email_unconfirmed
 			)
 		else
 			AppUserSnapshot.create(
@@ -60,7 +70,9 @@ class CreateUserSnapshotsJob < ApplicationJob
 				yearly_active: yearly_active,
             free_plan: free_plan,
             plus_plan: plus_plan,
-            pro_plan: pro_plan
+            pro_plan: pro_plan,
+            email_confirmed: email_confirmed,
+            email_unconfirmed: email_unconfirmed
 			)
 		end
 	end
