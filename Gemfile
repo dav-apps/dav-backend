@@ -29,7 +29,7 @@ gem 'rack-cors'
 gem 'sidekiq'
 
 # Sending emails
-gem 'sendgrid-ruby'
+gem 'resend', '~> 0.2.0'
 
 # Sending notifications
 gem 'webpush'
