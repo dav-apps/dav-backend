@@ -1,8 +1,12 @@
 class UtilsService
 	def self.redis
+		db = 2 # Staging
+		db = 1 if Rails.production?
+		db = 3 if Rails.test?
+
 		@redis ||= Redis.new(
 			url: ENV["REDIS_URL"],
-			db: 1,
+			db: db,
 			:reconnect_attempts => 10,
 			:reconnect_delay => 1,
 			:reconnect_delay_max => 5
