@@ -1,8 +1,8 @@
 class UtilsService
 	def self.redis
 		db = 2 # Staging
-		db = 1 if Rails.production?
-		db = 3 if Rails.test?
+		db = 1 if Rails.env.production?
+		db = 3 if Rails.env.test?
 
 		@redis ||= Redis.new(
 			url: ENV["REDIS_URL"],
