@@ -626,9 +626,9 @@ class DavExpressionCompiler
 					return nil if uuid.nil?
 
 					if query_params.nil?
-						return "https://\#\{ENV['SPACE_NAME']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}"
+						return "https://\#\{ENV['BUCKET_NAME_READ']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}"
 					else
-						return "https://\#\{ENV['SPACE_NAME']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}?\#\{query_params.to_query\}"
+						return "https://\#\{ENV['BUCKET_NAME_READ']\}.fra1.cdn.digitaloceanspaces.com/\#\{uuid\}?\#\{query_params.to_query\}"
 					end
 				when 'TableObjectUserAccess.create'
 					table_object_id = params[:table_object_id]

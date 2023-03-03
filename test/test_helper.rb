@@ -85,7 +85,7 @@ class ActiveSupport::TestCase
 		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
 		s3.put_object({
-			bucket: ENV["SPACE_NAME"],
+			bucket: ENV["BUCKET_NAME_WRITE"],
 			key: table_object.uuid,
 			body: contents,
 			acl: table_object.table.cdn ? "public-read" : "private",
@@ -97,7 +97,7 @@ class ActiveSupport::TestCase
 		tempfile = Tempfile.new
 
 		result = s3.get_object(
-			bucket: ENV["SPACE_NAME"],
+			bucket: ENV["BUCKET_NAME_WRITE"],
 			key: table_object.uuid,
 			response_target: tempfile.path
 		)
@@ -110,7 +110,7 @@ class ActiveSupport::TestCase
 		contents = blob.class == StringIO ? blob.string : File.open(blob, "rb").read
 
 		UtilsService.s3.put_object({
-			bucket: ENV["SPACE_NAME"],
+			bucket: ENV["BUCKET_NAME_WRITE"],
 			key: "profileImages/#{user.id}",
 			body: contents,
 			acl: "public-read",
