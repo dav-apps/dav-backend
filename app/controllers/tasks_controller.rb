@@ -23,4 +23,8 @@ class TasksController < ApplicationController
 		UpdateRedisCachesJob.perform_later
 		head 204, content_type: "application/json"
 	end
+
+	def rebuild_table_object_caching
+		RebuildTableObjectCachingJob.perform_later(6)
+	end
 end
