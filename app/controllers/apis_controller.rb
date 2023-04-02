@@ -217,6 +217,7 @@ class ApisController < ApplicationController
 		auth = get_auth
 		id = params[:id]
 		slot_name = params[:slot]
+		schema = params[:schema]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
@@ -238,6 +239,87 @@ class ApisController < ApplicationController
 		# Get the api slot
 		api_slot = api.api_slots.find_by(name: slot_name)
 		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slot))
+
+		if !schema.nil?
+			# TODO: Validate schema param
+
+			# Read the schema and generate all required api endpoints
+			# Go through each class
+			schema.each do |class_name, class_data|
+				class_name_snake = snake_case(class_name)
+				class_name_snake_plural = name_plural(class_name_snake)
+				next if class_data["endpoints"].nil?
+
+				endpoints = class_data["endpoints"]
+				properties = class_data["properties"]
+
+				# Try to find the table of the class
+				table = api.app.tables.find_by(name: class_name)
+				next if table.nil?
+
+				if endpoints.include?("retrieve")
+					# Generate the retrieve endpoint
+					code = %{
+						#{get_functions(api.app)}
+
+						(# Get the params)
+						(var uuid (get_param "uuid"))
+						(var fields_str (get_param "fields"))
+
+						(if (is_nil fields_str) (
+							(var fields (list "uuid"))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
+
+						(# Get the session)
+						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
+
+						(# Get the object)
+						(var obj (func get_table_object (uuid #{table.id})))
+
+						(if (is_nil obj) (
+							(# Object does not exist)
+							(func render_validation_errors (
+								(list (hash
+									(error "#{class_name_snake}_does_not_exist")
+									(status 404)
+								))
+							))
+						))
+
+						(# Render the result)
+						(var result (hash))
+
+						(if (fields.contains "uuid") (var result.uuid obj.uuid))
+						#{
+							properties.each.map { |property_name, property_data|
+								%{
+									(if (field.contains \"#{property_name}\") (var result.#{property_name}) obj.#{property_name})
+								}
+							}.join("\n")
+						}
+
+						(render_json result 200)
+					}
+
+					# Save the endpoint
+					path = "#{class_name_snake_plural}/:uuid"
+					api_endpoint = api_slot.api_endpoints.find_by(path: path, method: "GET")
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(api_slot: api_slot, path: path, method: "GET", commands: code)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
+			end
+		end
 
 		# Compile each ApiEndpoint and create or update the CompiledApiEndpoints with the compiled code
 		compiler = DavExpressionCompiler.new
@@ -262,5 +344,123 @@ class ApisController < ApplicationController
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
 		render_errors(e)
+	end
+
+	private
+	def snake_case(string)
+		string.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+	end
+
+	def name_plural(string)
+		return "#{string[0..-2]}ies" if string[-1] == "y"
+		return "#{string}s"
+	end
+
+	def get_functions(app)
+		return %{
+			(def process_fields (fields_string) (
+				(# params: fields_string: string)
+				(var fields (list))
+	
+				(for field in (fields_string.split /,(?![^(]*\\))/) (
+					(if (Regex.check field /^\\w+\\([\\w,\\(\\)]+\\)$/) (
+						(# field contains parentheses with subfields)
+						(var matches (Regex.match field /^(?<parent>\\w+)\\((?<content>[\\w,\\(\\)]+)\\)$/))
+	
+						(var parent matches.parent)
+						(var content matches.content)
+						(var inner_values (func process_fields (content)))
+	
+						(for value in inner_values (
+							(fields.push (parent + "." + value))
+						))
+					) elseif (field.length > 0) (
+						(fields.push field)
+					))
+				))
+	
+				(return fields)
+			))
+
+			(def get_session (token) (
+				(# params: token: string)
+				(catch (
+					(var session (Session.get token))
+				) (
+					(var error errors#0)
+
+					(if (error.code == 0) (
+						(# Session does not exist)
+						(var error_code 3501)
+						(var status_code 404)
+					) elseif (error.code == 1) (
+						(# Can't use old access token)
+						(var error_code 3100)
+						(var status_code 403)
+					) else (
+						(# Session needs to be renewed)
+						(var error_code 3101)
+						(var status_code 403)
+					))
+
+					(func render_validation_errors ((list (hash (error (get_error error_code)) (status status_code)))))
+				))
+
+				(# Check if the session belongs to the app)
+				(if (session.app_id != #{app.id}) (
+					(# Action not allowed)
+					(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+				))
+
+				(return session)
+			))
+
+			(def get_table_object (uuid table_id user_id) (
+				(# params: uuid: string, table_id: int, user_id: int)
+				(if (is_nil uuid) (return nil))
+
+				(catch (
+					(var obj (TableObject.get uuid))
+				) (
+					(# Access not allowed)
+					(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+				))
+
+				(if (is_nil obj) (
+					(return nil)
+				) else (
+					(# Check if the table object belongs to the user and to the table)
+					(if (
+						(obj.table_id != table_id)
+						or ((!(is_nil user_id)) and (obj.user_id != user_id))
+					) (
+						(# Action not allowed)
+						(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+					))
+
+					(return obj)
+				))
+			))
+
+			(def render_errors (errors status) (
+				(# params: errors: list, status: int)
+				(render_json (hash (errors errors)) status)
+			))
+
+			(def render_validation_errors (validations status) (
+				(# params: validations: list<hash: error<hash: {code: string, message: string}>, status: number>)
+				(# Save the errors in a separate list)
+				(var errors (list))
+
+				(for validation in validations (
+					(errors.push validation.error)
+				))
+
+				(if (errors.length > 0) (
+					(# Render the errors with the status of the first validation)
+					(func render_errors (errors validations#0.status))
+				))
+			))
+		}
 	end
 end
