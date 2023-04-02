@@ -1225,9 +1225,13 @@ class DavExpressionCompiler
 				return "break\n"
 			when :def
 				name = command[1].to_s
-				result = "def #{name}("
 
+				# Save that the function is defined
+				@defined_functions.push(name)
+
+				result = "def #{name}("
 				i = 0
+
 				command[2].each do |parameter|
 					result += ", " if i != 0
 					result += "#{parameter} = nil"
@@ -1236,9 +1240,6 @@ class DavExpressionCompiler
 
 				result += ")\n"
 				result += "#{compile_command(command[3])}\nend\n"
-
-				# Save that the function is defined
-				@defined_functions.push(name)
 
 				return result
 			when :func
