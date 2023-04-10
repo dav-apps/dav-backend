@@ -1665,6 +1665,8 @@ class DavExpressionCompiler
 				else
 					return "#{compile_command(parts.join('.').to_sym, true)}.#{last_part}[#{index}]"
 				end
+			elsif last_part.starts_with?("properties[")
+				return "#{parts.join('.')}#{last_part[10..]}"
 			end
 
 			# The first part of the command is probably a variable / hash
