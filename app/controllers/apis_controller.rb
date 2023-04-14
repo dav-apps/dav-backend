@@ -217,7 +217,10 @@ class ApisController < ApplicationController
 		auth = get_auth
 		id = params[:id]
 		slot_name = params[:slot]
-		schema = params[:schema]
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		schema = body["schema"]
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
@@ -252,6 +255,7 @@ class ApisController < ApplicationController
 
 				endpoints = class_data["endpoints"]
 				properties = class_data["properties"]
+				getters = ["url_getter"]
 
 				# Try to find the table of the class
 				table = api.app.tables.find_by(name: class_name)
@@ -267,7 +271,7 @@ class ApisController < ApplicationController
 						(var fields_str (get_param "fields"))
 
 						(if (is_nil fields_str) (
-							(var fields (list "uuid"))
+							(var fields (hash (uuid (hash))))
 						) else (
 							(# Process the fields string)
 							(var fields (func process_fields (fields_str)))
@@ -280,7 +284,7 @@ class ApisController < ApplicationController
 						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
 
 						(# Get the object)
-						(var obj (func get_table_object (uuid #{table.id})))
+						(var obj (func get_table_object (uuid)))
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -292,17 +296,150 @@ class ApisController < ApplicationController
 							))
 						))
 
+						(def generate_result (key value obj schema class_name) (
+							(var schema_class schema[class_name])
+							(if (is_nil schema_class) (
+								(var schema_class (hash))
+							))
+
+							(var schema_properties schema_class["properties"])
+							(if (is_nil schema_properties) (
+								(var schema_properties (hash))
+							))
+
+							(var schema_property schema_properties[key])
+							(if (is_nil schema_property) (
+								(var schema_property (hash))
+							))
+
+							(var getter schema_property["getter"])
+
+							(if (value.keys.length == 0) (
+								#{
+									result = ""
+
+									getters.each do |getter|
+										result += %{
+											(if (getter == "#{getter}") (
+												(return (func #{getter} (obj (get_params))))
+											))
+										}
+									end
+
+									result
+								}
+
+								(return obj.properties[key])
+							) else (
+								(var relationship schema_property["relationship"])
+
+								(if (relationship == "multiple") (
+									(var items (list))
+									(var uuids_string obj.properties[key])
+									(if (is_nil uuids_string) (return items))
+
+									(var uuids (uuids_string.split ","))
+
+									(for uuid in uuids (
+										(var item (hash))
+										(var new_obj (func get_table_object (uuid)))
+
+										(for subkey in value.keys (
+											(var val
+												(func generate_result (
+													subkey
+													value[subkey]
+													new_obj
+													schema
+													schema_property["type"]
+												))
+											)
+
+											(var item[subkey] val)
+										))
+
+										(items.push item)
+									))
+
+									(return items)
+								) else (
+									(var item (hash))
+									(var uuid obj.properties[key])
+									(var new_obj (func get_table_object (uuid)))
+
+									(if (is_nil new_obj) (
+										(return nil)
+									))
+
+									(for subkey in value.keys (
+										(var val
+											(func generate_result (
+												subkey
+												value[subkey]
+												new_obj
+												schema
+												schema_property["type"]
+											))
+										)
+
+										(var item[subkey] val)
+									))
+
+									(return item)
+								))
+							))
+						))
+
 						(# Render the result)
 						(var result (hash))
 
-						(if (fields.contains "uuid") (var result.uuid obj.uuid))
-						#{
-							properties.each.map { |property_name, property_data|
-								%{
-									(if (field.contains \"#{property_name}\") (var result.#{property_name}) obj.#{property_name})
-								}
-							}.join("\n")
-						}
+						(for key in fields.keys (
+							(var value (func generate_result (key fields[key] obj
+								(hash
+									(Publisher (hash
+										(properties (hash
+											(authors (hash
+												(type "Author")
+												(relationship "multiple")
+											))
+											(logo (hash
+												(type "PublisherLogo")
+											))
+										))
+									))
+									(PublisherLogo (hash
+										(properties (hash
+											(url (hash
+												(type "String")
+												(getter "url_getter")
+											))
+										))
+									))
+									(Author (hash
+										(properties (hash
+											(first_name (hash
+												(type "String")
+											))
+											(last_name (hash
+												(type "String")
+											))
+											(series (hash
+												(relationship "multiple")
+											))
+										))
+									))
+									(StoreBookSeries (hash
+										(properties (hash
+											(name (hash
+												(type "String")
+											))
+										))
+									))
+								)
+								"Publisher"
+							)))
+							(var result[key] value)
+						))
 
 						(render_json result 200)
 					}
@@ -353,33 +490,55 @@ class ApisController < ApplicationController
 
 	def name_plural(string)
 		return "#{string[0..-2]}ies" if string[-1] == "y"
-		return "#{string}s"
+		return "#{string}s" if string[-1] != "s"
+		return string
 	end
 
 	def get_functions(app)
 		return %{
-			(def process_fields (fields_string) (
-				(# params: fields_string: string)
-				(var fields (list))
-	
-				(for field in (fields_string.split /,(?![^(]*\\))/) (
-					(if (Regex.check field /^\\w+\\([\\w,\\(\\)]+\\)$/) (
-						(# field contains parentheses with subfields)
-						(var matches (Regex.match field /^(?<parent>\\w+)\\((?<content>[\\w,\\(\\)]+)\\)$/))
-	
-						(var parent matches.parent)
-						(var content matches.content)
-						(var inner_values (func process_fields (content)))
-	
-						(for value in inner_values (
-							(fields.push (parent + "." + value))
+			(def process_fields (input) (
+				(var result (hash))
+				(var depth 0)
+				(var current_key "")
+				(var current_value "")
+
+				(for char in input.chars (
+					(if (char == " ") (continue))
+
+					(if ((char == ",") && (depth == 0)) (
+						(if (current_key.size == 0) (continue))
+						(var result[current_key] (hash))
+						(var current_key "")
+					) elseif (char == "[") (
+						(if (depth > 0) (
+							(var current_value (current_value + char))
 						))
-					) elseif (field.length > 0) (
-						(fields.push field)
+
+						(var depth (depth + 1))
+					) elseif (char == "]") (
+						(if (depth > 1) (
+							(var current_value (current_value + char))
+						))
+
+						(var depth (depth - 1))
+
+						(if (depth == 0) (
+							(var result[current_key] (func process_fields (current_value)))
+							(var current_key "")
+							(var current_value "")
+						))
+					) elseif (depth == 0) (
+						(var current_key (current_key + char))
+					) else (
+						(var current_value (current_value + char))
 					))
 				))
-	
-				(return fields)
+
+				(if (current_key.size > 0) (
+					(var result[current_key] (hash))
+				))
+
+				(return result)
 			))
 
 			(def get_session (token) (
@@ -415,8 +574,8 @@ class ApisController < ApplicationController
 				(return session)
 			))
 
-			(def get_table_object (uuid table_id user_id) (
-				(# params: uuid: string, table_id: int, user_id: int)
+			(def get_table_object (uuid user_id) (
+				(# params: uuid: string, user_id: int)
 				(if (is_nil uuid) (return nil))
 
 				(catch (
@@ -430,10 +589,7 @@ class ApisController < ApplicationController
 					(return nil)
 				) else (
 					(# Check if the table object belongs to the user and to the table)
-					(if (
-						(obj.table_id != table_id)
-						or ((!(is_nil user_id)) and (obj.user_id != user_id))
-					) (
+					(if ((!(is_nil user_id)) and (obj.user_id != user_id)) (
 						(# Action not allowed)
 						(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
 					))
