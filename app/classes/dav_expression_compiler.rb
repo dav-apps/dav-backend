@@ -1299,6 +1299,8 @@ class DavExpressionCompiler
 				return "@vars[:headers][#{compile_command(command[1], true)}]"
 			when :get_param
 				return "@vars[:params][#{compile_command(command[1], true)}]"
+			when :get_params
+				return "@vars[:params]"
 			when :get_body
 				return "_method_call('get_body')"
 			when :get_error
@@ -1643,6 +1645,8 @@ class DavExpressionCompiler
 				"to_i",
 				"to_f",
 				"round",
+				"chars",
+				"size",
 				"keys",
 				"values",
 				"table_objects",
