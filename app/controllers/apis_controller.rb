@@ -265,7 +265,7 @@ class ApisController < ApplicationController
 				if endpoints.include?("retrieve")
 					# Generate the retrieve endpoint
 					code = %{
-						#{get_functions(api.app, getters)}
+						#{get_functions(schema, api.app, getters)}
 
 						(# Get the params)
 						(var uuid (get_param "uuid"))
@@ -301,48 +301,11 @@ class ApisController < ApplicationController
 						(var result (hash))
 
 						(for key in fields.keys (
-							(var value (func generate_result (key fields[key] obj
-								(hash
-									(Publisher (hash
-										(properties (hash
-											(authors (hash
-												(type "Author")
-												(relationship "multiple")
-											))
-											(logo (hash
-												(type "PublisherLogo")
-											))
-										))
-									))
-									(PublisherLogo (hash
-										(properties (hash
-											(url (hash
-												(type "String")
-												(getter "url_getter")
-											))
-										))
-									))
-									(Author (hash
-										(properties (hash
-											(first_name (hash
-												(type "String")
-											))
-											(last_name (hash
-												(type "String")
-											))
-											(series (hash
-												(relationship "multiple")
-											))
-										))
-									))
-									(StoreBookSeries (hash
-										(properties (hash
-											(name (hash
-												(type "String")
-											))
-										))
-									))
-								)
+							(var value (func generate_result (
+								key
+								fields[key]
+								obj
+								schema
 								"Publisher"
 							)))
 							(var result[key] value)
@@ -458,8 +421,46 @@ class ApisController < ApplicationController
 		return result
 	end
 
-	def get_functions(app, getters)
+	def hash_to_dx_hash(hash)
+		values = ""
+
+		hash.each do |key, value|
+			if value.is_a?(String)
+				values += "(#{key} \"#{value}\")\n"
+			elsif value.is_a?(Hash)
+				values += "(#{key} #{hash_to_dx_hash(value)})\n"
+			elsif value.is_a?(Array)
+				values += "(#{key} #{array_to_dx_list(value)})\n"
+			else
+				values += "(#{key} #{value})\n"
+			end
+		end
+
+		return "(hash #{values})"
+	end
+
+	def array_to_dx_list(array)
+		values = ""
+
+		array.each do |value|
+			if value.is_a?(String)
+				values += "\"#{value}\"\n"
+			elsif value.is_a?(Hash)
+				values += "#{hash_to_dx_hash(value)}\n"
+			elsif value.is_a?(Array)
+				values += "#{array_to_dx_list(value)}\n"
+			else
+				values += "#{value}\n"
+			end
+		end
+
+		return "(list #{values})"
+	end
+
+	def get_functions(schema, app, getters)
 		return %{
+			(var schema #{hash_to_dx_hash(schema)})
+
 			(def process_fields (input) (
 				(var result (hash))
 				(var depth 0)
