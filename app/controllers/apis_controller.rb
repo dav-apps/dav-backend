@@ -255,7 +255,8 @@ class ApisController < ApplicationController
 
 				endpoints = class_data["endpoints"]
 				properties = class_data["properties"]
-				getters = ["url_getter"]
+				schema_functions = get_schema_class_functions(schema, class_name)
+				getters = schema_functions[:getters]
 
 				# Try to find the table of the class
 				table = api.app.tables.find_by(name: class_name)
@@ -264,7 +265,7 @@ class ApisController < ApplicationController
 				if endpoints.include?("retrieve")
 					# Generate the retrieve endpoint
 					code = %{
-						#{get_functions(api.app)}
+						#{get_functions(api.app, getters)}
 
 						(# Get the params)
 						(var uuid (get_param "uuid"))
@@ -292,100 +293,6 @@ class ApisController < ApplicationController
 								(list (hash
 									(error "#{class_name_snake}_does_not_exist")
 									(status 404)
-								))
-							))
-						))
-
-						(def generate_result (key value obj schema class_name) (
-							(var schema_class schema[class_name])
-							(if (is_nil schema_class) (
-								(var schema_class (hash))
-							))
-
-							(var schema_properties schema_class["properties"])
-							(if (is_nil schema_properties) (
-								(var schema_properties (hash))
-							))
-
-							(var schema_property schema_properties[key])
-							(if (is_nil schema_property) (
-								(var schema_property (hash))
-							))
-
-							(var getter schema_property["getter"])
-
-							(if (value.keys.length == 0) (
-								#{
-									result = ""
-
-									getters.each do |getter|
-										result += %{
-											(if (getter == "#{getter}") (
-												(return (func #{getter} (obj (get_params))))
-											))
-										}
-									end
-
-									result
-								}
-
-								(return obj.properties[key])
-							) else (
-								(var relationship schema_property["relationship"])
-
-								(if (relationship == "multiple") (
-									(var items (list))
-									(var uuids_string obj.properties[key])
-									(if (is_nil uuids_string) (return items))
-
-									(var uuids (uuids_string.split ","))
-
-									(for uuid in uuids (
-										(var item (hash))
-										(var new_obj (func get_table_object (uuid)))
-
-										(for subkey in value.keys (
-											(var val
-												(func generate_result (
-													subkey
-													value[subkey]
-													new_obj
-													schema
-													schema_property["type"]
-												))
-											)
-
-											(var item[subkey] val)
-										))
-
-										(items.push item)
-									))
-
-									(return items)
-								) else (
-									(var item (hash))
-									(var uuid obj.properties[key])
-									(var new_obj (func get_table_object (uuid)))
-
-									(if (is_nil new_obj) (
-										(return nil)
-									))
-
-									(for subkey in value.keys (
-										(var val
-											(func generate_result (
-												subkey
-												value[subkey]
-												new_obj
-												schema
-												schema_property["type"]
-											))
-										)
-
-										(var item[subkey] val)
-									))
-
-									(return item)
 								))
 							))
 						))
@@ -494,7 +401,64 @@ class ApisController < ApplicationController
 		return string
 	end
 
-	def get_functions(app)
+	def get_schema_class_functions(schema, type_name, visited = [])
+		result = {
+			setters: [],
+			getters: [],
+			validators: [],
+			preprocessors: []
+		}
+
+		# Check if the class exists in the schema
+		return result unless schema[type_name]
+
+		type = schema[type_name]
+
+		# Check if we've already visited this class
+		return result if visited.include?(type_name)
+
+		properties = type["properties"]
+		return result unless properties
+
+		visited << type_name
+
+		properties.each do |prop_name, prop_value|
+			setter = prop_value["setter"]
+			result[:setters].push(setter) if !setter.nil?
+
+			getter = prop_value["getter"]
+			result[:getters].push(getter) if !getter.nil?
+
+			validator = prop_value["validator"]
+			result[:validators].push(validator) if !validator.nil?
+
+			preprocessor = prop_value["preprocessor"]
+			result[:preprocessors].push(preprocessor) if !preprocessor.nil?
+
+			sub_class_name = prop_value["type"]
+			sub_result = get_schema_class_functions(
+				schema,
+				sub_class_name,
+				visited
+			)
+
+			result[:setters].push(sub_result[:setters])
+			result[:getters].push(sub_result[:getters])
+			result[:validators].push(sub_result[:validators])
+			result[:preprocessors].push(sub_result[:preprocessors])
+		end
+
+		visited.delete(type_name)
+
+		result.each do |key, value|
+			value.flatten!
+			value.uniq!
+		end
+
+		return result
+	end
+
+	def get_functions(app, getters)
 		return %{
 			(def process_fields (input) (
 				(var result (hash))
@@ -615,6 +579,100 @@ class ApisController < ApplicationController
 				(if (errors.length > 0) (
 					(# Render the errors with the status of the first validation)
 					(func render_errors (errors validations#0.status))
+				))
+			))
+
+			(def generate_result (key value obj schema class_name) (
+				(var schema_class schema[class_name])
+				(if (is_nil schema_class) (
+					(var schema_class (hash))
+				))
+
+				(var schema_properties schema_class["properties"])
+				(if (is_nil schema_properties) (
+					(var schema_properties (hash))
+				))
+
+				(var schema_property schema_properties[key])
+				(if (is_nil schema_property) (
+					(var schema_property (hash))
+				))
+
+				(var getter schema_property["getter"])
+
+				(if (value.keys.length == 0) (
+					#{
+						result = ""
+
+						getters.each do |getter|
+							result += %{
+								(if (getter == "#{getter}") (
+									(return (func #{getter} (obj (get_params))))
+								))
+							}
+						end
+
+						result
+					}
+
+					(return obj.properties[key])
+				) else (
+					(var relationship schema_property["relationship"])
+
+					(if (relationship == "multiple") (
+						(var items (list))
+						(var uuids_string obj.properties[key])
+						(if (is_nil uuids_string) (return items))
+
+						(var uuids (uuids_string.split ","))
+
+						(for uuid in uuids (
+							(var item (hash))
+							(var new_obj (func get_table_object (uuid)))
+
+							(for subkey in value.keys (
+								(var val
+									(func generate_result (
+										subkey
+										value[subkey]
+										new_obj
+										schema
+										schema_property["type"]
+									))
+								)
+
+								(var item[subkey] val)
+							))
+
+							(items.push item)
+						))
+
+						(return items)
+					) else (
+						(var item (hash))
+						(var uuid obj.properties[key])
+						(var new_obj (func get_table_object (uuid)))
+
+						(if (is_nil new_obj) (
+							(return nil)
+						))
+
+						(for subkey in value.keys (
+							(var val
+								(func generate_result (
+									subkey
+									value[subkey]
+									new_obj
+									schema
+									schema_property["type"]
+								))
+							)
+
+							(var item[subkey] val)
+						))
+
+						(return item)
+					))
 				))
 			))
 		}
