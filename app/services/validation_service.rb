@@ -572,6 +572,11 @@ class ValidationService
 		!mode.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_schema_type(schema)
+		error_code = 2254
+		!schema.is_a?(Hash) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Too short & too long fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -1419,6 +1424,8 @@ class ValidationService
 			"Field has wrong type: cancel_url"
 		when 2253
 			"Field has wrong type: mode"
+		when 2254
+			"Field has wrong type: schema"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"

@@ -244,7 +244,8 @@ class ApisController < ApplicationController
 		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slot))
 
 		if !schema.nil?
-			# TODO: Validate schema param
+			# Validate schema param
+			ValidationService.raise_validation_errors(ValidationService.validate_schema_type(schema))
 
 			# Read the schema and generate all required api endpoints
 			# Go through each class
