@@ -263,6 +263,203 @@ class ApisController < ApplicationController
 				table = api.app.tables.find_by(name: class_name)
 				next if table.nil?
 
+				if endpoints.include?("create")
+					# Generate the create endpoint
+					code = %{
+						#{get_functions(schema, api.app, getters)}
+
+						(# Get the params)
+						(var fields_str (get_param "fields"))
+
+						(if (is_nil fields_str) (
+							(var fields (hash (uuid (hash))))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(var json (parse_json (get_body)))
+						(var body_params (hash))
+
+						#{
+							result = ""
+
+							schema[class_name]["properties"].each do |prop_key, prop_value|
+								next if !["String", "Boolean", "Integer", "Float"].include?(prop_value["type"])
+								result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
+							end
+
+							result
+						}
+
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
+
+						(if (is_nil access_token) (
+							(func render_validation_errors (
+								(list (hash
+									(error "authorization_header_missing")
+									(status 400)
+								))
+							))
+						))
+
+						(# Make sure content type is json)
+						(func validate_content_type_json ((get_header "Content-Type")))
+
+						(# Get the session)
+						(var session (func get_session (access_token)))
+
+						(# Validate missing fields)
+						#{
+							result = ""
+
+							schema[class_name]["properties"].each do |prop_key, prop_value|
+								next unless prop_value["required"]
+								result += %{
+									(if (is_nil body_params[\"#{prop_key}\"]) (
+										(func render_validation_errors (
+											(list (hash
+												(error "#{prop_key}_missing")
+												(status 400)
+											))
+										))
+									))
+								}
+							end
+
+							result
+						}
+
+						(# Validate field types)
+						#{
+							result = ""
+
+							schema[class_name]["properties"].each do |prop_key, prop_value|
+								if prop_value["type"].nil? || prop_value["type"] == "String"
+									condition = "(body_params[\"#{prop_key}\"].class != \"String\")"
+								elsif prop_value["type"] == "Boolean"
+									condition = "((body_params[\"#{prop_key}\"] != true) and (body_params[\"#{prop_key}\"] != false))"
+								elsif prop_value["type"] == "Integer"
+									condition = "(body_params[\"#{prop_key}\"].class != \"Integer\")"
+								elsif prop_value["type"] == "Float"
+									condition = "(body_params[\"#{prop_key}\"].class != \"Float\")"
+								elsif prop_value["relationship"] == "multiple"
+									condition = "(body_params[\"#{prop_key}\"].class != \"Array\")"
+								else
+									next
+								end
+
+								result += %{
+									(if (!(is_nil body_params[\"#{prop_key}\"])) (
+										(if #{condition} (
+											(func render_validation_errors (
+												(list (hash
+													(error "#{prop_key}_wrong_type")
+													(status 400)
+												))
+											))
+										))
+									))
+								}
+							end
+
+							result
+						}
+
+						(# Validate too short and too long fields)
+						#{
+							result = ""
+
+							schema[class_name]["properties"].each do |prop_key, prop_value|
+								next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
+								next if !prop_value["type"].nil? && prop_value["type"] != "String"
+
+								if !prop_value["minLength"].nil?
+									result += %{
+										(if (
+											(!(is_nil body_params[\"#{prop_key}\"]))
+											and (body_params[\"#{prop_key}\"].length < #{prop_value["minLength"]})
+										)
+											(func render_validation_errors (
+												(list (hash
+													(error "#{prop_key}_too_short")
+													(status 400)
+												))
+											))
+										)
+									}
+								end
+
+								if !prop_value["maxLength"].nil?
+									result += %{
+										(if (
+											(!(is_nil body_params[\"#{prop_key}\"]))
+											and (body_params[\"#{prop_key}\"].length > #{prop_value["maxLength"]})
+										)
+											(func render_validation_errors (
+												(list (hash
+													(error "#{prop_key}_too_long")
+													(status 400)
+												))
+											))
+										)
+									}
+								end
+							end
+
+							result
+						}
+
+						(# Create the object)
+						(var properties (hash))
+
+						(for key in body_params.keys (
+							(var properties[key] body_params[key])
+						))
+
+						(var obj (func create_table_object (
+							session.user_id
+							\"#{class_name}\"
+							properties
+						)))
+
+						(# Render the result)
+						(var result (hash))
+
+						(for key in fields.keys (
+							(var value (func generate_result (
+								key
+								fields[key]
+								obj
+								schema
+								\"#{class_name}\"
+							)))
+							(var result[key] value)
+						))
+
+						(render_json result 201)
+					}
+
+					# Save the endpoint
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: class_name_snake_plural,
+						method: "POST"
+					)
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: class_name_snake_plural,
+							method: "POST",
+							commands: code
+						)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
+
 				if endpoints.include?("retrieve")
 					# Generate the retrieve endpoint
 					code = %{
@@ -307,7 +504,7 @@ class ApisController < ApplicationController
 								fields[key]
 								obj
 								schema
-								"Publisher"
+								\"#{class_name}\"
 							)))
 							(var result[key] value)
 						))
@@ -317,10 +514,18 @@ class ApisController < ApplicationController
 
 					# Save the endpoint
 					path = "#{class_name_snake_plural}/:uuid"
-					api_endpoint = api_slot.api_endpoints.find_by(path: path, method: "GET")
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: path,
+						method: "GET"
+					)
 
 					if api_endpoint.nil?
-						ApiEndpoint.create(api_slot: api_slot, path: path, method: "GET", commands: code)
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: path,
+							method: "GET",
+							commands: code
+						)
 					else
 						api_endpoint.commands = code
 						api_endpoint.save
@@ -462,6 +667,26 @@ class ApisController < ApplicationController
 		return %{
 			(var schema #{hash_to_dx_hash(schema)})
 
+			(def render_errors (errors status) (
+				(# params: errors: list, status: int)
+				(render_json (hash (errors errors)) status)
+			))
+
+			(def render_validation_errors (validations status) (
+				(# params: validations: list<hash: error<hash: {code: string, message: string}>, status: number>)
+				(# Save the errors in a separate list)
+				(var errors (list))
+
+				(for validation in validations (
+					(errors.push validation.error)
+				))
+
+				(if (errors.length > 0) (
+					(# Render the errors with the status of the first validation)
+					(func render_errors (errors validations#0.status))
+				))
+			))
+
 			(def process_fields (input) (
 				(var result (hash))
 				(var depth 0)
@@ -516,25 +741,35 @@ class ApisController < ApplicationController
 
 					(if (error.code == 0) (
 						(# Session does not exist)
-						(var error_code 3501)
+						(var error_code "session_does_not_exist")
 						(var status_code 404)
 					) elseif (error.code == 1) (
 						(# Can't use old access token)
-						(var error_code 3100)
+						(var error_code "cannot_use_old_access_token")
 						(var status_code 403)
 					) else (
 						(# Session needs to be renewed)
-						(var error_code 3101)
+						(var error_code "access_token_must_be_renewed")
 						(var status_code 403)
 					))
 
-					(func render_validation_errors ((list (hash (error (get_error error_code)) (status status_code)))))
+					(func render_validation_errors (
+						(list (hash
+							(error error_code)
+							(status status_code)
+						))
+					))
 				))
 
 				(# Check if the session belongs to the app)
 				(if (session.app_id != #{app.id}) (
 					(# Action not allowed)
-					(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+					(func render_validation_errors (
+						(list (hash
+							(error "action_not_allowed")
+							(status 403)
+						))
+					))
 				))
 
 				(return session)
@@ -547,8 +782,13 @@ class ApisController < ApplicationController
 				(catch (
 					(var obj (TableObject.get uuid))
 				) (
-					(# Access not allowed)
-					(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+					(# Action not allowed)
+					(func render_validation_errors (
+						(list (hash
+							(error "action_not_allowed")
+							(status 403)
+						))
+					))
 				))
 
 				(if (is_nil obj) (
@@ -557,30 +797,15 @@ class ApisController < ApplicationController
 					(# Check if the table object belongs to the user and to the table)
 					(if ((!(is_nil user_id)) and (obj.user_id != user_id)) (
 						(# Action not allowed)
-						(func render_validation_errors ((list (hash (error (get_error 1002)) (status 403)))))
+						(func render_validation_errors (
+							(list (hash
+								(error "action_not_allowed")
+								(status 403)
+							))
+						))
 					))
 
 					(return obj)
-				))
-			))
-
-			(def render_errors (errors status) (
-				(# params: errors: list, status: int)
-				(render_json (hash (errors errors)) status)
-			))
-
-			(def render_validation_errors (validations status) (
-				(# params: validations: list<hash: error<hash: {code: string, message: string}>, status: number>)
-				(# Save the errors in a separate list)
-				(var errors (list))
-
-				(for validation in validations (
-					(errors.push validation.error)
-				))
-
-				(if (errors.length > 0) (
-					(# Render the errors with the status of the first validation)
-					(func render_errors (errors validations#0.status))
 				))
 			))
 
@@ -674,6 +899,46 @@ class ApisController < ApplicationController
 						))
 
 						(return item)
+					))
+				))
+			))
+
+			(def validate_content_type_json (content_type) (
+				(# params: content_type: String)
+				(if ((is_nil content_type) or (!(content_type.contains "application/json"))) (
+					(# Content-Type not supported error)
+					(func render_validation_errors (
+						(list (hash
+							(error "content_type_not_supported")
+							(status 415)
+						))
+					))
+				))
+			))
+
+			(def create_table_object (user_id table_name properties) (
+				(# params: user_id: int, table_name: string, properties: Hash)
+				(catch (
+					(TableObject.create user_id table_name properties)
+				) (
+					(var error errors#0)
+
+					(if (((error.code == 0) or (error.code == 2)) or (error.code == 3)) (
+						(# Table or user does not exist, or object didn't save)
+						(func render_validation_errors (
+							(list (hash
+								(error "unexpected_error")
+								(status 500)
+							))
+						))
+					) else (
+						(# Action not allowed)
+						(func render_validation_errors (
+							(list (hash
+								(error "action_not_allowed")
+								(status 403)
+							))
+						))
 					))
 				))
 			))
