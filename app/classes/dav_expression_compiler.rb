@@ -294,7 +294,13 @@ class DavExpressionCompiler
 					properties = params[:properties]
 
 					# Get the table
-					table = _method_call('get_table', id: table_id)
+					if table_id.is_a?(String)
+						# Get the table by the name
+						table = _method_call('get_table', name: table_id)
+					else
+						# Get the table by the id
+						table = _method_call('get_table', id: table_id)
+					end
 
 					# Check if the table exists
 					if table.nil?
