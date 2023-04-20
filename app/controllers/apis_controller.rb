@@ -282,14 +282,7 @@ class ApisController < ApplicationController
 						(var body_params (hash))
 
 						#{
-							result = ""
-
-							schema[class_name]["properties"].each do |prop_key, prop_value|
-								next if !["String", "Boolean", "Integer", "Float"].include?(prop_value["type"])
-								result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
-							end
-
-							result
+							generate_body_params_dx_code(schema[class_name]["properties"])
 						}
 
 						(# Get the access token)
@@ -312,103 +305,17 @@ class ApisController < ApplicationController
 
 						(# Validate missing fields)
 						#{
-							result = ""
-
-							schema[class_name]["properties"].each do |prop_key, prop_value|
-								next unless prop_value["required"]
-								result += %{
-									(if (is_nil body_params[\"#{prop_key}\"]) (
-										(func render_validation_errors (
-											(list (hash
-												(error "#{prop_key}_missing")
-												(status 400)
-											))
-										))
-									))
-								}
-							end
-
-							result
+							generate_missing_field_validations_dx_code(schema[class_name]["properties"])
 						}
 
 						(# Validate field types)
 						#{
-							result = ""
-
-							schema[class_name]["properties"].each do |prop_key, prop_value|
-								if prop_value["type"].nil? || prop_value["type"] == "String"
-									condition = "(body_params[\"#{prop_key}\"].class != \"String\")"
-								elsif prop_value["type"] == "Boolean"
-									condition = "((body_params[\"#{prop_key}\"] != true) and (body_params[\"#{prop_key}\"] != false))"
-								elsif prop_value["type"] == "Integer"
-									condition = "(body_params[\"#{prop_key}\"].class != \"Integer\")"
-								elsif prop_value["type"] == "Float"
-									condition = "(body_params[\"#{prop_key}\"].class != \"Float\")"
-								elsif prop_value["relationship"] == "multiple"
-									condition = "(body_params[\"#{prop_key}\"].class != \"Array\")"
-								else
-									next
-								end
-
-								result += %{
-									(if (!(is_nil body_params[\"#{prop_key}\"])) (
-										(if #{condition} (
-											(func render_validation_errors (
-												(list (hash
-													(error "#{prop_key}_wrong_type")
-													(status 400)
-												))
-											))
-										))
-									))
-								}
-							end
-
-							result
+							generate_field_type_validations_dx_code(schema[class_name]["properties"])
 						}
 
 						(# Validate too short and too long fields)
 						#{
-							result = ""
-
-							schema[class_name]["properties"].each do |prop_key, prop_value|
-								next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
-								next if !prop_value["type"].nil? && prop_value["type"] != "String"
-
-								if !prop_value["minLength"].nil?
-									result += %{
-										(if (
-											(!(is_nil body_params[\"#{prop_key}\"]))
-											and (body_params[\"#{prop_key}\"].length < #{prop_value["minLength"]})
-										)
-											(func render_validation_errors (
-												(list (hash
-													(error "#{prop_key}_too_short")
-													(status 400)
-												))
-											))
-										)
-									}
-								end
-
-								if !prop_value["maxLength"].nil?
-									result += %{
-										(if (
-											(!(is_nil body_params[\"#{prop_key}\"]))
-											and (body_params[\"#{prop_key}\"].length > #{prop_value["maxLength"]})
-										)
-											(func render_validation_errors (
-												(list (hash
-													(error "#{prop_key}_too_long")
-													(status 400)
-												))
-											))
-										)
-									}
-								end
-							end
-
-							result
+							generate_field_length_validations_dx_code(schema[class_name]["properties"])
 						}
 
 						(# Create the object)
@@ -661,6 +568,115 @@ class ApisController < ApplicationController
 		end
 
 		return "(list #{values})"
+	end
+
+	def generate_body_params_dx_code(schema_properties)
+		result = ""
+
+		schema_properties.each do |prop_key, prop_value|
+			next if !["String", "Boolean", "Integer", "Float", nil].include?(prop_value["type"])
+			result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
+		end
+
+		result
+	end
+
+	def generate_missing_field_validations_dx_code(schema_properties)
+		result = ""
+
+		schema_properties.each do |prop_key, prop_value|
+			next unless prop_value["required"]
+			result += %{
+				(if (is_nil body_params[\"#{prop_key}\"]) (
+					(func render_validation_errors (
+						(list (hash
+							(error "#{prop_key}_missing")
+							(status 400)
+						))
+					))
+				))
+			}
+		end
+
+		result
+	end
+
+	def generate_field_type_validations_dx_code(schema_properties)
+		result = ""
+
+		schema_properties.each do |prop_key, prop_value|
+			if prop_value["type"].nil? || prop_value["type"] == "String"
+				condition = "(body_params[\"#{prop_key}\"].class != \"String\")"
+			elsif prop_value["type"] == "Boolean"
+				condition = "((body_params[\"#{prop_key}\"] != true) and (body_params[\"#{prop_key}\"] != false))"
+			elsif prop_value["type"] == "Integer"
+				condition = "(body_params[\"#{prop_key}\"].class != \"Integer\")"
+			elsif prop_value["type"] == "Float"
+				condition = "(body_params[\"#{prop_key}\"].class != \"Float\")"
+			elsif prop_value["relationship"] == "multiple"
+				condition = "(body_params[\"#{prop_key}\"].class != \"Array\")"
+			else
+				next
+			end
+
+			result += %{
+				(if (!(is_nil body_params[\"#{prop_key}\"])) (
+					(if #{condition} (
+						(func render_validation_errors (
+							(list (hash
+								(error "#{prop_key}_wrong_type")
+								(status 400)
+							))
+						))
+					))
+				))
+			}
+		end
+
+		result
+	end
+
+	def generate_field_length_validations_dx_code(schema_properties)
+		result = ""
+
+		schema_properties.each do |prop_key, prop_value|
+			next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
+			next if !prop_value["type"].nil? && prop_value["type"] != "String"
+
+			if !prop_value["minLength"].nil?
+				result += %{
+					(if (
+						(!(is_nil body_params[\"#{prop_key}\"]))
+						and (body_params[\"#{prop_key}\"].length < #{prop_value["minLength"]})
+					)
+						(func render_validation_errors (
+							(list (hash
+								(error "#{prop_key}_too_short")
+								(status 400)
+							))
+						))
+					)
+				}
+			end
+
+			if !prop_value["maxLength"].nil?
+				result += %{
+					(if (
+						(!(is_nil body_params[\"#{prop_key}\"]))
+						and (body_params[\"#{prop_key}\"].length > #{prop_value["maxLength"]})
+					)
+						(func render_validation_errors (
+							(list (hash
+								(error "#{prop_key}_too_long")
+								(status 400)
+							))
+						))
+					)
+				}
+			end
+		end
+
+		result
 	end
 
 	def get_functions(schema, app, getters)
