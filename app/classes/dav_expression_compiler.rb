@@ -62,10 +62,16 @@ class DavExpressionCompiler
 					return app
 				when 'get_table'
 					id = params[:id].to_i
+					name = params[:name]
 					table = @vars[:tables][id]
 
 					if table.nil?
-						table = Table.find_by(id: id)
+						if !name.nil?
+							table = Table.find_by(name: name)
+						else
+							table = Table.find_by(id: id)
+						end
+
 						@vars[:tables][id] = table if !table.nil?
 					end
 
