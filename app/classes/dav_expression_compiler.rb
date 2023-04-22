@@ -1124,7 +1124,7 @@ class DavExpressionCompiler
 			case command[0]
 			when :var
 				# Check usage of []
-				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_-]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
+				matchdata = command[1].to_s.match /^(?<varname>[a-zA-Z0-9_\-\.]{1,})\[(?<value>[a-zA-Z0-9_\-\"\.]{0,})\]$/
 				val = compile_command(command[2], true)
 				val.strip! if val.is_a?(String)
 
@@ -1135,6 +1135,11 @@ class DavExpressionCompiler
 				if !matchdata.nil?
 					matchdata_varname = matchdata["varname"]
 					matchdata_value = matchdata["value"]
+					splitted_varname = matchdata_varname.split(".")
+
+					if splitted_varname[-1] == "properties"
+						matchdata_varname = splitted_varname[0..-2].join(".")
+					end
 
 					if !matchdata_value.nil?
 						if matchdata_value[0] == "\"" && matchdata_value[-1] == "\""
