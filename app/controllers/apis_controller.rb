@@ -443,6 +443,124 @@ class ApisController < ApplicationController
 						api_endpoint.save
 					end
 				end
+
+				if endpoints.include?("update")
+					# Generate the update endpoint
+					code = %{
+						#{get_functions(schema, api.app, getters)}
+
+						(# Get the params)
+						(var uuid (get_param "uuid"))
+						(var fields_str (get_param "fields"))
+
+						(if (is_nil fields_str) (
+							(var fields (hash (uuid (hash))))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(var json (parse_json (get_body)))
+						(var body_params (hash))
+
+						#{
+							generate_body_params_dx_code(schema[class_name]["properties"])
+						}
+
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
+
+						(if (is_nil access_token) (
+							(func render_validation_errors (
+								(list (hash
+									(error "authorization_header_missing")
+									(status 400)
+								))
+							))
+						))
+
+						(# Make sure content type is json)
+						(func validate_content_type_json ((get_header "Content-Type")))
+
+						(# Get the session)
+						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
+
+						(# Validate field types)
+						#{
+							generate_field_type_validations_dx_code(schema[class_name]["properties"])
+						}
+
+						(# Validate too short and too long fields)
+						#{
+							generate_field_length_validations_dx_code(schema[class_name]["properties"])
+						}
+
+						(# Validate validity of fields)
+						#{
+							generate_field_validity_validations_dx_code(schema[class_name]["properties"])
+						}
+
+						(# Get the object)
+						(var obj (func get_table_object (uuid)))
+
+						(if (is_nil obj) (
+							(# Object does not exist)
+							(func render_validation_errors (
+								(list (hash
+									(error "#{class_name_snake}_does_not_exist")
+									(status 404)
+								))
+							))
+						))
+
+						(# Set the values)
+						(for key in body_params.keys (
+							(var value body_params[key])
+							(if (is_nil value) (continue))
+
+							(if (value == "") (
+								(var obj.properties[key] nil)
+							) else (
+								(var obj.properties[key] value)
+							))
+						))
+
+						(# Render the result)
+						(var result (hash))
+
+						(for key in fields.keys (
+							(var value (func generate_result (
+								key
+								fields[key]
+								obj
+								schema
+								\"#{class_name}\"
+							)))
+							(var result[key] value)
+						))
+
+						(render_json result 200)
+					}
+
+					# Save the endpoint
+					path = "#{class_name_snake_plural}/:uuid"
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: path,
+						method: "PUT"
+					)
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: path,
+							method: "PUT",
+							commands: code
+						)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
 			end
 		end
 
