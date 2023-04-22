@@ -318,6 +318,11 @@ class ApisController < ApplicationController
 							generate_field_length_validations_dx_code(schema[class_name]["properties"])
 						}
 
+						(# Validate validity of fields)
+						#{
+							generate_field_validity_validations_dx_code(schema[class_name]["properties"])
+						}
+
 						(# Create the object)
 						(var properties (hash))
 
@@ -582,27 +587,26 @@ class ApisController < ApplicationController
 	end
 
 	def generate_missing_field_validations_dx_code(schema_properties)
-		result = ""
+		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
 			next unless prop_value["required"]
 			result += %{
-				(if (is_nil body_params[\"#{prop_key}\"]) (
-					(func render_validation_errors (
-						(list (hash
-							(error "#{prop_key}_missing")
-							(status 400)
-						))
+				(if (is_nil body_params["#{prop_key}"]) (
+					(errors.push (hash
+						(error "#{prop_key}_missing")
+						(status 400)
 					))
 				))
 			}
 		end
 
+		result += "(func render_validation_errors (errors))"
 		result
 	end
 
 	def generate_field_type_validations_dx_code(schema_properties)
-		result = ""
+		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
 			if prop_value["type"].nil? || prop_value["type"] == "String"
@@ -620,24 +624,23 @@ class ApisController < ApplicationController
 			end
 
 			result += %{
-				(if (!(is_nil body_params[\"#{prop_key}\"])) (
+				(if (!(is_nil body_params["#{prop_key}"])) (
 					(if #{condition} (
-						(func render_validation_errors (
-							(list (hash
-								(error "#{prop_key}_wrong_type")
-								(status 400)
-							))
+						(errors.push (hash
+							(error "#{prop_key}_wrong_type")
+							(status 400)
 						))
 					))
 				))
 			}
 		end
 
+		result += "(func render_validation_errors (errors))"
 		result
 	end
 
 	def generate_field_length_validations_dx_code(schema_properties)
-		result = ""
+		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
 			next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
@@ -646,14 +649,12 @@ class ApisController < ApplicationController
 			if !prop_value["minLength"].nil?
 				result += %{
 					(if (
-						(!(is_nil body_params[\"#{prop_key}\"]))
-						and (body_params[\"#{prop_key}\"].length < #{prop_value["minLength"]})
+						(!(is_nil body_params["#{prop_key}"]))
+						and (body_params["#{prop_key}"].length < #{prop_value["minLength"]})
 					)
-						(func render_validation_errors (
-							(list (hash
-								(error "#{prop_key}_too_short")
-								(status 400)
-							))
+						(errors.push (hash
+							(error "#{prop_key}_too_short")
+							(status 400)
 						))
 					)
 				}
@@ -662,20 +663,42 @@ class ApisController < ApplicationController
 			if !prop_value["maxLength"].nil?
 				result += %{
 					(if (
-						(!(is_nil body_params[\"#{prop_key}\"]))
-						and (body_params[\"#{prop_key}\"].length > #{prop_value["maxLength"]})
+						(!(is_nil body_params["#{prop_key}"]))
+						and (body_params["#{prop_key}"].length > #{prop_value["maxLength"]})
 					)
-						(func render_validation_errors (
-							(list (hash
-								(error "#{prop_key}_too_long")
-								(status 400)
-							))
+						(errors.push (hash
+							(error "#{prop_key}_too_long")
+							(status 400)
 						))
 					)
 				}
 			end
 		end
 
+		result += "(func render_validation_errors (errors))"
+		result
+	end
+
+	def generate_field_validity_validations_dx_code(schema_properties)
+		result = "(var errors (list))"
+
+		schema_properties.each do |prop_key, prop_value|
+			next unless prop_value["validator"]
+
+			result += %{
+				(if (
+					(!(is_nil body_params["#{prop_key}"]))
+					and (!(func #{prop_value["validator"]} (body_params["#{prop_key}"])))
+				) (
+					(errors.push (hash
+						(error "#{prop_key}_invalid")
+						(status 400)
+					))
+				))
+			}
+		end
+
+		result += "(func render_validation_errors (errors))"
 		result
 	end
 
