@@ -242,6 +242,7 @@ class ApisController < ApplicationController
 		# Get the api slot
 		api_slot = api.api_slots.find_by(name: slot_name)
 		ValidationService.raise_validation_errors(ValidationService.validate_api_slot_existence(api_slot))
+		api_docu = ""
 
 		if !schema.nil?
 			# Validate schema param
@@ -282,7 +283,7 @@ class ApisController < ApplicationController
 						(var body_params (hash))
 
 						#{
-							generate_body_params_dx_code(schema[class_name]["properties"])
+							generate_body_params_dx_code(properties)
 						}
 
 						(# Get the access token)
@@ -305,22 +306,22 @@ class ApisController < ApplicationController
 
 						(# Validate missing fields)
 						#{
-							generate_missing_field_validations_dx_code(schema[class_name]["properties"])
+							generate_missing_field_validations_dx_code(properties)
 						}
 
 						(# Validate field types)
 						#{
-							generate_field_type_validations_dx_code(schema[class_name]["properties"])
+							generate_field_type_validations_dx_code(properties)
 						}
 
 						(# Validate too short and too long fields)
 						#{
-							generate_field_length_validations_dx_code(schema[class_name]["properties"])
+							generate_field_length_validations_dx_code(properties)
 						}
 
 						(# Validate validity of fields)
 						#{
-							generate_field_validity_validations_dx_code(schema[class_name]["properties"])
+							generate_field_validity_validations_dx_code(properties)
 						}
 
 						(# Create the object)
@@ -549,7 +550,7 @@ class ApisController < ApplicationController
 						(var body_params (hash))
 
 						#{
-							generate_body_params_dx_code(schema[class_name]["properties"])
+							generate_body_params_dx_code(properties)
 						}
 
 						(# Get the access token)
@@ -572,17 +573,17 @@ class ApisController < ApplicationController
 
 						(# Validate field types)
 						#{
-							generate_field_type_validations_dx_code(schema[class_name]["properties"])
+							generate_field_type_validations_dx_code(properties)
 						}
 
 						(# Validate too short and too long fields)
 						#{
-							generate_field_length_validations_dx_code(schema[class_name]["properties"])
+							generate_field_length_validations_dx_code(properties)
 						}
 
 						(# Validate validity of fields)
 						#{
-							generate_field_validity_validations_dx_code(schema[class_name]["properties"])
+							generate_field_validity_validations_dx_code(properties)
 						}
 
 						(# Get the object)
@@ -647,6 +648,25 @@ class ApisController < ApplicationController
 						api_endpoint.save
 					end
 				end
+
+				# Generate the documentation for the current class
+				api_docu += "# #{class_name}\n"
+				api_docu += "## Resource representation\n\n"
+				api_docu += "```\n"
+				api_docu += "{\n"
+				api_docu += "   \"uuid\": String"
+				api_docu += "," unless properties.size == 0
+				api_docu += "\n"
+
+				properties.each do |prop_key, prop_data|
+					api_docu += "   \"#{prop_key}\": #{prop_data["type"]}"
+					api_docu += "[]" if prop_data["relationship"] == "multiple"
+					api_docu += "," unless prop_key == properties.keys[-1]
+					api_docu += "\n"
+				end
+
+				api_docu += "}\n"
+				api_docu += "```\n\n"
 			end
 		end
 
@@ -669,6 +689,9 @@ class ApisController < ApplicationController
 			compiled_endpoint.code = code
 			ValidationService.raise_unexpected_error(!compiled_endpoint.save)
 		end
+
+		api_slot.documentation = api_docu
+		ValidationService.raise_unexpected_error(!api_slot.save)
 
 		head 204, content_type: "application/json"
 	rescue RuntimeError => e
