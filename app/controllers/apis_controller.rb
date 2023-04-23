@@ -790,8 +790,8 @@ class ApisController < ApplicationController
 
 					# Query params table
 					api_docu += "#### Query params\n"
-					api_docu += "Name | Type | Required | Default value | Description\n"
-					api_docu += "---- | ---- | -------- | ------------- | -----------\n"
+					api_docu += "Name | Type | Default value | Description\n"
+					api_docu += "---- | ---- | ------------- | -----------\n"
 
 					# fields param
 					api_docu += "fields | String | False | uuid | List of parameters that should be returned, separated by comma\n"
@@ -799,6 +799,37 @@ class ApisController < ApplicationController
 					# TODO
 
 					api_docu += "\n"
+
+					if ["POST", "PUT"].include?(endpoint_data[:method])
+						# Body params table
+						api_docu += "#### Body params\n"
+						api_docu += "Name | Type"
+						api_docu += " | Required" if endpoint_data[:method] == "POST"
+						api_docu += " | Description\n"
+						api_docu += "---- | ----"
+						api_docu += " | --------" if endpoint_data[:method] == "POST"
+						api_docu += " | -----------\n"
+
+						properties.each do |prop_key, prop_data|
+							type = prop_data["type"]
+							required = prop_data["required"]
+							description = prop_data["description"]
+							next if !["String", "Boolean", "Integer", "Float", nil].include?(type)
+
+							type = "String" if type.nil?
+							required = false if required.nil?
+
+							api_docu += prop_key
+							api_docu += " | #{type}"
+							api_docu += " | #{required}" if endpoint_data[:method] == "POST"
+							api_docu += " | #{description}\n"
+						end
+
+						api_docu += "\n"
+					end
+
+					api_docu += "### Response\n"
+					api_docu += "If successful, this method returns a #{class_name_snake} resource in the response body.\n\n"
 				end
 			end
 		end
