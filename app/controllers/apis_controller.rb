@@ -347,6 +347,7 @@ class ApisController < ApplicationController
 								schema
 								\"#{class_name}\"
 							)))
+
 							(var result[key] value)
 						))
 
@@ -418,6 +419,7 @@ class ApisController < ApplicationController
 								schema
 								\"#{class_name}\"
 							)))
+
 							(var result[key] value)
 						))
 
@@ -435,6 +437,89 @@ class ApisController < ApplicationController
 						ApiEndpoint.create(
 							api_slot: api_slot,
 							path: path,
+							method: "GET",
+							commands: code
+						)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
+
+				if endpoints.include?("list")
+					# Generate the list endpoint
+					code = %{
+						#{get_functions(schema, api.app, getters)}
+
+						(# Get the params)
+						(var uuid (get_param "uuid"))
+						(var fields_str (get_param "fields"))
+
+						(if (is_nil fields_str) (
+							(var fields (hash (uuid (hash))))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(# Get the objects)
+						(var object_uuids (list))
+
+						#{
+							result = ""
+							collection_name = endpoints["list"]["collection"]
+
+							if !collection_name.nil?
+								result += %{
+									(var collection_uuids
+										(func get_table_object_uuids_of_collection (
+											"#{class_name}"
+											"#{collection_name}"
+										))
+									)
+									(var object_uuids collection_uuids.reverse)
+								}
+							end
+
+							result
+						}
+
+						(# Render the result)
+						(var result (hash (items (list))))
+
+						(for uuid in object_uuids (
+							(var obj (func get_table_object (uuid)))
+							(if (is_nil obj) (continue))
+							(var item (hash))
+
+							(for key in fields.keys (
+								(var value (func generate_result (
+									key
+									fields[key]
+									obj
+									schema
+									\"#{class_name}\"
+								)))
+
+								(var item[key] value)
+							))
+
+							(result.items.push item)
+						))
+
+						(render_json result 200)
+					}
+
+					# Save the endpoint
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: class_name_snake_plural,
+						method: "GET"
+					)
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: class_name_snake_plural,
 							method: "GET",
 							commands: code
 						)
@@ -536,6 +621,7 @@ class ApisController < ApplicationController
 								schema
 								\"#{class_name}\"
 							)))
+
 							(var result[key] value)
 						))
 
@@ -932,6 +1018,33 @@ class ApisController < ApplicationController
 				(return session)
 			))
 
+			(def create_table_object (user_id table_name properties) (
+				(# params: user_id: int, table_name: string, properties: Hash)
+				(catch (
+					(TableObject.create user_id table_name properties)
+				) (
+					(var error errors#0)
+
+					(if (((error.code == 0) or (error.code == 2)) or (error.code == 3)) (
+						(# Table or user does not exist, or object didn't save)
+						(func render_validation_errors (
+							(list (hash
+								(error "unexpected_error")
+								(status 500)
+							))
+						))
+					) else (
+						(# Action not allowed)
+						(func render_validation_errors (
+							(list (hash
+								(error "action_not_allowed")
+								(status 403)
+							))
+						))
+					))
+				))
+			))
+
 			(def get_table_object (uuid user_id) (
 				(# params: uuid: string, user_id: int)
 				(if (is_nil uuid) (return nil))
@@ -1073,28 +1186,15 @@ class ApisController < ApplicationController
 				))
 			))
 
-			(def create_table_object (user_id table_name properties) (
-				(# params: user_id: int, table_name: string, properties: Hash)
+			(def get_table_object_uuids_of_collection (table_name collection_name) (
 				(catch (
-					(TableObject.create user_id table_name properties)
+					(Collection.get_table_object_uuids table_name collection_name)
 				) (
-					(var error errors#0)
-
-					(if (((error.code == 0) or (error.code == 2)) or (error.code == 3)) (
-						(# Table or user does not exist, or object didn't save)
-						(func render_validation_errors (
-							(list (hash
-								(error "unexpected_error")
-								(status 500)
-							))
-						))
-					) else (
-						(# Action not allowed)
-						(func render_validation_errors (
-							(list (hash
-								(error "action_not_allowed")
-								(status 403)
-							))
+					(# Unexpected error)
+					(func render_validation_errors (
+						(list (hash
+							(error "unexpected_error")
+							(status 500)
 						))
 					))
 				))
