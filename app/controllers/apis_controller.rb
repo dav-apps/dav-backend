@@ -668,65 +668,138 @@ class ApisController < ApplicationController
 				api_docu += "}\n"
 				api_docu += "```\n\n"
 
+				# API methods table
 				api_docu += "## API methods\n"
 				api_docu += "Name | URL | Request method | Description\n"
 				api_docu += "---- | --- | -------------- | -----------\n"
 
+				endpoints_data_list = Array.new
+
 				if endpoints.include?("create")
 					create_endpoint_data = endpoints["create"]
 
-					api_docu += "Create #{class_name_snake} "
-					api_docu += "| #{create_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
-					api_docu += "| POST "
-					api_docu += "| #{create_endpoint_data["description"] || "Creates a new #{class_name_snake} for the user."}\n"
+					endpoints_data_list.push({
+						name: "Create #{class_name_snake}",
+						url: create_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						method: "POST",
+						description: create_endpoint_data["description"] || "Creates a new #{class_name_snake} for the user.",
+						authorized: true
+					})
 				end
 
 				if endpoints.include?("retrieve")
 					retrieve_endpoint_data = endpoints["retrieve"]
 
-					api_docu += "Retrieve #{class_name_snake} "
-					api_docu += "| #{retrieve_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
-					api_docu += "| GET "
-					api_docu += "| #{retrieve_endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid."}\n"
+					endpoints_data_list.push({
+						name: "Retrieve #{class_name_snake}",
+						url: retrieve_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						method: "GET",
+						description: retrieve_endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid.",
+						authorized: retrieve_endpoint_data["authorized"] == true
+					})
 				end
 
 				if endpoints.include?("list")
 					list_endpoint_data = endpoints["list"]
 
-					api_docu += "List #{class_name_snake_plural} "
-					api_docu += "| #{list_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
-					api_docu += "| GET "
-					api_docu += "| #{list_endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params."}\n"
+					endpoints_data_list.push({
+						name: "List #{class_name_snake_plural}",
+						url: list_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						method: "GET",
+						description: list_endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params.",
+						authorized: list_endpoint_data["authorized"] == true
+					})
 				end
 
 				if endpoints.include?("update")
 					update_endpoint_data = endpoints["update"]
 
-					api_docu += "Update #{class_name_snake} "
-					api_docu += "| #{update_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
-					api_docu += "| PUT "
-					api_docu += "| #{update_endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it."}\n"
+					endpoints_data_list.push({
+						name: "Update #{class_name_snake}",
+						url: update_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						method: "PUT",
+						description: update_endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it.",
+						authorized: true
+					})
 				end
 
 				if endpoints.include?("set")
 					set_endpoint_data = endpoints["set"]
 
-					api_docu += "Set #{class_name_snake} "
-					api_docu += "| #{set_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
-					api_docu += "| PUT "
-					api_docu += "| #{set_endpoint_data["description"] || "Sets the #{class_name_snake}."}\n"
+					endpoints_data_list.push({
+						name: "Set #{class_name_snake}",
+						url: set_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						method: "PUT",
+						description: set_endpoint_data["description"] || "Sets the #{class_name_snake}.",
+						authorized: true
+					})
 				end
 
 				if endpoints.include?("upload")
 					upload_endpoint_data = endpoints["upload"]
 
-					api_docu += "Upload #{class_name_snake} "
-					api_docu += "| #{upload_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
-					api_docu += "| PUT "
-					api_docu += "| #{upload_endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid."}\n"
+					endpoints_data_list.push({
+						name: "Upload #{class_name_snake}",
+						url: upload_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						method: "PUT",
+						description: upload_endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid.",
+						authorized: true
+					})
+				end
+
+				endpoints_data_list.each do |endpoint_data|
+					api_docu += endpoint_data[:name]
+					api_docu += " | #{endpoint_data[:url]} "
+					api_docu += " | #{endpoint_data[:method]} "
+					api_docu += " | #{endpoint_data[:description]}\n"
 				end
 
 				api_docu += "\n"
+
+				# API methods details
+				endpoints_data_list.each do |endpoint_data|
+					# Name and description
+					api_docu += "## #{endpoint_data[:name]}\n"
+					api_docu += "#{endpoint_data[:description]}\n\n"
+
+					# Request method and url
+					api_docu += "### Request\n"
+					api_docu += "```\n"
+					api_docu += "#{endpoint_data[:method]} #{endpoint_data[:url]}\n"
+					api_docu += "```\n\n"
+
+					# Header table
+					authorization_header = endpoint_data[:authorized]
+					content_type_header = ["POST", "PUT"].include?(endpoint_data[:method])
+
+					if authorization_header || content_type_header
+						api_docu += "#### Headers\n"
+						api_docu += "Name | Type | Required\n"
+						api_docu += "---- | ---- | --------\n"
+
+						if authorization_header
+							api_docu += "Authorization | String | True\n"
+						end
+
+						if content_type_header
+							api_docu += "Content-Type | String | True\n"
+						end
+
+						api_docu += "\n"
+					end
+
+					# Query params table
+					api_docu += "#### Query params\n"
+					api_docu += "Name | Type | Required | Default value | Description\n"
+					api_docu += "---- | ---- | -------- | ------------- | -----------\n"
+
+					# fields param
+					api_docu += "fields | String | False | uuid | List of parameters that should be returned, separated by comma\n"
+
+					# TODO
+
+					api_docu += "\n"
+				end
 			end
 		end
 
