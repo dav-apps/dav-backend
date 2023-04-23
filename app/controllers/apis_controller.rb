@@ -667,6 +667,66 @@ class ApisController < ApplicationController
 
 				api_docu += "}\n"
 				api_docu += "```\n\n"
+
+				api_docu += "## API methods\n"
+				api_docu += "Name | URL | Request method | Description\n"
+				api_docu += "---- | --- | -------------- | -----------\n"
+
+				if endpoints.include?("create")
+					create_endpoint_data = endpoints["create"]
+
+					api_docu += "Create #{class_name_snake} "
+					api_docu += "| #{create_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
+					api_docu += "| POST "
+					api_docu += "| #{create_endpoint_data["description"] || "Creates a new #{class_name_snake} for the user."}\n"
+				end
+
+				if endpoints.include?("retrieve")
+					retrieve_endpoint_data = endpoints["retrieve"]
+
+					api_docu += "Retrieve #{class_name_snake} "
+					api_docu += "| #{retrieve_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
+					api_docu += "| GET "
+					api_docu += "| #{retrieve_endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid."}\n"
+				end
+
+				if endpoints.include?("list")
+					list_endpoint_data = endpoints["list"]
+
+					api_docu += "List #{class_name_snake_plural} "
+					api_docu += "| #{list_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
+					api_docu += "| GET "
+					api_docu += "| #{list_endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params."}\n"
+				end
+
+				if endpoints.include?("update")
+					update_endpoint_data = endpoints["update"]
+
+					api_docu += "Update #{class_name_snake} "
+					api_docu += "| #{update_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
+					api_docu += "| PUT "
+					api_docu += "| #{update_endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it."}\n"
+				end
+
+				if endpoints.include?("set")
+					set_endpoint_data = endpoints["set"]
+
+					api_docu += "Set #{class_name_snake} "
+					api_docu += "| #{set_endpoint_data["url"] || "/#{class_name_snake_plural}"} "
+					api_docu += "| PUT "
+					api_docu += "| #{set_endpoint_data["description"] || "Sets the #{class_name_snake}."}\n"
+				end
+
+				if endpoints.include?("upload")
+					upload_endpoint_data = endpoints["upload"]
+
+					api_docu += "Upload #{class_name_snake} "
+					api_docu += "| #{upload_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid"} "
+					api_docu += "| PUT "
+					api_docu += "| #{upload_endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid."}\n"
+				end
+
+				api_docu += "\n"
 			end
 		end
 
