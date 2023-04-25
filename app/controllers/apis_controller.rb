@@ -679,6 +679,7 @@ class ApisController < ApplicationController
 					create_endpoint_data = endpoints["create"]
 
 					endpoints_data_list.push({
+						type: "create",
 						name: "Create #{class_name_snake}",
 						url: create_endpoint_data["url"] || "/#{class_name_snake_plural}",
 						method: "POST",
@@ -691,6 +692,7 @@ class ApisController < ApplicationController
 					retrieve_endpoint_data = endpoints["retrieve"]
 
 					endpoints_data_list.push({
+						type: "retrieve",
 						name: "Retrieve #{class_name_snake}",
 						url: retrieve_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						method: "GET",
@@ -703,6 +705,7 @@ class ApisController < ApplicationController
 					list_endpoint_data = endpoints["list"]
 
 					endpoints_data_list.push({
+						type: "list",
 						name: "List #{class_name_snake_plural}",
 						url: list_endpoint_data["url"] || "/#{class_name_snake_plural}",
 						method: "GET",
@@ -715,6 +718,7 @@ class ApisController < ApplicationController
 					update_endpoint_data = endpoints["update"]
 
 					endpoints_data_list.push({
+						type: "update",
 						name: "Update #{class_name_snake}",
 						url: update_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						method: "PUT",
@@ -727,6 +731,7 @@ class ApisController < ApplicationController
 					set_endpoint_data = endpoints["set"]
 
 					endpoints_data_list.push({
+						type: "set",
 						name: "Set #{class_name_snake}",
 						url: set_endpoint_data["url"] || "/#{class_name_snake_plural}",
 						method: "PUT",
@@ -739,6 +744,7 @@ class ApisController < ApplicationController
 					upload_endpoint_data = endpoints["upload"]
 
 					endpoints_data_list.push({
+						type: "upload",
 						name: "Upload #{class_name_snake}",
 						url: upload_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						method: "PUT",
@@ -794,13 +800,36 @@ class ApisController < ApplicationController
 					api_docu += "---- | ---- | ------------- | -----------\n"
 
 					# fields param
-					api_docu += "fields | String | False | uuid | List of parameters that should be returned, separated by comma\n"
+					api_docu += "fields | String | uuid | List of parameters that should be returned, separated by comma\n"
+
+					# uuid param
+					if endpoint_data[:url].include?(":uuid")
+						api_docu += "uuid | String | | The uuid of the #{class_name_snake}\n"
+					end
 
 					# TODO
 
 					api_docu += "\n"
 
-					if ["POST", "PUT"].include?(endpoint_data[:method])
+					if endpoint_data[:type] == "upload"
+						api_docu += "#### Body\n"
+						api_docu += "Provide the file data in the request body.\n"
+
+						content_types = endpoints["upload"]["content_types"]
+
+						if !content_types.nil?
+							api_docu += "The following content types are accepted: "
+
+							content_types.each do |content_type|
+								api_docu += content_type
+								api_docu += ", " unless content_type == content_types[-1]
+							end
+
+							api_docu += "\n"
+						end
+
+						api_docu += "\n"
+					elsif ["POST", "PUT"].include?(endpoint_data[:method])
 						# Body params table
 						api_docu += "#### Body params\n"
 						api_docu += "Name | Type"
@@ -829,7 +858,19 @@ class ApisController < ApplicationController
 					end
 
 					api_docu += "### Response\n"
-					api_docu += "If successful, this method returns a #{class_name_snake} resource in the response body.\n\n"
+
+					if endpoint_data[:type] == "list"
+						api_docu += "If successful, this method returns a response body with the following structure:\n\n"
+						api_docu += "```\n"
+						api_docu += "{\n"
+						api_docu += "   \"items\": [\n"
+						api_docu += "      #{class_name_snake} resource\n"
+						api_docu += "   ]\n"
+						api_docu += "}\n"
+						api_docu += "```\n\n"
+					else
+						api_docu += "If successful, this method returns a #{class_name_snake} resource in the response body.\n\n"
+					end
 				end
 			end
 		end
