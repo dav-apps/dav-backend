@@ -682,9 +682,10 @@ class ApisController < ApplicationController
 						type: "create",
 						name: "Create #{class_name_snake}",
 						url: create_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						url_params: create_endpoint_data["urlParams"],
 						method: "POST",
 						description: create_endpoint_data["description"] || "Creates a new #{class_name_snake} for the user.",
-						authorized: true
+						authenticated: true
 					})
 				end
 
@@ -695,9 +696,10 @@ class ApisController < ApplicationController
 						type: "retrieve",
 						name: "Retrieve #{class_name_snake}",
 						url: retrieve_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						url_params: retrieve_endpoint_data["urlParams"],
 						method: "GET",
 						description: retrieve_endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid.",
-						authorized: retrieve_endpoint_data["authorized"] == true
+						authenticated: retrieve_endpoint_data["authenticated"]
 					})
 				end
 
@@ -708,9 +710,10 @@ class ApisController < ApplicationController
 						type: "list",
 						name: "List #{class_name_snake_plural}",
 						url: list_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						url_params: list_endpoint_data["urlParams"],
 						method: "GET",
 						description: list_endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params.",
-						authorized: list_endpoint_data["authorized"] == true
+						authenticated: list_endpoint_data["authenticated"]
 					})
 				end
 
@@ -721,9 +724,10 @@ class ApisController < ApplicationController
 						type: "update",
 						name: "Update #{class_name_snake}",
 						url: update_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						url_params: update_endpoint_data["urlParams"],
 						method: "PUT",
 						description: update_endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it.",
-						authorized: true
+						authenticated: true
 					})
 				end
 
@@ -734,9 +738,10 @@ class ApisController < ApplicationController
 						type: "set",
 						name: "Set #{class_name_snake}",
 						url: set_endpoint_data["url"] || "/#{class_name_snake_plural}",
+						url_params: set_endpoint_data["urlParams"],
 						method: "PUT",
 						description: set_endpoint_data["description"] || "Sets the #{class_name_snake}.",
-						authorized: true
+						authenticated: true
 					})
 				end
 
@@ -747,9 +752,10 @@ class ApisController < ApplicationController
 						type: "upload",
 						name: "Upload #{class_name_snake}",
 						url: upload_endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+						url_params: upload_endpoint_data["urlParams"],
 						method: "PUT",
 						description: upload_endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid.",
-						authorized: true
+						authenticated: true
 					})
 				end
 
@@ -775,23 +781,43 @@ class ApisController < ApplicationController
 					api_docu += "```\n\n"
 
 					# Header table
-					authorization_header = endpoint_data[:authorized]
-					content_type_header = ["POST", "PUT"].include?(endpoint_data[:method])
+					authorization_data = endpoint_data[:authenticated]
+					create_or_update_endpoint = ["create", "update"].include?(endpoint_data[:type])
 
-					if authorization_header || content_type_header
+					if !authorization_data.nil? || create_or_update_endpoint
 						api_docu += "#### Headers\n"
 						api_docu += "Name | Type | Required\n"
 						api_docu += "---- | ---- | --------\n"
 
-						if authorization_header
+						if authorization_data.is_a?(Hash)
+							description = authorization_data["description"]
+							description = "True" unless description
+
+							api_docu += "Authorization | String | #{description}\n"
+						elsif authorization_data == true || authorization_data.is_a?(String) || create_or_update_endpoint
 							api_docu += "Authorization | String | True\n"
 						end
 
-						if content_type_header
+						if create_or_update_endpoint
 							api_docu += "Content-Type | String | True\n"
 						end
 
 						api_docu += "\n"
+					end
+
+					# URL params table
+					if endpoint_data[:url].include?(":")
+						api_docu += "#### URL params\n"
+						api_docu += "Name | Type | Description\n"
+						api_docu += "---- | ---- | -----------\n"
+
+						if !endpoint_data[:url_params].nil?
+							endpoint_data[:url_params].each do |param_name, param_data|
+								api_docu += "#{param_name} | #{param_data["type"]} | #{param_data["description"]}\n"
+							end
+						elsif endpoint_data[:url].include?(":uuid")
+							api_docu += "uuid | String | The uuid of the #{class_name_snake}\n"
+						end
 					end
 
 					# Query params table
@@ -801,11 +827,6 @@ class ApisController < ApplicationController
 
 					# fields param
 					api_docu += "fields | String | uuid | List of parameters that should be returned, separated by comma\n"
-
-					# uuid param
-					if endpoint_data[:url].include?(":uuid")
-						api_docu += "uuid | String | | The uuid of the #{class_name_snake}\n"
-					end
 
 					# TODO
 
