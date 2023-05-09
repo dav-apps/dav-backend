@@ -251,7 +251,7 @@ class ApisController < ApplicationController
 			# Read the schema and generate all required api endpoints
 			# Go through each class
 			schema.each do |class_name, class_data|
-				class_name_snake = snake_case(class_name)
+				class_name_snake = snake_case(class_name).gsub("_", " ")
 				class_name_snake_plural = name_plural(class_name_snake)
 				next if class_data["endpoints"].nil?
 
@@ -684,6 +684,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "POST",
 						description: endpoint_data["description"] || "Creates a new #{class_name_snake} for the user.",
 						authenticated: true
@@ -699,6 +700,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "GET",
 						description: endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid.",
 						authenticated: endpoint_data["authenticated"]
@@ -714,6 +716,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "GET",
 						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params.",
 						authenticated: endpoint_data["authenticated"]
@@ -729,6 +732,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
 						description: endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it.",
 						authenticated: true
@@ -744,6 +748,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
 						description: endpoint_data["description"] || "Sets the #{class_name_snake}.",
 						authenticated: true
@@ -759,6 +764,7 @@ class ApisController < ApplicationController
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
+						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
 						description: endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid.",
 						authenticated: true
@@ -788,9 +794,9 @@ class ApisController < ApplicationController
 
 					# Header table
 					authorization_data = endpoint_data[:authenticated]
-					create_or_update_endpoint = ["create", "update"].include?(endpoint_data[:type])
+					write_endpoint = ["create", "update", "set", "upload"].include?(endpoint_data[:type])
 
-					if !authorization_data.nil? || create_or_update_endpoint
+					if !authorization_data.nil? || write_endpoint
 						api_docu += "#### Headers\n"
 						api_docu += "Name | Type | Required\n"
 						api_docu += "---- | ---- | --------\n"
@@ -800,11 +806,11 @@ class ApisController < ApplicationController
 							description = "True" unless description
 
 							api_docu += "Authorization | String | #{description}\n"
-						elsif authorization_data == true || authorization_data.is_a?(String) || create_or_update_endpoint
+						elsif authorization_data == true || authorization_data.is_a?(String) || write_endpoint
 							api_docu += "Authorization | String | True\n"
 						end
 
-						if create_or_update_endpoint
+						if write_endpoint
 							api_docu += "Content-Type | String | True\n"
 						end
 
@@ -883,6 +889,21 @@ class ApisController < ApplicationController
 							api_docu += " | #{type}"
 							api_docu += " | #{required}" if endpoint_data[:method] == "POST"
 							api_docu += " | #{description}\n"
+						end
+
+						if !endpoint_data[:body_params].nil?
+							endpoint_data[:body_params].each do |prop_key, prop_data|
+								type = prop_data["type"]
+								description = prop_data["description"]
+								next if !["String", "Boolean", "Integer", "Float", nil].include?(type)
+								
+								type = "String" if type.nil?
+
+								api_docu += prop_key
+								api_docu += " | #{type}"
+								api_docu += " | true"
+								api_docu += " | #{description}\n"
+							end
 						end
 
 						api_docu += "\n"
