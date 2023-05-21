@@ -251,8 +251,10 @@ class ApisController < ApplicationController
 			# Read the schema and generate all required api endpoints
 			# Go through each class
 			schema.each do |class_name, class_data|
-				class_name_snake = snake_case(class_name).gsub("_", " ")
+				class_name_snake = snake_case(class_name)
+				class_name_snake_space = class_name_snake.gsub("_", " ")
 				class_name_snake_plural = name_plural(class_name_snake)
+				class_name_snake_space_plural = name_plural(class_name_snake_space)
 				next if class_data["endpoints"].nil?
 
 				endpoints = class_data["endpoints"]
@@ -680,13 +682,13 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "create",
-						name: "Create #{class_name_snake}",
+						name: "Create #{class_name_snake_space}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "POST",
-						description: endpoint_data["description"] || "Creates a new #{class_name_snake} for the user.",
+						description: endpoint_data["description"] || "Creates a new #{class_name_snake_space} for the user.",
 						authenticated: true
 					})
 				end
@@ -696,13 +698,13 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "retrieve",
-						name: "Retrieve #{class_name_snake}",
+						name: "Retrieve #{class_name_snake_space}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "GET",
-						description: endpoint_data["description"] || "Retrieves the #{class_name_snake} with the given uuid.",
+						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space} with the given uuid.",
 						authenticated: endpoint_data["authenticated"]
 					})
 				end
@@ -712,13 +714,13 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "list",
-						name: "List #{class_name_snake_plural}",
+						name: "List #{class_name_snake_space_plural}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "GET",
-						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_plural} with the given params.",
+						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space_plural} with the given params.",
 						authenticated: endpoint_data["authenticated"]
 					})
 				end
@@ -734,7 +736,7 @@ class ApisController < ApplicationController
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
-						description: endpoint_data["description"] || "Updates the #{class_name_snake} with the given uuid and returns it.",
+						description: endpoint_data["description"] || "Updates the #{class_name_snake_space} with the given uuid and returns it.",
 						authenticated: true
 					})
 				end
@@ -744,13 +746,13 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "set",
-						name: "Set #{class_name_snake}",
+						name: "Set #{class_name_snake_space}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
-						description: endpoint_data["description"] || "Sets the #{class_name_snake}.",
+						description: endpoint_data["description"] || "Sets the #{class_name_snake_space}.",
 						authenticated: true
 					})
 				end
@@ -760,13 +762,13 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "upload",
-						name: "Upload #{class_name_snake}",
+						name: "Upload #{class_name_snake_space}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
 						body_params: endpoint_data["bodyParams"],
 						method: "PUT",
-						description: endpoint_data["description"] || "Uploads the file for the #{class_name_snake} with the given uuid.",
+						description: endpoint_data["description"] || "Uploads the file for the #{class_name_snake_space} with the given uuid.",
 						authenticated: true
 					})
 				end
@@ -828,7 +830,7 @@ class ApisController < ApplicationController
 								api_docu += "#{param_name} | #{param_data["type"]} | #{param_data["description"]}\n"
 							end
 						elsif endpoint_data[:url].include?(":uuid")
-							api_docu += "uuid | String | The uuid of the #{class_name_snake}\n"
+							api_docu += "uuid | String | The uuid of the #{class_name_snake_space}\n"
 						end
 					end
 
@@ -877,6 +879,9 @@ class ApisController < ApplicationController
 						api_docu += " | -----------\n"
 
 						properties.each do |prop_key, prop_data|
+							# Check if the property is already covered by a url param
+							next if !endpoint_data[:url_params].nil? && !endpoint_data[:url_params][prop_key].nil?
+
 							type = prop_data["type"]
 							required = prop_data["required"]
 							description = prop_data["description"]
@@ -916,12 +921,12 @@ class ApisController < ApplicationController
 						api_docu += "```\n"
 						api_docu += "{\n"
 						api_docu += "   \"items\": [\n"
-						api_docu += "      #{class_name_snake} resource\n"
+						api_docu += "      #{class_name_snake_space} resource\n"
 						api_docu += "   ]\n"
 						api_docu += "}\n"
 						api_docu += "```\n\n"
 					else
-						api_docu += "If successful, this method returns a #{class_name_snake} resource in the response body.\n\n"
+						api_docu += "If successful, this method returns a #{class_name_snake_space} resource in the response body.\n\n"
 					end
 				end
 			end
