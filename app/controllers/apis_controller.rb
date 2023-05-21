@@ -899,14 +899,26 @@ class ApisController < ApplicationController
 						if !endpoint_data[:body_params].nil?
 							endpoint_data[:body_params].each do |prop_key, prop_data|
 								type = prop_data["type"]
+								required = prop_data["required"]
 								description = prop_data["description"]
 								next if !["String", "Boolean", "Integer", "Float", nil].include?(type)
-								
+
 								type = "String" if type.nil?
 
 								api_docu += prop_key
 								api_docu += " | #{type}"
-								api_docu += " | true"
+
+								if required.is_a?(Hash)
+									required_description = required["description"]
+									required_description = "True" unless required_description
+
+									api_docu += " | #{required_description}"
+								elsif required == true || required.is_a?(String)
+									api_docu += " | True"
+								else
+									api_docu += " | False"
+								end
+
 								api_docu += " | #{description}\n"
 							end
 						end
