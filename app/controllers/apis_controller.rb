@@ -1,4 +1,6 @@
 class ApisController < ApplicationController
+	ALLOWED_TYPES = ["String", "String[]", "Boolean", "Integer", "Float", nil]
+
 	def api_call
 		redis = UtilsService.redis
 		api_id = params[:id]
@@ -730,7 +732,7 @@ class ApisController < ApplicationController
 
 					endpoints_data_list.push({
 						type: "update",
-						name: "Update #{class_name_snake}",
+						name: "Update #{class_name_snake_space}",
 						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
 						url_params: endpoint_data["urlParams"],
 						query_params: endpoint_data["queryParams"],
@@ -885,7 +887,7 @@ class ApisController < ApplicationController
 							type = prop_data["type"]
 							required = prop_data["required"]
 							description = prop_data["description"]
-							next if !["String", "Boolean", "Integer", "Float", nil].include?(type)
+							next if !ALLOWED_TYPES.include?(type)
 
 							type = "String" if type.nil?
 							required = false if required.nil?
@@ -901,7 +903,7 @@ class ApisController < ApplicationController
 								type = prop_data["type"]
 								required = prop_data["required"]
 								description = prop_data["description"]
-								next if !["String", "Boolean", "Integer", "Float", nil].include?(type)
+								next if !ALLOWED_TYPES.include?(type)
 
 								type = "String" if type.nil?
 
@@ -1080,7 +1082,7 @@ class ApisController < ApplicationController
 		result = ""
 
 		schema_properties.each do |prop_key, prop_value|
-			next if !["String", "Boolean", "Integer", "Float", nil].include?(prop_value["type"])
+			next if !ALLOWED_TYPES.include?(prop_value["type"])
 			result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
 		end
 
