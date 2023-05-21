@@ -884,6 +884,9 @@ class ApisController < ApplicationController
 							# Check if the property is already covered by a url param
 							next if !endpoint_data[:url_params].nil? && !endpoint_data[:url_params][prop_key].nil?
 
+							# Check if the property was excluded by the endpoints attribute in the properties hash
+							next if !prop_data["endpoints"].nil? && !prop_data["endpoints"].include?(endpoint_data[:type])
+
 							type = prop_data["type"]
 							required = prop_data["required"]
 							description = prop_data["description"]
@@ -910,15 +913,17 @@ class ApisController < ApplicationController
 								api_docu += prop_key
 								api_docu += " | #{type}"
 
-								if required.is_a?(Hash)
-									required_description = required["description"]
-									required_description = "True" unless required_description
-
-									api_docu += " | #{required_description}"
-								elsif required == true || required.is_a?(String)
-									api_docu += " | True"
-								else
-									api_docu += " | False"
+								if endpoint_data[:method] == "POST"
+									if required.is_a?(Hash)
+										required_description = required["description"]
+										required_description = "True" unless required_description
+	
+										api_docu += " | #{required_description}"
+									elsif required == true || required.is_a?(String)
+										api_docu += " | True"
+									else
+										api_docu += " | False"
+									end
 								end
 
 								api_docu += " | #{description}\n"
