@@ -671,109 +671,101 @@ class ApisController < ApplicationController
 
 				api_docu += "}\n"
 				api_docu += "```\n\n"
+				endpoints_data_list = Array.new
+
+				endpoints.each do |endpoint_name, endpoint_data|
+					case endpoint_name
+					when "create"
+						endpoints_data_list.push({
+							type: "create",
+							name: "Create #{class_name_snake_space}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "POST",
+							description: endpoint_data["description"] || "Creates a new #{class_name_snake_space} for the user.",
+							authenticated: true
+						})
+					when "retrieve"
+						endpoints_data_list.push({
+							type: "retrieve",
+							name: "Retrieve #{class_name_snake_space}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "GET",
+							description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space} with the given uuid.",
+							authenticated: endpoint_data["authenticated"]
+						})
+					when "list"
+						endpoints_data_list.push({
+							type: "list",
+							name: "List #{class_name_snake_space_plural}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "GET",
+							description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space_plural} with the given params.",
+							authenticated: endpoint_data["authenticated"]
+						})
+					when "update"
+						endpoints_data_list.push({
+							type: "update",
+							name: "Update #{class_name_snake_space}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "PUT",
+							description: endpoint_data["description"] || "Updates the #{class_name_snake_space} with the given uuid and returns it.",
+							authenticated: true
+						})
+					when "set"
+						endpoints_data_list.push({
+							type: "set",
+							name: "Set #{class_name_snake_space}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "PUT",
+							description: endpoint_data["description"] || "Sets the #{class_name_snake_space}.",
+							authenticated: true
+						})
+					when "upload"
+						endpoints_data_list.push({
+							type: "upload",
+							name: "Upload #{class_name_snake_space}",
+							url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: "PUT",
+							description: endpoint_data["description"] || "Uploads the file for the #{class_name_snake_space} with the given uuid.",
+							authenticated: true
+						})
+					else
+						endpoints_data_list.push({
+							type: "custom",
+							name: "#{endpoint_name.capitalize} #{class_name_snake_space}",
+							url: endpoint_data["url"],
+							url_params: endpoint_data["urlParams"],
+							query_params: endpoint_data["queryParams"],
+							body_params: endpoint_data["bodyParams"],
+							method: !endpoint_data["method"].nil? ? endpoint_data["method"].upcase : "",
+							description: endpoint_data["description"],
+							authenticated: endpoint_data["authenticated"]
+						})
+					end
+				end
 
 				# API methods table
 				api_docu += "## API methods\n"
 				api_docu += "Name | URL | Request method | Description\n"
 				api_docu += "---- | --- | -------------- | -----------\n"
-
-				endpoints_data_list = Array.new
-
-				if endpoints.include?("create")
-					endpoint_data = endpoints["create"]
-
-					endpoints_data_list.push({
-						type: "create",
-						name: "Create #{class_name_snake_space}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "POST",
-						description: endpoint_data["description"] || "Creates a new #{class_name_snake_space} for the user.",
-						authenticated: true
-					})
-				end
-
-				if endpoints.include?("retrieve")
-					endpoint_data = endpoints["retrieve"]
-
-					endpoints_data_list.push({
-						type: "retrieve",
-						name: "Retrieve #{class_name_snake_space}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "GET",
-						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space} with the given uuid.",
-						authenticated: endpoint_data["authenticated"]
-					})
-				end
-
-				if endpoints.include?("list")
-					endpoint_data = endpoints["list"]
-
-					endpoints_data_list.push({
-						type: "list",
-						name: "List #{class_name_snake_space_plural}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "GET",
-						description: endpoint_data["description"] || "Retrieves the #{class_name_snake_space_plural} with the given params.",
-						authenticated: endpoint_data["authenticated"]
-					})
-				end
-
-				if endpoints.include?("update")
-					endpoint_data = endpoints["update"]
-
-					endpoints_data_list.push({
-						type: "update",
-						name: "Update #{class_name_snake_space}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "PUT",
-						description: endpoint_data["description"] || "Updates the #{class_name_snake_space} with the given uuid and returns it.",
-						authenticated: true
-					})
-				end
-
-				if endpoints.include?("set")
-					endpoint_data = endpoints["set"]
-
-					endpoints_data_list.push({
-						type: "set",
-						name: "Set #{class_name_snake_space}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "PUT",
-						description: endpoint_data["description"] || "Sets the #{class_name_snake_space}.",
-						authenticated: true
-					})
-				end
-
-				if endpoints.include?("upload")
-					endpoint_data = endpoints["upload"]
-
-					endpoints_data_list.push({
-						type: "upload",
-						name: "Upload #{class_name_snake_space}",
-						url: endpoint_data["url"] || "/#{class_name_snake_plural}/:uuid",
-						url_params: endpoint_data["urlParams"],
-						query_params: endpoint_data["queryParams"],
-						body_params: endpoint_data["bodyParams"],
-						method: "PUT",
-						description: endpoint_data["description"] || "Uploads the file for the #{class_name_snake_space} with the given uuid.",
-						authenticated: true
-					})
-				end
 
 				endpoints_data_list.each do |endpoint_data|
 					api_docu += endpoint_data[:name]
@@ -798,7 +790,7 @@ class ApisController < ApplicationController
 
 					# Header table
 					authorization_data = endpoint_data[:authenticated]
-					write_endpoint = ["create", "update", "set", "upload"].include?(endpoint_data[:type])
+					write_endpoint = ["POST", "PUT"].include?(endpoint_data[:method])
 
 					if !authorization_data.nil? || write_endpoint
 						api_docu += "#### Headers\n"
@@ -872,12 +864,14 @@ class ApisController < ApplicationController
 						api_docu += "\n"
 					elsif ["POST", "PUT"].include?(endpoint_data[:method])
 						# Body params table
+						include_required = ["create", "set", "custom"].include?(endpoint_data[:type])
+
 						api_docu += "#### Body params\n"
 						api_docu += "Name | Type"
-						api_docu += " | Required" if endpoint_data[:method] == "POST"
+						api_docu += " | Required" if include_required
 						api_docu += " | Description\n"
 						api_docu += "---- | ----"
-						api_docu += " | --------" if endpoint_data[:method] == "POST"
+						api_docu += " | --------" if include_required
 						api_docu += " | -----------\n"
 
 						properties.each do |prop_key, prop_data|
@@ -897,7 +891,7 @@ class ApisController < ApplicationController
 
 							api_docu += prop_key
 							api_docu += " | #{type}"
-							api_docu += " | #{required}" if endpoint_data[:method] == "POST"
+							api_docu += " | #{required}" if include_required
 							api_docu += " | #{description}\n"
 						end
 
@@ -917,7 +911,7 @@ class ApisController < ApplicationController
 									if required.is_a?(Hash)
 										required_description = required["description"]
 										required_description = "True" unless required_description
-	
+
 										api_docu += " | #{required_description}"
 									elsif required == true || required.is_a?(String)
 										api_docu += " | True"
