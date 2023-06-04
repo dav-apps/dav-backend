@@ -275,8 +275,6 @@ class ApisController < ApplicationController
 					code = %{
 						#{get_functions(schema, api.app, getters)}
 
-						#{generate_state_dx_code(endpoint)}
-
 						(# Get the params)
 						(var fields_str (get_param "fields"))
 
@@ -309,6 +307,9 @@ class ApisController < ApplicationController
 
 						(# Get the session)
 						(var session (func get_session (access_token)))
+
+						#{generate_state_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint)}
 
 						(# Validate missing fields)
 						#{generate_missing_field_validations_dx_code(properties)}
@@ -547,9 +548,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{
-							generate_body_params_dx_code(properties)
-						}
+						#{generate_body_params_dx_code(properties)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -569,20 +568,17 @@ class ApisController < ApplicationController
 						(# Get the session)
 						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
 
+						#{generate_state_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint)}
+
 						(# Validate field types)
-						#{
-							generate_field_type_validations_dx_code(properties)
-						}
+						#{generate_field_type_validations_dx_code(properties)}
 
 						(# Validate too short and too long fields)
-						#{
-							generate_field_length_validations_dx_code(properties)
-						}
+						#{generate_field_length_validations_dx_code(properties)}
 
 						(# Validate validity of fields)
-						#{
-							generate_field_validity_validations_dx_code(properties)
-						}
+						#{generate_field_validity_validations_dx_code(properties)}
 
 						(# Get the object)
 						(var obj (func get_table_object (uuid)))
@@ -1077,11 +1073,23 @@ class ApisController < ApplicationController
 		# Endpoint state vars
 		if !endpoint.nil? && !endpoint["state"].nil?
 			endpoint_state = endpoint["state"]
-			result += "(var endpoint_state (func #{endpoint_state} ((get_params))))\n"
+			result += "(var endpoint_state (func #{endpoint_state} ((session))))\n"
 
 			result += "(for key in endpoint_state.keys (\n"
 			result += "(var state[key] endpoint_state[key])\n"
 			result += "))\n"
+		end
+
+		result
+	end
+
+	def generate_validators_dx_code(endpoint)
+		result = ""
+		validators = endpoint["validators"]
+		return result if validators.nil?
+
+		validators.each do |validator|
+			result += "(func #{validator} (state))\n"
 		end
 
 		result
