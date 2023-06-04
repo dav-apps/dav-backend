@@ -327,7 +327,10 @@ class ApisController < ApplicationController
 						(var props (hash))
 
 						(for key in body_params.keys (
-							(var props[key] body_params[key])
+							(var val body_params[key])
+							(if (!(is_nil val)) (
+								(var props[key] val)
+							))
 						))
 
 						(var obj (func create_table_object (
