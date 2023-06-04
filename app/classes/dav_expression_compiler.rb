@@ -246,10 +246,10 @@ class DavExpressionCompiler
 
 					return table
 				when 'Table.get_table_objects'
-					id = params[:id]
+					table_name = params[:table_name]
 					user_id = params[:user_id]
 
-					table = _method_call('get_table', id: id)
+					table = _method_call('get_table', name: table_name)
 					return nil if !table
 
 					table_app = _method_call('get_app', id: table.app_id)
@@ -271,10 +271,10 @@ class DavExpressionCompiler
 
 					return holders
 				when 'Table.get_table_object_uuids'
-					id = params[:id]
+					table_name = params[:table_name]
 					user_id = params[:user_id]
 
-					table = _method_call('get_table', id: id)
+					table = _method_call('get_table', name: table_name)
 					return nil if !table
 
 					table_app = _method_call('get_app', id: table.app_id)
@@ -645,22 +645,22 @@ class DavExpressionCompiler
 				when 'TableObjectUserAccess.create'
 					table_object_id = params[:table_object_id]
 					user_id = params[:user_id]
-					table_alias = params[:table_alias]
+					alias_table_name = params[:alias_table_name]
 
 					# Check if there is already a TableObjectUserAccess object
 					if table_object_id.is_a?(String)
 						# Get the id of the table object
 						obj = _method_call('get_table_object', uuid: table_object_id)
+					else
+						obj = _method_call('get_table_object', id: table_object_id)
+					end
 
-						if obj.nil?
-							raise RuntimeError, [{"code" => 0}].to_json
-						end
-
-						table_object_id = obj.id
+					if obj.nil?
+						raise RuntimeError, [{"code" => 0}].to_json
 					end
 
 					# Try to find the table
-					table = _method_call('get_table', id: table_alias)
+					table = _method_call('get_table', name: alias_table_name)
 
 					if table.nil?
 						raise RuntimeError, [{"code" => 1}].to_json
@@ -668,16 +668,16 @@ class DavExpressionCompiler
 
 					# Find the access and return it
 					access = TableObjectUserAccess.find_by(
-						table_object_id: table_object_id,
+						table_object_id: obj.id,
 						user_id: user_id,
-						table_alias: table_alias
+						table_alias: table.id
 					)
 
 					if access.nil?
 						access = TableObjectUserAccess.create(
 							table_object_id: table_object_id,
 							user_id: user_id,
-							table_alias: table_alias
+							table_alias: table.id
 						)
 					end
 
@@ -773,11 +773,11 @@ class DavExpressionCompiler
 						return holders
 					end
 				when 'Collection.get_table_object_uuids'
-					table_id = params[:table_id]
+					table_name = params[:table_name]
 					collection_name = params[:collection_name]
 
 					# Try to find the table
-					table = _method_call('get_table', id: table_id)
+					table = _method_call('get_table', name: table_name)
 
 					if table.nil?
 						raise RuntimeError, [{"code" => 0}].to_json
@@ -1368,12 +1368,12 @@ class DavExpressionCompiler
 					)"
 				when "Table.get_table_objects"
 					return "_method_call('Table.get_table_objects',
-						id: #{compile_command(command[1], true)},
+						table_name: #{compile_command(command[1], true)},
 						user_id: #{compile_command(command[2], true)}
 					)"
 				when "Table.get_table_object_uuids"
 					return "_method_call('Table.get_table_object_uuids',
-						id: #{compile_command(command[1], true)},
+						table_name: #{compile_command(command[1], true)},
 						user_id: #{compile_command(command[2], true)}
 					)"
 				when "TableObject.create"
@@ -1430,7 +1430,7 @@ class DavExpressionCompiler
 					return "_method_call('TableObjectUserAccess.create',
 						table_object_id: #{compile_command(command[1], true)},
 						user_id: #{compile_command(command[2], true)},
-						table_alias: #{compile_command(command[3], true)}
+						alias_table_name: #{compile_command(command[3], true)}
 					)"
 				when "Collection.add_table_object"
 					return "_method_call('Collection.add_table_object',
@@ -1449,7 +1449,7 @@ class DavExpressionCompiler
 					)"
 				when "Collection.get_table_object_uuids"
 					return "_method_call('Collection.get_table_object_uuids',
-						table_id: #{compile_command(command[1], true)},
+						table_name: #{compile_command(command[1], true)},
 						collection_name: #{compile_command(command[2], true)}
 					)"
 				when "TableObject.find_by_property"
