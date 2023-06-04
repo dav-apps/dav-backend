@@ -270,8 +270,12 @@ class ApisController < ApplicationController
 
 				if endpoints.include?("create")
 					# Generate the create endpoint
+					endpoint = endpoints["create"]
+
 					code = %{
 						#{get_functions(schema, api.app, getters)}
+
+						#{generate_state_dx_code(endpoint)}
 
 						(# Get the params)
 						(var fields_str (get_param "fields"))
@@ -286,9 +290,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{
-							generate_body_params_dx_code(properties)
-						}
+						#{generate_body_params_dx_code(properties)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -297,7 +299,7 @@ class ApisController < ApplicationController
 							(func render_validation_errors (
 								(list (hash
 									(error "authorization_header_missing")
-									(status 400)
+									(status 401)
 								))
 							))
 						))
@@ -309,36 +311,28 @@ class ApisController < ApplicationController
 						(var session (func get_session (access_token)))
 
 						(# Validate missing fields)
-						#{
-							generate_missing_field_validations_dx_code(properties)
-						}
+						#{generate_missing_field_validations_dx_code(properties)}
 
 						(# Validate field types)
-						#{
-							generate_field_type_validations_dx_code(properties)
-						}
+						#{generate_field_type_validations_dx_code(properties)}
 
 						(# Validate too short and too long fields)
-						#{
-							generate_field_length_validations_dx_code(properties)
-						}
+						#{generate_field_length_validations_dx_code(properties)}
 
 						(# Validate validity of fields)
-						#{
-							generate_field_validity_validations_dx_code(properties)
-						}
+						#{generate_field_validity_validations_dx_code(properties)}
 
 						(# Create the object)
-						(var properties (hash))
+						(var props (hash))
 
 						(for key in body_params.keys (
-							(var properties[key] body_params[key])
+							(var props[key] body_params[key])
 						))
 
 						(var obj (func create_table_object (
 							session.user_id
 							\"#{class_name}\"
-							properties
+							props
 						)))
 
 						(# Render the result)
@@ -1077,6 +1071,22 @@ class ApisController < ApplicationController
 		return "(list #{values})"
 	end
 
+	def generate_state_dx_code(endpoint)
+		result = "(var state (hash))\n"
+
+		# Endpoint state vars
+		if !endpoint.nil? && !endpoint["state"].nil?
+			endpoint_state = endpoint["state"]
+			result += "(var endpoint_state (func #{endpoint_state} ((get_params))))\n"
+
+			result += "(for key in endpoint_state.keys (\n"
+			result += "(var state[key] endpoint_state[key])\n"
+			result += "))\n"
+		end
+
+		result
+	end
+
 	def generate_body_params_dx_code(schema_properties)
 		result = ""
 
@@ -1214,7 +1224,7 @@ class ApisController < ApplicationController
 			))
 
 			(def render_validation_errors (validations status) (
-				(# params: validations: list<hash: error<hash: {code: string, message: string}>, status: number>)
+				(# params: validations: list<hash<error: string, status: number>>)
 				(# Save the errors in a separate list)
 				(var errors (list))
 
