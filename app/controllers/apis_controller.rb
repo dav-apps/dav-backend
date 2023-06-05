@@ -273,6 +273,8 @@ class ApisController < ApplicationController
 					endpoint = endpoints["create"]
 
 					code = %{
+						(var state (hash))
+
 						#{get_functions(schema, api.app, getters)}
 
 						(# Get the params)
@@ -306,7 +308,7 @@ class ApisController < ApplicationController
 						(func validate_content_type_json ((get_header "Content-Type")))
 
 						(# Get the session)
-						(var session (func get_session (access_token)))
+						(var state.session (func get_session (access_token)))
 
 						#{generate_state_dx_code(endpoint)}
 						#{generate_validators_dx_code(endpoint)}
@@ -334,7 +336,7 @@ class ApisController < ApplicationController
 						))
 
 						(var obj (func create_table_object (
-							session.user_id
+							state.session.user_id
 							\"#{class_name}\"
 							props
 						)))
@@ -378,7 +380,11 @@ class ApisController < ApplicationController
 
 				if endpoints.include?("retrieve")
 					# Generate the retrieve endpoint
+					endpoint = endpoints["retrieve"]
+
 					code = %{
+						(var state (hash))
+
 						#{get_functions(schema, api.app, getters)}
 
 						(# Get the params)
@@ -396,10 +402,19 @@ class ApisController < ApplicationController
 						(var access_token (get_header "Authorization"))
 
 						(# Get the session)
-						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
+						(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
+
+						#{generate_state_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the object)
-						(var obj (func get_table_object (uuid)))
+						(var obj
+							(func get_table_object (
+								uuid
+								(if (is_nil state.session) nil else state.session.user_id)
+								"#{class_name}"
+							))
+						)
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -451,6 +466,8 @@ class ApisController < ApplicationController
 
 				if endpoints.include?("list")
 					# Generate the list endpoint
+					endpoint = endpoints["list"]
+
 					code = %{
 						#{get_functions(schema, api.app, getters)}
 
@@ -534,7 +551,11 @@ class ApisController < ApplicationController
 
 				if endpoints.include?("update")
 					# Generate the update endpoint
+					endpoint = endpoints["update"]
+
 					code = %{
+						(var state (hash))
+
 						#{get_functions(schema, api.app, getters)}
 
 						(# Get the params)
@@ -569,7 +590,7 @@ class ApisController < ApplicationController
 						(func validate_content_type_json ((get_header "Content-Type")))
 
 						(# Get the session)
-						(if (!(is_nil access_token)) (var session (func get_session (access_token))))
+						(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
 
 						#{generate_state_dx_code(endpoint)}
 						#{generate_validators_dx_code(endpoint)}
@@ -1071,12 +1092,12 @@ class ApisController < ApplicationController
 	end
 
 	def generate_state_dx_code(endpoint)
-		result = "(var state (hash))\n"
+		result = ""
 
 		# Endpoint state vars
 		if !endpoint.nil? && !endpoint["state"].nil?
 			endpoint_state = endpoint["state"]
-			result += "(var endpoint_state (func #{endpoint_state} ((session))))\n"
+			result += "(var endpoint_state (func #{endpoint_state} (state.session)))\n"
 
 			result += "(for key in endpoint_state.keys (\n"
 			result += "(var state[key] endpoint_state[key])\n"
@@ -1364,7 +1385,21 @@ class ApisController < ApplicationController
 				))
 			))
 
-			(def get_table_object (uuid user_id) (
+			(def get_table (id) (
+				(catch (
+					(return (Table.get id))
+				) (
+					(# Action not allowed)
+					(func render_validation_errors (
+						(list (hash
+							(error "action_not_allowed")
+							(status 403)
+						))
+					))
+				))
+			))
+
+			(def get_table_object (uuid user_id table_name) (
 				(# params: uuid: string, user_id: int)
 				(if (is_nil uuid) (return nil))
 
@@ -1383,8 +1418,18 @@ class ApisController < ApplicationController
 				(if (is_nil obj) (
 					(return nil)
 				) else (
+					(var obj_table (func get_table (obj.table_id)))
+
 					(# Check if the table object belongs to the user and to the table)
-					(if ((!(is_nil user_id)) and (obj.user_id != user_id)) (
+					(if  (
+						((!(is_nil user_id)) and (obj.user_id != user_id))
+						or
+						(
+							((!(is_nil obj_table))
+							and (!(is_nil table_name)))
+							and (obj_table.name != table_name)
+						)
+					) (
 						(# Action not allowed)
 						(func render_validation_errors (
 							(list (hash
