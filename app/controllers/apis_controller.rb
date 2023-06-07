@@ -506,24 +506,7 @@ class ApisController < ApplicationController
 						(# Get the objects)
 						(var object_uuids (list))
 
-						#{
-							result = ""
-							collection_name = endpoints["list"]["collection"]
-
-							if !collection_name.nil?
-								result += %{
-									(var collection_uuids
-										(func get_table_object_uuids_of_collection (
-											"#{class_name}"
-											"#{collection_name}"
-										))
-									)
-									(var object_uuids collection_uuids.reverse)
-								}
-							end
-
-							result
-						}
+						#{generate_list_selector_dx_code(endpoint)}
 
 						(# Render the result)
 						(var result (hash (items (list))))
@@ -1267,11 +1250,27 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_authenticated_if_statement_dx_code(authenticated)
+	def generate_authenticated_if_statement_dx_code(endpoint)
+		authenticated = endpoint["authenticated"]
+
 		if authenticated.is_a?(Hash) && !authenticated["value"].nil?
 			return "(func #{authenticated["value"]} ((get_params)))"
 		elsif authenticated.is_a?(String)
 			return "(func #{authenticated} ((get_params)))"
+		end
+
+		return ""
+	end
+
+	def generate_list_selector_dx_code(endpoint)
+		selector = endpoint["selector"]
+
+		if selector.is_a?(String)
+			return %{
+				(for uuid in (func #{selector} (state)) (
+					(object_uuids.push uuid)
+				))
+			}
 		end
 
 		return ""
