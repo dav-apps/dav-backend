@@ -469,10 +469,11 @@ class ApisController < ApplicationController
 					endpoint = endpoints["list"]
 
 					code = %{
+						(var state (hash))
+
 						#{get_functions(schema, api.app, getters)}
 
 						(# Get the params)
-						(var uuid (get_param "uuid"))
 						(var fields_str (get_param "fields"))
 
 						(if (is_nil fields_str) (
@@ -481,6 +482,26 @@ class ApisController < ApplicationController
 							(# Process the fields string)
 							(var fields (func process_fields (fields_str)))
 						))
+
+						(if #{generate_authenticated_if_statement_dx_code(endpoint)} (
+							(# Get the access token)
+							(var access_token (get_header "Authorization"))
+
+							(if ((is_nil access_token)) (
+								(func render_validation_errors (
+									(list (hash
+										(error "authorization_header_missing")
+										(status 401)
+									))
+								))
+							))
+
+							(# Get the session)
+							(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
+						))
+
+						#{generate_state_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the objects)
 						(var object_uuids (list))
@@ -1097,7 +1118,7 @@ class ApisController < ApplicationController
 		# Endpoint state vars
 		if !endpoint.nil? && !endpoint["state"].nil?
 			endpoint_state = endpoint["state"]
-			result += "(var endpoint_state (func #{endpoint_state} (state.session)))\n"
+			result += "(var endpoint_state (func #{endpoint_state} (state.session (get_params))))\n"
 
 			result += "(for key in endpoint_state.keys (\n"
 			result += "(var state[key] endpoint_state[key])\n"
@@ -1244,6 +1265,16 @@ class ApisController < ApplicationController
 
 		result += "(func render_validation_errors (errors))"
 		result
+	end
+
+	def generate_authenticated_if_statement_dx_code(authenticated)
+		if authenticated.is_a?(Hash) && !authenticated["value"].nil?
+			return "(func #{authenticated["value"]} ((get_params)))"
+		elsif authenticated.is_a?(String)
+			return "(func #{authenticated} ((get_params)))"
+		end
+
+		return ""
 	end
 
 	def get_functions(schema, app, getters)
