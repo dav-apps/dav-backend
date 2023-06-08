@@ -361,15 +361,17 @@ class ApisController < ApplicationController
 					}
 
 					# Save the endpoint
+					path = endpoint["url"] || class_name_snake_plural
+
 					api_endpoint = api_slot.api_endpoints.find_by(
-						path: class_name_snake_plural,
+						path: path,
 						method: "POST"
 					)
 
 					if api_endpoint.nil?
 						ApiEndpoint.create(
 							api_slot: api_slot,
-							path: class_name_snake_plural,
+							path: path,
 							method: "POST",
 							commands: code
 						)
@@ -401,6 +403,17 @@ class ApisController < ApplicationController
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
+
+						(if #{generate_authenticated_if_statement_dx_code(endpoint)} (
+							(if ((is_nil access_token)) (
+								(func render_validation_errors (
+									(list (hash
+										(error "authorization_header_missing")
+										(status 401)
+									))
+								))
+							))
+						))
 
 						(# Get the session)
 						(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
@@ -440,7 +453,8 @@ class ApisController < ApplicationController
 					}
 
 					# Save the endpoint
-					path = "#{class_name_snake_plural}/:uuid"
+					path = endpoint["url"] || "#{class_name_snake_plural}/:uuid"
+
 					api_endpoint = api_slot.api_endpoints.find_by(
 						path: path,
 						method: "GET"
@@ -530,15 +544,17 @@ class ApisController < ApplicationController
 					}
 
 					# Save the endpoint
+					path = endpoint["url"] || class_name_snake_plural
+
 					api_endpoint = api_slot.api_endpoints.find_by(
-						path: class_name_snake_plural,
+						path: path,
 						method: "GET"
 					)
 
 					if api_endpoint.nil?
 						ApiEndpoint.create(
 							api_slot: api_slot,
-							path: class_name_snake_plural,
+							path: path,
 							method: "GET",
 							commands: code
 						)
@@ -659,7 +675,8 @@ class ApisController < ApplicationController
 					}
 
 					# Save the endpoint
-					path = "#{class_name_snake_plural}/:uuid"
+					path = endpoint["url"] || "#{class_name_snake_plural}/:uuid"
+
 					api_endpoint = api_slot.api_endpoints.find_by(
 						path: path,
 						method: "PUT"
@@ -1286,7 +1303,7 @@ class ApisController < ApplicationController
 			return "(func #{authenticated} ((get_params)))"
 		end
 
-		return ""
+		return "false"
 	end
 
 	def generate_list_selector_dx_code(endpoint)
