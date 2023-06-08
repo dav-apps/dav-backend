@@ -329,9 +329,10 @@ class ApisController < ApplicationController
 						(var props (hash))
 
 						(for key in body_params.keys (
-							(var val body_params[key])
-							(if (!(is_nil val)) (
-								(var props[key] val)
+							(var value body_params[key])
+
+							(if (!(is_nil value)) (
+								#{generate_set_table_object_value_create_dx_code(class_data)}
 							))
 						))
 
@@ -635,7 +636,7 @@ class ApisController < ApplicationController
 							(if (value == "") (
 								(var obj.properties[key] nil)
 							) else (
-								(var obj.properties[key] value)
+								#{generate_set_table_object_value_update_dx_code(class_data)}
 							))
 						))
 
@@ -1300,6 +1301,46 @@ class ApisController < ApplicationController
 		end
 
 		return ""
+	end
+
+	def generate_set_table_object_value_create_dx_code(class_data)
+		properties = class_data["properties"]
+		result = ""
+
+		properties.each do |prop_key, prop_value|
+			preprocessor = prop_value["preprocessor"]
+			next if preprocessor.nil?
+
+			result += %{
+				(if (key == "#{prop_key}") (
+					(var value (func #{preprocessor} (value)))
+				))
+			}
+		end
+
+		result += %{
+			(var props[key] value)
+		}
+	end
+
+	def generate_set_table_object_value_update_dx_code(class_data)
+		properties = class_data["properties"]
+		result = ""
+
+		properties.each do |prop_key, prop_value|
+			preprocessor = prop_value["preprocessor"]
+			next if preprocessor.nil?
+
+			result += %{
+				(if (key == "#{prop_key}") (
+					(var value (func #{preprocessor} (value)))
+				))
+			}
+		end
+
+		result += %{
+			(var obj.properties[key] value)
+		}
 	end
 
 	def get_functions(schema, app, getters)
