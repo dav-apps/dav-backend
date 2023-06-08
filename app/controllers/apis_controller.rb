@@ -408,13 +408,7 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the object)
-						(var obj
-							(func get_table_object (
-								uuid
-								(if (is_nil state.session) nil else state.session.user_id)
-								"#{class_name}"
-							))
-						)
+						#{generate_table_object_getter_dx_code(endpoint, class_name)}
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -585,7 +579,7 @@ class ApisController < ApplicationController
 							(func render_validation_errors (
 								(list (hash
 									(error "authorization_header_missing")
-									(status 400)
+									(status 401)
 								))
 							))
 						))
@@ -594,22 +588,12 @@ class ApisController < ApplicationController
 						(func validate_content_type_json ((get_header "Content-Type")))
 
 						(# Get the session)
-						(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
+						(var state.session (func get_session (access_token)))
 
 						#{generate_state_dx_code(endpoint)}
-						#{generate_validators_dx_code(endpoint)}
-
-						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties)}
-
-						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties)}
-
-						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties)}
 
 						(# Get the object)
-						(var obj (func get_table_object (uuid)))
+						#{generate_table_object_getter_dx_code(endpoint, class_name)}
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -620,6 +604,28 @@ class ApisController < ApplicationController
 								))
 							))
 						))
+
+						(# Check if the object belongs to the user)
+						(if (state.session.user_id != obj.user_id) (
+							(# Action not allowed)
+							(func render_validation_errors ((list
+								(hash
+									(error "action_not_allowed")
+									(status 403)
+								)
+							)))
+						))
+
+						#{generate_validators_dx_code(endpoint)}
+
+						(# Validate field types)
+						#{generate_field_type_validations_dx_code(properties)}
+
+						(# Validate too short and too long fields)
+						#{generate_field_length_validations_dx_code(properties)}
+
+						(# Validate validity of fields)
+						#{generate_field_validity_validations_dx_code(properties)}
 
 						(# Set the values)
 						(for key in body_params.keys (
@@ -1117,7 +1123,7 @@ class ApisController < ApplicationController
 		return result if validators.nil?
 
 		validators.each do |validator|
-			result += "(func #{validator} (state))\n"
+			result += "(func #{validator} (state (get_params)))\n"
 		end
 
 		result
@@ -1248,6 +1254,26 @@ class ApisController < ApplicationController
 
 		result += "(func render_validation_errors (errors))"
 		result
+	end
+
+	def generate_table_object_getter_dx_code(endpoint, class_name)
+		getter = endpoint["getter"]
+
+		if getter.is_a?(String)
+			return %{
+				(var obj (func #{getter} (state uuid)))
+			}
+		end
+
+		return %{
+			(var obj
+				(func get_table_object (
+					uuid
+					(if (is_nil state.session) nil else state.session.user_id)
+					"#{class_name}"
+				))
+			)
+		}
 	end
 
 	def generate_authenticated_if_statement_dx_code(endpoint)
