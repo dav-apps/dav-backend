@@ -344,7 +344,8 @@ class DavExpressionCompiler
 						prop.table_object = obj
 						prop.name = key
 						prop.value = value
-						prop.save
+
+						raise RuntimeError, [{"code" => 3}].to_json if prop.save
 					end
 
 					# Return the table object
@@ -355,6 +356,7 @@ class DavExpressionCompiler
 					ext = params[:ext]
 					type = params[:type]
 					file = params[:file]
+					properties = params[:properties]
 
 					# Get the table
 					table = _method_call('get_table', id: table_id)
@@ -433,6 +435,24 @@ class DavExpressionCompiler
 					end
 
 					# Create the properties
+					prohibited_property_names = [
+						Constants::EXT_PROPERTY_NAME,
+						Constants::ETAG_PROPERTY_NAME,
+						Constants::SIZE_PROPERTY_NAME,
+						Constants::TYPE_PROPERTY_NAME
+					]
+
+					properties.each do |key, value|
+						next if prohibited_property_names.include?(key)
+
+						prop = TableObjectProperty.new
+						prop.table_object = obj
+						prop.name = key
+						prop.value = value
+
+						raise RuntimeError, [{"code" => 6}].to_json if !prop.save
+					end
+
 					if !ext_prop.save || !etag_prop.save || !size_prop.save || !type_prop.save
 						raise RuntimeError, [{"code" => 6}].to_json
 					end
@@ -1388,7 +1408,8 @@ class DavExpressionCompiler
 						table_id: #{compile_command(command[2], true)},
 						ext: #{compile_command(command[3], true)},
 						type: #{compile_command(command[4], true)},
-						file: #{compile_command(command[5], true)}
+						file: #{compile_command(command[5], true)},
+						properties: #{compile_command(command[6], true)}
 					)"
 				when "TableObject.get"
 					return "_method_call('TableObject.get',

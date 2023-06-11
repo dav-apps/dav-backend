@@ -736,32 +736,32 @@ class ApisController < ApplicationController
 						(var state.session (func get_session (access_token)))
 
 						#{generate_state_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the object)
 						#{generate_table_object_getter_dx_code(endpoint, class_name)}
 
 						(if (is_nil obj) (
-							(# Object does not exist)
-							(func render_validation_errors (
-								(list (hash
-									(error "#{class_name_snake}_does_not_exist")
-									(status 404)
-								))
+							(# Create the table object)
+							(var obj (func create_table_object_file (
+								state.session.user_id
+								"PublisherLogo"
+								content_type
+								data
+								(hash)
+							)))
+						) else (
+							(# Check if the object belongs to the user)
+							(if (state.session.user_id != obj.user_id) (
+								(# Action not allowed)
+								(func render_validation_errors ((list
+									(hash
+										(error "action_not_allowed")
+										(status 403)
+									)
+								)))
 							))
 						))
-
-						(# Check if the object belongs to the user)
-						(if (state.session.user_id != obj.user_id) (
-							(# Action not allowed)
-							(func render_validation_errors ((list
-								(hash
-									(error "action_not_allowed")
-									(status 403)
-								)
-							)))
-						))
-
-						#{generate_validators_dx_code(endpoint)}
 					}
 
 					# Save the endpoint
@@ -1617,6 +1617,48 @@ class ApisController < ApplicationController
 				))
 			))
 
+			(def create_file_table_object (user_id table_name type properties) (
+				(var ext (func mimetype_to_ext (type)))
+
+				(catch (
+					(TableObject.create_file user_id
+						table_name
+						ext
+						type
+						file
+						properties
+					)
+				) (
+					(var error errors#0)
+
+					(if (error.code == 1) (
+						(# Table does not belong to the same app as the api)
+						(func render_validation_errors ((list
+							(hash
+								(error "action_not_allowed")
+								(status 403)
+							)
+						)))
+					) elseif (error.code == 3) (
+						(# Not enough free storage)
+						(func render_validation_errors ((list
+							(hash
+								(error "not_sufficient_storage_available")
+								(status 400)
+							)
+						)))
+					) else (
+						(# Table or User does not exist, or creating table object or property was not successful)
+						(func render_validation_errors ((list
+							(hash
+								(error "unexpected_error")
+								(status 500)
+							)
+						)))
+					))
+				))
+			))
+
 			(def get_table (id) (
 				(catch (
 					(return (Table.get id))
@@ -1794,6 +1836,16 @@ class ApisController < ApplicationController
 						))
 					))
 				))
+			))
+
+			(def mimetype_to_ext (type) (
+				(if (type == "image/png") (
+					(return "png")
+				) elseif (type == "image/jpeg") (
+					(return "jpg")
+				))
+
+				(return "")
 			))
 		}
 	end
