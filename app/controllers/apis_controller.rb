@@ -695,6 +695,96 @@ class ApisController < ApplicationController
 					end
 				end
 
+				if endpoints.include?("upload")
+					# Generate the upload endpoint
+					endpoint = endpoints["upload"]
+
+					code = %{
+						(var state (hash))
+
+						#{get_functions(schema, api.app, getters)}
+
+						(# Get the params)
+						(var uuid (get_param "uuid"))
+						(var fields_str (get_param "fields"))
+
+						(if (is_nil fields_str) (
+							(var fields (hash (uuid (hash))))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(var data (get_body))
+
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
+
+						(if (is_nil access_token) (
+							(func render_validation_errors (
+								(list (hash
+									(error "authorization_header_missing")
+									(status 401)
+								))
+							))
+						))
+
+						(# Check the content type)
+						#{generate_upload_content_type_validation_dx_code(endpoint)}
+
+						(# Get the session)
+						(var state.session (func get_session (access_token)))
+
+						#{generate_state_dx_code(endpoint)}
+
+						(# Get the object)
+						#{generate_table_object_getter_dx_code(endpoint, class_name)}
+
+						(if (is_nil obj) (
+							(# Object does not exist)
+							(func render_validation_errors (
+								(list (hash
+									(error "#{class_name_snake}_does_not_exist")
+									(status 404)
+								))
+							))
+						))
+
+						(# Check if the object belongs to the user)
+						(if (state.session.user_id != obj.user_id) (
+							(# Action not allowed)
+							(func render_validation_errors ((list
+								(hash
+									(error "action_not_allowed")
+									(status 403)
+								)
+							)))
+						))
+
+						#{generate_validators_dx_code(endpoint)}
+					}
+
+					# Save the endpoint
+					path = endpoint["url"] || "#{class_name_snake_plural}/:uuid"
+
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: path,
+						method: "PUT"
+					)
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: path,
+							method: "PUT",
+							commands: code
+						)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
+
 				# Generate the documentation for the current class
 				api_docu += "# #{class_name}\n"
 				api_docu += "## Resource representation\n\n"
@@ -1360,6 +1450,34 @@ class ApisController < ApplicationController
 		}
 	end
 
+	def generate_upload_content_type_validation_dx_code(endpoint)
+		content_types = endpoint["content_types"]
+		result = %{
+			(var content_type (get_header "Content-Type"))
+		}
+
+		if content_types.is_a?(Array)
+			content_types.map! { |type| type = "\"#{type}\"" }
+			content_types_string = "(list #{content_types.join(' ')})"
+
+			result += %{
+				(var supported_content_types #{content_types_string})
+
+				(if (!(supported_content_types.contains content_type)) (
+					(# Content-Type not supported)
+					(func render_validation_errors (
+						(list (hash
+							(error "content_type_not_supported")
+							(status 415)
+						))
+					))
+				))
+			}
+		end
+
+		result
+	end
+
 	def get_functions(schema, app, getters)
 		return %{
 			(var schema #{hash_to_dx_hash(schema)})
@@ -1654,7 +1772,7 @@ class ApisController < ApplicationController
 			(def validate_content_type_json (content_type) (
 				(# params: content_type: String)
 				(if ((is_nil content_type) or (!(content_type.contains "application/json"))) (
-					(# Content-Type not supported error)
+					(# Content-Type not supported)
 					(func render_validation_errors (
 						(list (hash
 							(error "content_type_not_supported")
