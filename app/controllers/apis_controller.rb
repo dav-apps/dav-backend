@@ -736,19 +736,19 @@ class ApisController < ApplicationController
 						(var state.session (func get_session (access_token)))
 
 						#{generate_state_dx_code(endpoint)}
-						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the object)
 						#{generate_table_object_getter_dx_code(endpoint, class_name)}
+						#{generate_upload_preprocessor_dx_code(class_data)}
 
 						(if (is_nil obj) (
 							(# Create the table object)
-							(var obj (func create_table_object_file (
+							(var obj (func create_file_table_object (
 								state.session.user_id
-								"PublisherLogo"
+								"#{class_name}"
 								content_type
 								data
-								(hash)
+								props
 							)))
 						) else (
 							(# Check if the object belongs to the user)
@@ -761,7 +761,34 @@ class ApisController < ApplicationController
 									)
 								)))
 							))
+
+							#{generate_validators_dx_code(endpoint)}
+
+							(# Update the table object)
+							(func update_file_table_object (
+								obj.uuid
+								content_type
+								data
+								props
+							))
 						))
+
+						(# Render the result)
+						(var result (hash))
+
+						(for key in fields.keys (
+							(var value (func generate_result (
+								key
+								fields[key]
+								obj
+								schema
+								\"#{class_name}\"
+							)))
+
+							(var result[key] value)
+						))
+
+						(render_json result 200)
 					}
 
 					# Save the endpoint
@@ -1478,9 +1505,35 @@ class ApisController < ApplicationController
 		result
 	end
 
+	def generate_upload_preprocessor_dx_code(class_data)
+		properties = class_data["properties"]
+		result = "(var props (hash))"
+
+		properties.each do |prop_key, prop_value|
+			preprocessor = prop_value["preprocessor"]
+			next if preprocessor.nil?
+
+			result += %{
+				(var props.#{prop_key} (func #{preprocessor} (data)))
+			}
+		end
+
+		result
+	end
+
 	def get_functions(schema, app, getters)
 		return %{
 			(var schema #{hash_to_dx_hash(schema)})
+
+			(def mimetype_to_ext (type) (
+				(if (type == "image/png") (
+					(return "png")
+				) elseif (type == "image/jpeg") (
+					(return "jpg")
+				))
+
+				(return "")
+			))
 
 			(def render_errors (errors status) (
 				(# params: errors: list, status: int)
@@ -1617,7 +1670,7 @@ class ApisController < ApplicationController
 				))
 			))
 
-			(def create_file_table_object (user_id table_name type properties) (
+			(def create_file_table_object (user_id table_name type data properties) (
 				(var ext (func mimetype_to_ext (type)))
 
 				(catch (
@@ -1625,7 +1678,7 @@ class ApisController < ApplicationController
 						table_name
 						ext
 						type
-						file
+						data
 						properties
 					)
 				) (
@@ -1649,6 +1702,42 @@ class ApisController < ApplicationController
 						)))
 					) else (
 						(# Table or User does not exist, or creating table object or property was not successful)
+						(func render_validation_errors ((list
+							(hash
+								(error "unexpected_error")
+								(status 500)
+							)
+						)))
+					))
+				))
+			))
+
+			(def update_file_table_object (uuid type data properties) (
+				(var ext (func mimetype_to_ext (type)))
+
+				(catch (
+					(TableObject.update_file uuid ext type data properties)
+				) (
+					(var error errors#0)
+
+					(if (error.code == 2) (
+						(# Action not allowed)
+						(func render_validation_errors ((list
+							(hash
+								(error "action_not_allowed")
+								(status 403)
+							)
+						)))
+					) elseif (error.code == 3) (
+						(# Not enough free storage)
+						(func render_validation_errors ((list
+							(hash
+								(error "not_sufficient_storage_available")
+								(status 400)
+							)
+						)))
+					) else (
+						(# Unexpected error)
 						(func render_validation_errors ((list
 							(hash
 								(error "unexpected_error")
@@ -1836,16 +1925,6 @@ class ApisController < ApplicationController
 						))
 					))
 				))
-			))
-
-			(def mimetype_to_ext (type) (
-				(if (type == "image/png") (
-					(return "png")
-				) elseif (type == "image/jpeg") (
-					(return "jpg")
-				))
-
-				(return "")
 			))
 		}
 	end

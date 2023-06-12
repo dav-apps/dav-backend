@@ -345,7 +345,7 @@ class DavExpressionCompiler
 						prop.name = key
 						prop.value = value
 
-						raise RuntimeError, [{"code" => 3}].to_json if prop.save
+						raise RuntimeError, [{"code" => 3}].to_json if !prop.save
 					end
 
 					# Return the table object
@@ -359,7 +359,13 @@ class DavExpressionCompiler
 					properties = params[:properties]
 
 					# Get the table
-					table = _method_call('get_table', id: table_id)
+					if table_id.is_a?(String)
+						# Get the table by the name
+						table = _method_call('get_table', name: table_id)
+					else
+						# Get the table by the id
+						table = _method_call('get_table', id: table_id)
+					end
 
 					# Check if the table exists
 					if table.nil?
@@ -435,7 +441,7 @@ class DavExpressionCompiler
 					end
 
 					# Create the properties
-					prohibited_property_names = [
+					reserved_property_names = [
 						Constants::EXT_PROPERTY_NAME,
 						Constants::ETAG_PROPERTY_NAME,
 						Constants::SIZE_PROPERTY_NAME,
@@ -443,7 +449,7 @@ class DavExpressionCompiler
 					]
 
 					properties.each do |key, value|
-						next if prohibited_property_names.include?(key)
+						next if reserved_property_names.include?(key)
 
 						prop = TableObjectProperty.new
 						prop.table_object = obj
@@ -523,7 +529,7 @@ class DavExpressionCompiler
 
 					# Update the properties of the table object
 					properties.each do |key, value|
-						next if !value
+						next if value.nil?
 						obj[key] = value
 					end
 
@@ -533,6 +539,7 @@ class DavExpressionCompiler
 					ext = params[:ext]
 					type = params[:type]
 					file = params[:file]
+					properties = params[:properties]
 
 					# Get the table object
 					obj = _method_call('get_table_object', uuid: uuid)
@@ -580,6 +587,18 @@ class DavExpressionCompiler
 					end
 
 					# Update the properties
+					reserved_property_names = [
+						Constants::EXT_PROPERTY_NAME,
+						Constants::ETAG_PROPERTY_NAME,
+						Constants::SIZE_PROPERTY_NAME,
+						Constants::TYPE_PROPERTY_NAME
+					]
+
+					properties.each do |key, value|
+						next if value.nil? || reserved_property_names.include?(key)
+						obj[key] = value
+					end
+
 					obj[Constants::EXT_PROPERTY_NAME] = ext
 					obj[Constants::ETAG_PROPERTY_NAME] = etag
 					obj[Constants::SIZE_PROPERTY_NAME] = file_size
@@ -1429,7 +1448,8 @@ class DavExpressionCompiler
 						uuid: #{compile_command(command[1], true)},
 						ext: #{compile_command(command[2], true)},
 						type: #{compile_command(command[3], true)},
-						file: #{compile_command(command[4], true)}
+						file: #{compile_command(command[4], true)},
+						properties: #{compile_command(command[5], true)}
 					)"
 				when "TableObject.set_price"
 					return "_method_call('TableObject.set_price',
