@@ -422,7 +422,7 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint)}
 
 						(# Get the object)
-						#{generate_table_object_getter_dx_code(endpoint, class_name)}
+						#{generate_table_object_getter_dx_code(endpoint["getter"], class_name)}
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -610,7 +610,7 @@ class ApisController < ApplicationController
 						#{generate_state_dx_code(endpoint)}
 
 						(# Get the object)
-						#{generate_table_object_getter_dx_code(endpoint, class_name)}
+						#{generate_table_object_getter_dx_code(endpoint["getter"], class_name)}
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -699,6 +699,28 @@ class ApisController < ApplicationController
 					# Generate the upload endpoint
 					endpoint = endpoints["upload"]
 
+					# Get the parent
+					parent_data = class_data["parent"]
+					next if parent_data.nil?
+
+					parent_type_name = parent_data["type"]
+					parent_type = schema[parent_type_name]
+					parent_getter = parent_data["getter"]
+
+					# Find the property of the parent
+					parent_property_name = ""
+					parent_property_data = nil
+
+					parent_type["properties"].each do |prop_name, prop_data|
+						if prop_data["type"] == class_name
+							parent_property_name = prop_name
+							parent_property_data = prop_data
+							break
+						end
+					end
+
+					next if parent_property_name.empty? || parent_property_data.nil?
+
 					code = %{
 						(var state (hash))
 
@@ -737,8 +759,28 @@ class ApisController < ApplicationController
 
 						#{generate_state_dx_code(endpoint)}
 
-						(# Get the object)
-						#{generate_table_object_getter_dx_code(endpoint, class_name)}
+						(# Get the parent table object)
+						#{generate_table_object_getter_dx_code(parent_getter, parent_type_name, "obj_parent")}
+
+						(if (is_nil obj_parent) (
+							(# TableObject does not exist)
+							(func render_validation_errors ((list
+								(hash
+									(error "#{snake_case(parent_type_name)}_does_not_exist")
+									(status 404)
+								)
+							)))
+						))
+
+						(# Get the table object)
+						(var obj
+							(func get_table_object (
+								obj_parent.properties.#{parent_property_name}
+								state.session.user_id
+								"#{class_name}"
+							))
+						)
+
 						#{generate_upload_preprocessor_dx_code(class_data)}
 
 						(if (is_nil obj) (
@@ -750,6 +792,9 @@ class ApisController < ApplicationController
 								data
 								props
 							)))
+
+							(# Update the parent with the uuid of the obj)
+							(var obj_parent.properties.#{parent_property_name} obj.uuid)
 						) else (
 							(# Check if the object belongs to the user)
 							(if (state.session.user_id != obj.user_id) (
@@ -1007,7 +1052,7 @@ class ApisController < ApplicationController
 						api_docu += "#### Body\n"
 						api_docu += "Provide the file data in the request body.\n"
 
-						content_types = endpoints["upload"]["content_types"]
+						content_types = endpoints["upload"]["contentTypes"]
 
 						if !content_types.nil?
 							api_docu += "The following content types are accepted: "
@@ -1391,17 +1436,15 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_table_object_getter_dx_code(endpoint, class_name)
-		getter = endpoint["getter"]
-
+	def generate_table_object_getter_dx_code(getter, class_name, obj_name = "obj")
 		if getter.is_a?(String)
 			return %{
-				(var obj (func #{getter} (state uuid)))
+				(var #{obj_name} (func #{getter} (state uuid)))
 			}
 		end
 
 		return %{
-			(var obj
+			(var #{obj_name}
 				(func get_table_object (
 					uuid
 					(if (is_nil state.session) nil else state.session.user_id)
@@ -1478,7 +1521,7 @@ class ApisController < ApplicationController
 	end
 
 	def generate_upload_content_type_validation_dx_code(endpoint)
-		content_types = endpoint["content_types"]
+		content_types = endpoint["contentTypes"]
 		result = %{
 			(var content_type (get_header "Content-Type"))
 		}
@@ -1781,10 +1824,10 @@ class ApisController < ApplicationController
 				(if (is_nil obj) (
 					(return nil)
 				) else (
+					(# Check if the table object belongs to the user and to the table)
 					(var obj_table (func get_table (obj.table_id)))
 
-					(# Check if the table object belongs to the user and to the table)
-					(if  (
+					(if (
 						((!(is_nil user_id)) and (obj.user_id != user_id))
 						or
 						(

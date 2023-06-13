@@ -595,7 +595,7 @@ class DavExpressionCompiler
 					]
 
 					properties.each do |key, value|
-						next if value.nil? || reserved_property_names.include?(key)
+						next if reserved_property_names.include?(key)
 						obj[key] = value
 					end
 
