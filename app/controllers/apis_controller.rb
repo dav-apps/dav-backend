@@ -310,8 +310,8 @@ class ApisController < ApplicationController
 						(# Get the session)
 						(var state.session (func get_session (access_token)))
 
-						#{generate_state_dx_code(endpoint)}
-						#{generate_validators_dx_code(endpoint)}
+						#{generate_state_dx_code(endpoint, "json")}
+						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate missing fields)
 						#{generate_missing_field_validations_dx_code(properties)}
@@ -607,7 +607,7 @@ class ApisController < ApplicationController
 						(# Get the session)
 						(var state.session (func get_session (access_token)))
 
-						#{generate_state_dx_code(endpoint)}
+						#{generate_state_dx_code(endpoint, "json")}
 
 						(# Get the object)
 						#{generate_table_object_getter_dx_code(endpoint["getter"], class_name)}
@@ -633,7 +633,7 @@ class ApisController < ApplicationController
 							)))
 						))
 
-						#{generate_validators_dx_code(endpoint)}
+						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate field types)
 						#{generate_field_type_validations_dx_code(properties)}
@@ -1281,13 +1281,13 @@ class ApisController < ApplicationController
 		return "(list #{values})"
 	end
 
-	def generate_state_dx_code(endpoint)
+	def generate_state_dx_code(endpoint, data_name = "(hash)")
 		result = ""
 
 		# Endpoint state vars
 		if !endpoint.nil? && !endpoint["state"].nil?
 			endpoint_state = endpoint["state"]
-			result += "(var endpoint_state (func #{endpoint_state} (state.session (get_params))))\n"
+			result += "(var endpoint_state (func #{endpoint_state} (state.session (get_params) #{data_name})))\n"
 
 			result += "(for key in endpoint_state.keys (\n"
 			result += "(var state[key] endpoint_state[key])\n"
@@ -1297,13 +1297,13 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_validators_dx_code(endpoint)
+	def generate_validators_dx_code(endpoint, data_name = "(hash)")
 		result = ""
 		validators = endpoint["validators"]
 		return result if validators.nil?
 
 		validators.each do |validator|
-			result += "(func #{validator} (state (get_params)))\n"
+			result += "(func #{validator} (state (get_params) #{data_name}))\n"
 		end
 
 		result
@@ -1527,7 +1527,6 @@ class ApisController < ApplicationController
 		}
 
 		if content_types.is_a?(Array)
-			content_types.map! { |type| type = "\"#{type}\"" }
 			content_types_string = "(list #{content_types.join(' ')})"
 
 			result += %{
