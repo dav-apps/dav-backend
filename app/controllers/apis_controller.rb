@@ -385,6 +385,7 @@ class ApisController < ApplicationController
 								key
 								fields[key]
 								obj
+								state
 								schema
 								\"#{class_name}\"
 							)))
@@ -477,6 +478,7 @@ class ApisController < ApplicationController
 								key
 								fields[key]
 								obj
+								state
 								schema
 								\"#{class_name}\"
 							)))
@@ -565,6 +567,7 @@ class ApisController < ApplicationController
 									key
 									fields[key]
 									obj
+									state
 									schema
 									\"#{class_name}\"
 								)))
@@ -699,6 +702,7 @@ class ApisController < ApplicationController
 								key
 								fields[key]
 								obj
+								state
 								schema
 								\"#{class_name}\"
 							)))
@@ -861,6 +865,7 @@ class ApisController < ApplicationController
 								key
 								fields[key]
 								obj
+								state
 								schema
 								\"#{class_name}\"
 							)))
@@ -1905,7 +1910,7 @@ class ApisController < ApplicationController
 				))
 			))
 
-			(def generate_result (key value obj schema class_name) (
+			(def generate_result (key value obj state schema class_name) (
 				(var schema_class schema[class_name])
 				(if (is_nil schema_class) (
 					(var schema_class (hash))
@@ -1922,29 +1927,34 @@ class ApisController < ApplicationController
 				))
 
 				(var getter schema_property["getter"])
+				(var getter_value nil)
+
+				#{
+					result = ""
+
+					getters.each do |getter|
+						result += %{
+							(if (getter == "#{getter}") (
+								(var getter_value (func #{getter} (obj state (get_params))))
+							))
+						}
+					end
+
+					result
+				}
+
+				(if (is_nil getter_value) (
+					(var getter_value obj.properties[key])
+				))
 
 				(if (value.keys.length == 0) (
-					#{
-						result = ""
-
-						getters.each do |getter|
-							result += %{
-								(if (getter == "#{getter}") (
-									(return (func #{getter} (obj (get_params))))
-								))
-							}
-						end
-
-						result
-					}
-
-					(return obj.properties[key])
+					(return getter_value)
 				) else (
 					(var relationship schema_property["relationship"])
 
 					(if (relationship == "multiple") (
 						(var items (list))
-						(var uuids_string obj.properties[key])
+						(var uuids_string getter_value)
 						(if (is_nil uuids_string) (return items))
 
 						(var uuids (uuids_string.split ","))
@@ -1959,6 +1969,7 @@ class ApisController < ApplicationController
 										subkey
 										value[subkey]
 										new_obj
+										state
 										schema
 										schema_property["type"]
 									))
@@ -1973,8 +1984,11 @@ class ApisController < ApplicationController
 						(return items)
 					) else (
 						(var item (hash))
-						(var uuid obj.properties[key])
-						(var new_obj (func get_table_object (uuid)))
+						(var new_obj getter_value)
+
+						(if (new_obj.class == "String") (
+							(var new_obj (func get_table_object (new_obj)))
+						))
 
 						(if (is_nil new_obj) (
 							(return nil)
@@ -1986,6 +2000,7 @@ class ApisController < ApplicationController
 									subkey
 									value[subkey]
 									new_obj
+									state
 									schema
 									schema_property["type"]
 								))
