@@ -272,6 +272,27 @@ class ApisController < ApplicationController
 					# Generate the create endpoint
 					endpoint = endpoints["create"]
 
+					# Get the parent
+					parent_data = class_data["parent"]
+
+					if !parent_data.nil?
+						parent_type_name = parent_data["type"]
+						parent_type = schema[parent_type_name]
+						parent_getter = parent_data["getter"]
+
+						# Find the property of the parent
+						parent_property_name = ""
+						parent_property_data = nil
+
+						parent_type["properties"].each do |prop_name, prop_data|
+							if prop_data["type"] == class_name
+								parent_property_name = prop_name
+								parent_property_data = prop_data
+								break
+							end
+						end
+					end
+
 					code = %{
 						(var state (hash))
 
@@ -325,6 +346,13 @@ class ApisController < ApplicationController
 						(# Validate validity of fields)
 						#{generate_field_validity_validations_dx_code(properties)}
 
+						(# Get the parent table object)
+						#{
+							if !parent_property_data.nil?
+								generate_table_object_getter_dx_code(parent_getter, parent_type_name, "parent_obj", "json")
+							end
+						}
+
 						(# Create the object)
 						(var props (hash))
 
@@ -341,6 +369,13 @@ class ApisController < ApplicationController
 							\"#{class_name}\"
 							props
 						)))
+
+						(# Add the table object to the objects of the parent)
+						#{
+							if !parent_property_data.nil?
+								generate_add_object_to_parent_table_object_dx_code(parent_property_name, "obj.uuid")
+							end
+						}
 
 						(# Render the result)
 						(var result (hash))
@@ -610,7 +645,7 @@ class ApisController < ApplicationController
 						#{generate_state_dx_code(endpoint, "json")}
 
 						(# Get the object)
-						#{generate_table_object_getter_dx_code(endpoint["getter"], class_name)}
+						#{generate_table_object_getter_dx_code(endpoint["getter"], class_name, "obj", "json")}
 
 						(if (is_nil obj) (
 							(# Object does not exist)
@@ -1313,8 +1348,14 @@ class ApisController < ApplicationController
 		result = ""
 
 		schema_properties.each do |prop_key, prop_value|
-			next if !ALLOWED_TYPES.include?(prop_value["type"])
-			result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
+			setter = prop_value["setter"]
+			next if !ALLOWED_TYPES.include?(prop_value["type"]) && setter.nil?
+
+			if setter.nil?
+				result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
+			else
+				result += "(var body_params[\"#{prop_key}\"] (func #{setter} (state (get_params) json)))\n"
+			end
 		end
 
 		result
@@ -1436,10 +1477,10 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_table_object_getter_dx_code(getter, class_name, obj_name = "obj")
+	def generate_table_object_getter_dx_code(getter, class_name, obj_name = "obj", data_name = "(hash)")
 		if getter.is_a?(String)
 			return %{
-				(var #{obj_name} (func #{getter} (state uuid)))
+				(var #{obj_name} (func #{getter} (state (get_params) #{data_name})))
 			}
 		end
 
@@ -1561,6 +1602,22 @@ class ApisController < ApplicationController
 		end
 
 		result
+	end
+
+	def generate_add_object_to_parent_table_object_dx_code(property_name, uuid_name)
+		return %{
+			(if (!(is_nil parent_obj)) (
+				(var uuids parent_obj.properties.#{property_name})
+
+				(if (is_nil uuids) (
+					(# Add the first uuids to the uuids of the parent table object)
+					(var parent_obj.properties.#{property_name} #{uuid_name})
+				) else (
+					(# Add the uuid to the list of uuids, separated by comma)
+					(var parent_obj.properties.#{property_name} (uuids + "," + #{uuid_name}))
+				))
+			))
+		}
 	end
 
 	def get_functions(schema, app, getters)
