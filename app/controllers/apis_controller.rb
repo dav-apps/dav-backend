@@ -366,7 +366,7 @@ class ApisController < ApplicationController
 
 						(var obj (func create_table_object (
 							state.session.user_id
-							\"#{class_name}\"
+							"#{class_name}"
 							props
 						)))
 
@@ -387,7 +387,7 @@ class ApisController < ApplicationController
 								obj
 								state
 								schema
-								\"#{class_name}\"
+								"#{class_name}"
 							)))
 
 							(var result[key] value)
@@ -480,7 +480,7 @@ class ApisController < ApplicationController
 								obj
 								state
 								schema
-								\"#{class_name}\"
+								"#{class_name}"
 							)))
 
 							(var result[key] value)
@@ -521,12 +521,22 @@ class ApisController < ApplicationController
 
 						(# Get the params)
 						(var fields_str (get_param "fields"))
+						(var limit (to_int (get_param "limit")))
+						(var page (to_int (get_param "page")))
 
 						(if (is_nil fields_str) (
 							(var fields (hash (uuid (hash))))
 						) else (
 							(# Process the fields string)
 							(var fields (func process_fields (fields_str)))
+						))
+
+						(if (limit <= 0) (
+							(var limit 50)
+						))
+
+						(if (page <= 0) (
+							(var page 1)
 						))
 
 						(if #{generate_authenticated_if_statement_dx_code(endpoint)} (
@@ -555,7 +565,13 @@ class ApisController < ApplicationController
 						#{generate_list_selector_dx_code(endpoint)}
 
 						(# Render the result)
-						(var result (hash (items (list))))
+						(var i 0)
+						(var current_page 1)
+
+						(var result (hash
+							(type "#{class_name}")
+							(items (list))
+						))
 
 						(for uuid in object_uuids (
 							(var obj (func get_table_object (uuid)))
@@ -569,15 +585,22 @@ class ApisController < ApplicationController
 									obj
 									state
 									schema
-									\"#{class_name}\"
+									"#{class_name}"
 								)))
 
 								(var item[key] value)
 							))
 
-							(result.items.push item)
+							(# Calculate the current page)
+							(var i (i + 1))
+							(var current_page (Math.ceil (i.to_f / limit.to_f)))
+
+							(if (current_page == page) (
+								(result.items.push item)
+							))
 						))
 
+						(var result.pages current_page)
 						(render_json result 200)
 					}
 
@@ -704,7 +727,7 @@ class ApisController < ApplicationController
 								obj
 								state
 								schema
-								\"#{class_name}\"
+								"#{class_name}"
 							)))
 
 							(var result[key] value)
@@ -867,7 +890,7 @@ class ApisController < ApplicationController
 								obj
 								state
 								schema
-								\"#{class_name}\"
+								"#{class_name}"
 							)))
 
 							(var result[key] value)

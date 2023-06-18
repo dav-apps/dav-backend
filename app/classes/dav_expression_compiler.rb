@@ -1052,6 +1052,9 @@ class DavExpressionCompiler
 					rounded_value = var.round(rounding)
 					rounded_value = var.round if rounded_value == var.round
 					return rounded_value
+				when 'Math.ceil'
+					var = params[:var]
+					return var.ceil
 				when 'Regex.match'
 					string = params[:string]
 					regex = params[:regex]
@@ -1528,6 +1531,10 @@ class DavExpressionCompiler
 					return "_method_call('Math.round',
 						var: #{compile_command(command[1], true)},
 						rounding: #{compile_command(command[2], true)}
+					)"
+				when "Math.ceil"
+					return "_method_call('Math.ceil',
+						var: #{compile_command(command[1], true)}
 					)"
 				when "Regex.match"
 					return "_method_call('Regex.match',
