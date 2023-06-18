@@ -2027,6 +2027,20 @@ class ApisController < ApplicationController
 				))
 			))
 
+			(def get_table_object_uuids (table_name user_id) (
+				(catch (
+					(return (Table.get_table_object_uuids table_name user_id))
+				) (
+					(# Action not allowed)
+					(func render_validation_errors ((list
+						(hash
+							(error "action_not_allowed")
+							(status 403)
+						)
+					)))
+				))
+			))
+
 			(def get_table_object_uuids_of_collection (table_name collection_name) (
 				(catch (
 					(Collection.get_table_object_uuids table_name collection_name)
