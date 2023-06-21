@@ -539,10 +539,10 @@ class ApisController < ApplicationController
 							(var page 1)
 						))
 
-						(if #{generate_authenticated_if_statement_dx_code(endpoint)} (
-							(# Get the access token)
-							(var access_token (get_header "Authorization"))
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
 
+						(if #{generate_authenticated_if_statement_dx_code(endpoint)} (
 							(if ((is_nil access_token)) (
 								(func render_validation_errors (
 									(list (hash
@@ -551,10 +551,10 @@ class ApisController < ApplicationController
 									))
 								))
 							))
-
-							(# Get the session)
-							(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
 						))
+
+						(# Get the session)
+						(if (!(is_nil access_token)) (var state.session (func get_session (access_token))))
 
 						#{generate_state_dx_code(endpoint)}
 						#{generate_validators_dx_code(endpoint)}

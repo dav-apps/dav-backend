@@ -1616,6 +1616,7 @@ class DavExpressionCompiler
 					valid = [
 						"push",
 						"pop",
+						"delete",
 						"contains",
 						"contains_all",
 						"join",
