@@ -281,7 +281,7 @@ class ApisController < ApplicationController
 						parent_getter = parent_data["getter"]
 
 						# Find the property of the parent
-						parent_property_name = ""
+						parent_property_name = nil
 						parent_property_data = nil
 
 						parent_type["properties"].each do |prop_name, prop_data|
@@ -360,7 +360,7 @@ class ApisController < ApplicationController
 							(var value body_params[key])
 
 							(if (!(is_nil value)) (
-								#{generate_set_table_object_value_create_dx_code(class_data)}
+								#{generate_table_object_props_dx_code(class_data)}
 							))
 						))
 
@@ -713,7 +713,7 @@ class ApisController < ApplicationController
 							(if (value == "") (
 								(var obj.properties[key] nil)
 							) else (
-								#{generate_set_table_object_value_update_dx_code(class_data)}
+								#{generate_set_table_object_value_dx_code(class_data)}
 							))
 						))
 
@@ -757,6 +757,206 @@ class ApisController < ApplicationController
 					end
 				end
 
+				if endpoints.include?("set")
+					# Generate the set endpoint
+					endpoint = endpoints["set"]
+					endpoint_url_params = endpoint["urlParams"]
+
+					next if endpoint_url_params.nil? || endpoint_url_params.size != 2
+
+					# Get the parent
+					parent_data = class_data["parent"]
+
+					if !parent_data.nil?
+						parent_type_name = parent_data["type"]
+						parent_type = schema[parent_type_name]
+						parent_getter = parent_data["getter"]
+
+						# Find the property of the parent
+						parent_property_name = nil
+						parent_property_data = nil
+
+						parent_type["properties"].each do |prop_name, prop_data|
+							if prop_data["type"] == class_name && prop_data["relationship"] == "multiple"
+								parent_property_name = prop_name
+								parent_property_data = prop_data
+								break
+							end
+						end
+					end
+
+					next if parent_property_name.nil? || parent_property_data.nil?
+
+					code = %{
+						(var state (hash))
+
+						#{get_functions(schema, api.app, getters)}
+
+						(# Get the params)
+						(var uuid (get_param "uuid"))
+						(var fields_str (get_param "fields"))
+						(var selector_param_name "#{endpoint_url_params.keys[1]}")
+						(var selector_param (get_param selector_param_name))
+
+						(if (is_nil fields_str) (
+							(var fields (hash (uuid (hash))))
+						) else (
+							(# Process the fields string)
+							(var fields (func process_fields (fields_str)))
+						))
+
+						(var json (parse_json (get_body)))
+						(var body_params (hash))
+
+						#{generate_body_params_dx_code(properties)}
+
+						(# Get the access token)
+						(var access_token (get_header "Authorization"))
+
+						(if (is_nil access_token) (
+							(func render_validation_errors (
+								(list (hash
+									(error "authorization_header_missing")
+									(status 401)
+								))
+							))
+						))
+
+						(# Make sure content type is json)
+						(func validate_content_type_json ((get_header "Content-Type")))
+
+						(# Get the session)
+						(var state.session (func get_session (access_token)))
+
+						#{generate_state_dx_code(endpoint, "json")}
+
+						(# Get the parent table object)
+						#{generate_table_object_getter_dx_code(parent_getter, parent_type_name, "parent_obj")}
+
+						(if (is_nil parent_obj) (
+							(# TableObject does not exist)
+							(func render_validation_errors ((list
+								(hash
+									(error "#{snake_case(parent_type_name)}_does_not_exist")
+									(status 404)
+								)
+							)))
+						))
+
+						#{generate_validators_dx_code(endpoint, "json")}
+
+						(# Validate missing fields)
+						#{generate_missing_field_validations_dx_code(properties, endpoint)}
+
+						(# Validate field types)
+						#{generate_field_type_validations_dx_code(properties, endpoint)}
+
+						(# Validate too short and too long fields)
+						#{generate_field_length_validations_dx_code(properties)}
+
+						(# Validate validity of fields)
+						#{generate_field_validity_validations_dx_code(properties, endpoint)}
+
+						(# Get the items of the parent)
+						(var items_string parent_obj.properties.#{parent_property_name})
+						(var selected_item nil)
+
+						(if (!(is_nil items_string)) (
+							(var item_uuids (items_string.split ","))
+
+							(# Find the correct table object)
+							(for uuid in item_uuids (
+								(var item (func get_table_object (
+									uuid
+									state.session.user_id
+									"#{parent_property_data["type"]}"
+								)))
+
+								(if (!(is_nil item)) (
+									(# Check if this is the correct table object)
+									(if (item.properties[selector_param_name] == selector_param) (
+										(var selected_item item)
+										(break)
+									))
+								))
+							))
+						))
+
+						(if (is_nil selected_item) (
+							(# Create a new table object)
+							(var props (hash))
+
+							(for key in body_params.keys (
+								(var value body_params[key])
+
+								(if (!(is_nil value)) (
+									#{generate_table_object_props_dx_code(class_data)}
+
+									(var props[selector_param_name] selector_param)
+								))
+							))
+
+							(var selected_item (func create_table_object (
+								state.session.user_id
+								"#{class_name}"
+								props
+							)))
+
+							#{generate_add_object_to_parent_table_object_dx_code(parent_property_name, "selected_item.uuid")}
+						) else (
+							(# Update the selected item)
+							(for key in body_params.keys (
+								(var value body_params[key])
+								(if (is_nil value) (continue))
+
+								(if (value == "") (
+									(var selected_item.properties[key] nil)
+								) else (
+									#{generate_set_table_object_value_dx_code(class_data, "selected_item")}
+								))
+							))
+						))
+
+						(# Render the result)
+						(var result (hash))
+
+						(for key in fields.keys (
+							(var value (func generate_result (
+								key
+								fields[key]
+								selected_item
+								state
+								schema
+								"#{class_name}"
+							)))
+
+							(var result[key] value)
+						))
+
+						(render_json result 200)
+					}
+
+					# Save the endpoint
+					path = endpoint["url"]
+
+					api_endpoint = api_slot.api_endpoints.find_by(
+						path: path,
+						method: "PUT"
+					)
+
+					if api_endpoint.nil?
+						ApiEndpoint.create(
+							api_slot: api_slot,
+							path: path,
+							method: "PUT",
+							commands: code
+						)
+					else
+						api_endpoint.commands = code
+						api_endpoint.save
+					end
+				end
+
 				if endpoints.include?("upload")
 					# Generate the upload endpoint
 					endpoint = endpoints["upload"]
@@ -770,7 +970,7 @@ class ApisController < ApplicationController
 					parent_getter = parent_data["getter"]
 
 					# Find the property of the parent
-					parent_property_name = ""
+					parent_property_name = nil
 					parent_property_data = nil
 
 					parent_type["properties"].each do |prop_name, prop_data|
@@ -781,7 +981,7 @@ class ApisController < ApplicationController
 						end
 					end
 
-					next if parent_property_name.empty? || parent_property_data.nil?
+					next if parent_property_name.nil? || parent_property_data.nil?
 
 					code = %{
 						(var state (hash))
@@ -822,9 +1022,9 @@ class ApisController < ApplicationController
 						#{generate_state_dx_code(endpoint)}
 
 						(# Get the parent table object)
-						#{generate_table_object_getter_dx_code(parent_getter, parent_type_name, "obj_parent")}
+						#{generate_table_object_getter_dx_code(parent_getter, parent_type_name, "parent_obj")}
 
-						(if (is_nil obj_parent) (
+						(if (is_nil parent_obj) (
 							(# TableObject does not exist)
 							(func render_validation_errors ((list
 								(hash
@@ -837,7 +1037,7 @@ class ApisController < ApplicationController
 						(# Get the table object)
 						(var obj
 							(func get_table_object (
-								obj_parent.properties.#{parent_property_name}
+								parent_obj.properties.#{parent_property_name}
 								state.session.user_id
 								"#{class_name}"
 							))
@@ -856,7 +1056,7 @@ class ApisController < ApplicationController
 							)))
 
 							(# Update the parent with the uuid of the obj)
-							(var obj_parent.properties.#{parent_property_name} obj.uuid)
+							(var parent_obj.properties.#{parent_property_name} obj.uuid)
 						) else (
 							(# Check if the object belongs to the user)
 							(if (state.session.user_id != obj.user_id) (
@@ -1389,11 +1589,17 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_missing_field_validations_dx_code(schema_properties)
+	def generate_missing_field_validations_dx_code(schema_properties, endpoint = nil)
 		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
 			next unless prop_value["required"]
+
+			if !endpoint.nil?
+				# Check if the property is given in the url params
+				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+			end
+
 			result += %{
 				(if (is_nil body_params["#{prop_key}"]) (
 					(errors.push (hash
@@ -1408,10 +1614,15 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_field_type_validations_dx_code(schema_properties)
+	def generate_field_type_validations_dx_code(schema_properties, endpoint = nil)
 		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
+			if !endpoint.nil?
+				# Check if the property is given in the url params
+				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+			end
+
 			if prop_value["type"].nil? || prop_value["type"] == "String"
 				condition = "(body_params[\"#{prop_key}\"].class != \"String\")"
 			elsif prop_value["type"] == "Boolean"
@@ -1482,16 +1693,28 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_field_validity_validations_dx_code(schema_properties)
+	def generate_field_validity_validations_dx_code(schema_properties, endpoint = nil)
 		result = "(var errors (list))"
 
 		schema_properties.each do |prop_key, prop_value|
 			next unless prop_value["validator"]
+			use_url_param = false
+
+			if !endpoint.nil?
+				# Check if the property is given in the url params
+				use_url_param = !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+			end
+
+			if use_url_param
+				property_accessor = %{(get_param "#{prop_key}")}
+			else
+				property_accessor = %{body_params["#{prop_key}"]}
+			end
 
 			result += %{
 				(if (
-					(!(is_nil body_params["#{prop_key}"]))
-					and (!(func #{prop_value["validator"]} (body_params["#{prop_key}"])))
+					(!(is_nil #{property_accessor}))
+					and (!(func #{prop_value["validator"]} (#{property_accessor})))
 				) (
 					(errors.push (hash
 						(error "#{prop_key}_invalid")
@@ -1549,7 +1772,7 @@ class ApisController < ApplicationController
 		return ""
 	end
 
-	def generate_set_table_object_value_create_dx_code(class_data)
+	def generate_table_object_props_dx_code(class_data)
 		properties = class_data["properties"]
 		result = ""
 
@@ -1569,7 +1792,7 @@ class ApisController < ApplicationController
 		}
 	end
 
-	def generate_set_table_object_value_update_dx_code(class_data)
+	def generate_set_table_object_value_dx_code(class_data, obj_name = "obj")
 		properties = class_data["properties"]
 		result = ""
 
@@ -1585,7 +1808,7 @@ class ApisController < ApplicationController
 		end
 
 		result += %{
-			(var obj.properties[key] value)
+			(var #{obj_name}.properties[key] value)
 		}
 	end
 
