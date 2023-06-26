@@ -1819,8 +1819,13 @@ class ApisController < ApplicationController
 		}
 
 		if content_types.is_a?(Array)
-			content_types.map! { |type| %{"#{type}"} }
-			content_types_string = "(list #{content_types.join(' ')})"
+			new_content_types = Array.new
+
+			content_types.each do |type|
+				new_content_types.push(%{"#{type}"})
+			end
+
+			content_types_string = "(list #{new_content_types.join(' ')})"
 
 			result += %{
 				(var supported_content_types #{content_types_string})
