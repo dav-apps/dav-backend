@@ -268,33 +268,41 @@ class ApisController < ApplicationController
 				table = api.app.tables.find_by(name: class_name)
 				next if table.nil?
 
-				if endpoints.include?("create")
-					# Generate the create endpoint
-					endpoint = endpoints["create"]
+				# Get the parent
+				parent_data = class_data["parent"]
 
-					# Get the parent
-					parent_data = class_data["parent"]
+				if !parent_data.nil?
+					parent_type_name = parent_data["type"]
+					parent_type = schema[parent_type_name]
+					parent_getter = parent_data["getter"]
 
-					if !parent_data.nil?
-						parent_type_name = parent_data["type"]
-						parent_type = schema[parent_type_name]
-						parent_getter = parent_data["getter"]
+					# Find the property of the parent
+					parent_property_name = nil
+					parent_property_data = nil
 
-						# Find the property of the parent
-						parent_property_name = nil
-						parent_property_data = nil
+					parent_property_name_relationship_multi = nil
+					parent_property_data_relationship_multi = nil
 
-						parent_type["properties"].each do |prop_name, prop_data|
-							if prop_data["type"] == class_name
-								parent_property_name = prop_name
-								parent_property_data = prop_data
-								break
+					parent_type["properties"].each do |prop_name, prop_data|
+						if prop_data["type"] == class_name
+							parent_property_name = prop_name
+							parent_property_data = prop_data
+
+							if prop_data["relationship"] == "multiple"
+								parent_property_name_relationship_multi = prop_name
+								parent_property_data_relationship_multi = prop_data
 							end
 						end
 					end
+				end
+
+				if endpoints.include?("create")
+					# Generate the create endpoint
+					endpoint = endpoints["create"]
+					endpoint_name = "create_#{class_name_snake}"
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
@@ -420,9 +428,10 @@ class ApisController < ApplicationController
 				if endpoints.include?("retrieve")
 					# Generate the retrieve endpoint
 					endpoint = endpoints["retrieve"]
+					endpoint_name = "retrieve_#{class_name_snake}"
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
@@ -513,9 +522,10 @@ class ApisController < ApplicationController
 				if endpoints.include?("list")
 					# Generate the list endpoint
 					endpoint = endpoints["list"]
+					endpoint_name = "list_#{class_name_snake_plural}"
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
@@ -628,9 +638,10 @@ class ApisController < ApplicationController
 				if endpoints.include?("update")
 					# Generate the update endpoint
 					endpoint = endpoints["update"]
+					endpoint_name = "update_#{class_name_snake}"
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
@@ -760,35 +771,14 @@ class ApisController < ApplicationController
 				if endpoints.include?("set")
 					# Generate the set endpoint
 					endpoint = endpoints["set"]
+					endpoint_name = "set_#{class_name_snake}"
 					endpoint_url_params = endpoint["urlParams"]
 
 					next if endpoint_url_params.nil? || endpoint_url_params.size != 2
-
-					# Get the parent
-					parent_data = class_data["parent"]
-
-					if !parent_data.nil?
-						parent_type_name = parent_data["type"]
-						parent_type = schema[parent_type_name]
-						parent_getter = parent_data["getter"]
-
-						# Find the property of the parent
-						parent_property_name = nil
-						parent_property_data = nil
-
-						parent_type["properties"].each do |prop_name, prop_data|
-							if prop_data["type"] == class_name && prop_data["relationship"] == "multiple"
-								parent_property_name = prop_name
-								parent_property_data = prop_data
-								break
-							end
-						end
-					end
-
-					next if parent_property_name.nil? || parent_property_data.nil?
+					next if parent_data.nil? || parent_property_name_relationship_multi.nil? || parent_property_data_relationship_multi.nil?
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
@@ -858,7 +848,7 @@ class ApisController < ApplicationController
 						#{generate_field_validity_validations_dx_code(properties, endpoint)}
 
 						(# Get the items of the parent)
-						(var items_string parent_obj.properties.#{parent_property_name})
+						(var items_string parent_obj.properties.#{parent_property_name_relationship_multi})
 						(var selected_item nil)
 
 						(if (!(is_nil items_string)) (
@@ -869,7 +859,7 @@ class ApisController < ApplicationController
 								(var item (func get_table_object (
 									uuid
 									state.session.user_id
-									"#{parent_property_data["type"]}"
+									"#{parent_property_data_relationship_multi["type"]}"
 								)))
 
 								(if (!(is_nil item)) (
@@ -902,7 +892,7 @@ class ApisController < ApplicationController
 								props
 							)))
 
-							#{generate_add_object_to_parent_table_object_dx_code(parent_property_name, "selected_item.uuid")}
+							#{generate_add_object_to_parent_table_object_dx_code(parent_property_name_relationship_multi, "selected_item.uuid")}
 						) else (
 							(# Update the selected item)
 							(for key in body_params.keys (
@@ -960,31 +950,12 @@ class ApisController < ApplicationController
 				if endpoints.include?("upload")
 					# Generate the upload endpoint
 					endpoint = endpoints["upload"]
+					endpoint_name = "upload_#{class_name_snake}"
 
-					# Get the parent
-					parent_data = class_data["parent"]
-					next if parent_data.nil?
-
-					parent_type_name = parent_data["type"]
-					parent_type = schema[parent_type_name]
-					parent_getter = parent_data["getter"]
-
-					# Find the property of the parent
-					parent_property_name = nil
-					parent_property_data = nil
-
-					parent_type["properties"].each do |prop_name, prop_data|
-						if prop_data["type"] == class_name
-							parent_property_name = prop_name
-							parent_property_data = prop_data
-							break
-						end
-					end
-
-					next if parent_property_name.nil? || parent_property_data.nil?
+					next if parent_data.nil? || parent_property_name.nil? || parent_property_data.nil?
 
 					code = %{
-						(var state (hash))
+						(var state (hash (endpoint_name "#{endpoint_name}")))
 
 						#{get_functions(schema, api.app, getters)}
 
