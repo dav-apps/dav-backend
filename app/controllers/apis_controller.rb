@@ -1819,6 +1819,7 @@ class ApisController < ApplicationController
 		}
 
 		if content_types.is_a?(Array)
+			content_types.map! { |type| %{"#{type}"} }
 			content_types_string = "(list #{content_types.join(' ')})"
 
 			result += %{
