@@ -319,7 +319,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties)}
+						#{generate_body_params_dx_code(properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -343,16 +343,16 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate missing fields)
-						#{generate_missing_field_validations_dx_code(properties)}
+						#{generate_missing_field_validations_dx_code(properties, endpoint)}
 
 						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties)}
+						#{generate_field_type_validations_dx_code(properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties)}
+						#{generate_field_length_validations_dx_code(properties, endpoint)}
 
 						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties)}
+						#{generate_field_validity_validations_dx_code(properties, endpoint)}
 
 						(# Get the parent table object)
 						#{
@@ -659,7 +659,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties)}
+						#{generate_body_params_dx_code(properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -708,13 +708,13 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties)}
+						#{generate_field_type_validations_dx_code(properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties)}
+						#{generate_field_length_validations_dx_code(properties, endpoint)}
 
 						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties)}
+						#{generate_field_validity_validations_dx_code(properties, endpoint)}
 
 						(# Set the values)
 						(for key in body_params.keys (
@@ -798,7 +798,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties)}
+						#{generate_body_params_dx_code(properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -842,7 +842,7 @@ class ApisController < ApplicationController
 						#{generate_field_type_validations_dx_code(properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties)}
+						#{generate_field_length_validations_dx_code(properties, endpoint)}
 
 						(# Validate validity of fields)
 						#{generate_field_validity_validations_dx_code(properties, endpoint)}
@@ -1543,10 +1543,23 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_body_params_dx_code(schema_properties)
+	def generate_body_params_dx_code(schema_properties, endpoint)
 		result = ""
 
+		# Collect properties
+		properties = Hash.new
+
 		schema_properties.each do |prop_key, prop_value|
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		properties.each do |prop_key, prop_value|
 			setter = prop_value["setter"]
 			next if !ALLOWED_TYPES.include?(prop_value["type"]) && setter.nil?
 
@@ -1560,19 +1573,41 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_missing_field_validations_dx_code(schema_properties, endpoint = nil)
+	def generate_missing_field_validations_dx_code(schema_properties, endpoint)
 		result = "(var errors (list))"
 
+		# Collect properties
+		properties = Hash.new
+
 		schema_properties.each do |prop_key, prop_value|
-			next unless prop_value["required"]
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		properties.each do |prop_key, prop_value|
+			next if !ALLOWED_TYPES.include?(prop_value["type"])
+
+			required = prop_value["required"]
+			next unless required
 
 			if !endpoint.nil?
 				# Check if the property is given in the url params
 				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
 			end
 
+			if required.is_a?(Hash)
+				if_condition = %{((is_nil body_params["#{prop_key}"]) and (func #{required["value"]} (state (get_params) json)))}
+			else
+				if_condition = %{(is_nil body_params["#{prop_key}"])}
+			end
+
 			result += %{
-				(if (is_nil body_params["#{prop_key}"]) (
+				(if #{if_condition} (
 					(errors.push (hash
 						(error "#{prop_key}_missing")
 						(status 400)
@@ -1585,10 +1620,25 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_field_type_validations_dx_code(schema_properties, endpoint = nil)
+	def generate_field_type_validations_dx_code(schema_properties, endpoint)
 		result = "(var errors (list))"
 
+		# Collect properties
+		properties = Hash.new
+
 		schema_properties.each do |prop_key, prop_value|
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		properties.each do |prop_key, prop_value|
+			next if !ALLOWED_TYPES.include?(prop_value["type"])
+
 			if !endpoint.nil?
 				# Check if the property is given in the url params
 				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
@@ -1624,10 +1674,23 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_field_length_validations_dx_code(schema_properties)
+	def generate_field_length_validations_dx_code(schema_properties, endpoint)
 		result = "(var errors (list))"
 
+		# Collect properties
+		properties = Hash.new
+
 		schema_properties.each do |prop_key, prop_value|
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		properties.each do |prop_key, prop_value|
 			next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
 			next if !prop_value["type"].nil? && prop_value["type"] != "String"
 
@@ -1664,10 +1727,24 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_field_validity_validations_dx_code(schema_properties, endpoint = nil)
+	def generate_field_validity_validations_dx_code(schema_properties, endpoint)
 		result = "(var errors (list))"
 
+		# Collect properties
+		properties = Hash.new
+
 		schema_properties.each do |prop_key, prop_value|
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		properties.each do |prop_key, prop_value|
+			next if !ALLOWED_TYPES.include?(prop_value["type"])
 			next unless prop_value["validator"]
 			use_url_param = false
 
@@ -1717,13 +1794,13 @@ class ApisController < ApplicationController
 		}
 	end
 
-	def generate_authenticated_if_statement_dx_code(endpoint)
+	def generate_authenticated_if_statement_dx_code(endpoint, data_name = "(hash)")
 		authenticated = endpoint["authenticated"]
 
 		if authenticated.is_a?(Hash) && !authenticated["value"].nil?
-			return "(func #{authenticated["value"]} ((get_params)))"
+			return "(func #{authenticated["value"]} (state (get_params) #{data_name}))"
 		elsif authenticated.is_a?(String)
-			return "(func #{authenticated} ((get_params)))"
+			return "(func #{authenticated} (state (get_params) #{data_name}))"
 		end
 
 		return "false"
