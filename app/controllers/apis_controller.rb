@@ -1,5 +1,5 @@
 class ApisController < ApplicationController
-	ALLOWED_TYPES = ["String", "String[]", "Boolean", "Integer", "Float", nil]
+	PRIMITIVE_TYPES = ["String", "String[]", "Boolean", "Integer", "Float", nil]
 
 	def api_call
 		redis = UtilsService.redis
@@ -319,7 +319,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties, endpoint)}
+						#{generate_body_params_dx_code(schema, properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -343,16 +343,16 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate missing fields)
-						#{generate_missing_field_validations_dx_code(properties, endpoint)}
+						#{generate_missing_field_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties, endpoint)}
+						#{generate_field_type_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties, endpoint)}
+						#{generate_field_length_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties, endpoint)}
+						#{generate_field_validity_validations_dx_code(schema, properties, endpoint)}
 
 						(# Get the parent table object)
 						#{
@@ -659,7 +659,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties, endpoint)}
+						#{generate_body_params_dx_code(schema, properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -708,13 +708,13 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties, endpoint)}
+						#{generate_field_type_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties, endpoint)}
+						#{generate_field_length_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties, endpoint)}
+						#{generate_field_validity_validations_dx_code(schema, properties, endpoint)}
 
 						(# Set the values)
 						(for key in body_params.keys (
@@ -798,7 +798,7 @@ class ApisController < ApplicationController
 						(var json (parse_json (get_body)))
 						(var body_params (hash))
 
-						#{generate_body_params_dx_code(properties, endpoint)}
+						#{generate_body_params_dx_code(schema, properties, endpoint)}
 
 						(# Get the access token)
 						(var access_token (get_header "Authorization"))
@@ -836,16 +836,16 @@ class ApisController < ApplicationController
 						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Validate missing fields)
-						#{generate_missing_field_validations_dx_code(properties, endpoint)}
+						#{generate_missing_field_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate field types)
-						#{generate_field_type_validations_dx_code(properties, endpoint)}
+						#{generate_field_type_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate too short and too long fields)
-						#{generate_field_length_validations_dx_code(properties, endpoint)}
+						#{generate_field_length_validations_dx_code(schema, properties, endpoint)}
 
 						(# Validate validity of fields)
-						#{generate_field_validity_validations_dx_code(properties, endpoint)}
+						#{generate_field_validity_validations_dx_code(schema, properties, endpoint)}
 
 						(# Get the items of the parent)
 						(var items_string parent_obj.properties.#{parent_property_name_relationship_multi})
@@ -1322,7 +1322,7 @@ class ApisController < ApplicationController
 							type = prop_data["type"]
 							required = prop_data["required"]
 							description = prop_data["description"]
-							next if !ALLOWED_TYPES.include?(type)
+							next if !PRIMITIVE_TYPES.include?(type)
 
 							type = "String" if type.nil?
 							required = false if required.nil?
@@ -1338,7 +1338,7 @@ class ApisController < ApplicationController
 								type = prop_data["type"]
 								required = prop_data["required"]
 								description = prop_data["description"]
-								next if !ALLOWED_TYPES.include?(type)
+								next if !PRIMITIVE_TYPES.include?(type)
 
 								type = "String" if type.nil?
 
@@ -1543,7 +1543,7 @@ class ApisController < ApplicationController
 		result
 	end
 
-	def generate_body_params_dx_code(schema_properties, endpoint)
+	def generate_body_params_dx_code(schema, schema_properties, endpoint)
 		result = ""
 
 		# Collect properties
@@ -1561,19 +1561,28 @@ class ApisController < ApplicationController
 
 		properties.each do |prop_key, prop_value|
 			setter = prop_value["setter"]
-			next if !ALLOWED_TYPES.include?(prop_value["type"]) && setter.nil?
 
-			if setter.nil?
+			if PRIMITIVE_TYPES.include?(prop_value["type"])
+				if setter.nil?
+					result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
+				else
+					result += "(var body_params[\"#{prop_key}\"] (func #{setter} (state (get_params) json)))\n"
+				end
+			else
+				next if prop_value["relationship"] == "multiple"
+
+				# Find the sub type
+				sub_type = schema[prop_value["type"]]
+				next if sub_type.nil? || sub_type["file"]
+
 				result += "(var body_params[\"#{prop_key}\"] json[\"#{prop_key}\"])\n"
-			else
-				result += "(var body_params[\"#{prop_key}\"] (func #{setter} (state (get_params) json)))\n"
 			end
 		end
 
 		result
 	end
 
-	def generate_missing_field_validations_dx_code(schema_properties, endpoint)
+	def generate_missing_field_validations_dx_code(schema, schema_properties, endpoint)
 		result = "(var errors (list))"
 
 		# Collect properties
@@ -1589,38 +1598,69 @@ class ApisController < ApplicationController
 			end
 		end
 
-		properties.each do |prop_key, prop_value|
-			next if !ALLOWED_TYPES.include?(prop_value["type"])
+		result += generate_inner_missing_field_validations_dx_code(schema, properties, endpoint)
 
+		return (result += "(func render_validation_errors (errors))")
+	end
+
+	def generate_inner_missing_field_validations_dx_code(schema, properties, endpoint, subkeys = Array.new)
+		result = ""
+		subkey_path = ""
+
+		subkeys.each do |subkey|
+			subkey_path += %{["#{subkey}"]}
+		end
+
+		properties.each do |prop_key, prop_value|
 			required = prop_value["required"]
-			next unless required
 
-			if !endpoint.nil?
-				# Check if the property is given in the url params
-				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
-			end
+			if PRIMITIVE_TYPES.include?(prop_value["type"])
+				next unless required
 
-			if required.is_a?(Hash)
-				if_condition = %{((is_nil body_params["#{prop_key}"]) and (func #{required["value"]} (state (get_params) json)))}
-			else
-				if_condition = %{(is_nil body_params["#{prop_key}"])}
-			end
+				if !endpoint.nil?
+					# Check if the property is given in the url params
+					next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+				end
 
-			result += %{
-				(if #{if_condition} (
-					(errors.push (hash
-						(error "#{prop_key}_missing")
-						(status 400)
+				if required.is_a?(Hash)
+					if_condition = %{((is_nil body_params#{subkey_path}["#{prop_key}"]) and (func #{required["value"]} (state (get_params) json)))}
+				else
+					if_condition = %{(is_nil body_params#{subkey_path}["#{prop_key}"])}
+				end
+
+				error_code = "#{prop_key}_missing"
+
+				if subkeys.size > 0
+					error_code = subkeys.join('.') + ".#{prop_key}_missing"
+				end
+	
+				result += %{
+					(if #{if_condition} (
+						(errors.push (hash
+							(error "#{error_code}")
+							(status 400)
+						))
 					))
-				))
-			}
+				}
+			else
+				next if prop_value["relationship"] == "multiple"
+
+				# Find the sub type
+				sub_type = schema[prop_value["type"]]
+				next if sub_type.nil? || sub_type["file"]
+
+				result += %{
+					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+						#{generate_inner_missing_field_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
+					))
+				}
+			end
 		end
 
-		result += "(func render_validation_errors (errors))"
 		result
 	end
 
-	def generate_field_type_validations_dx_code(schema_properties, endpoint)
+	def generate_field_type_validations_dx_code(schema, schema_properties, endpoint)
 		result = "(var errors (list))"
 
 		# Collect properties
@@ -1636,45 +1676,178 @@ class ApisController < ApplicationController
 			end
 		end
 
+		result += generate_inner_field_type_validations_dx_code(schema, properties, endpoint)
+
+		return (result + "(func render_validation_errors (errors))")
+	end
+
+	def generate_inner_field_type_validations_dx_code(schema, properties, endpoint, subkeys = Array.new)
+		result = ""
+		subkey_path = ""
+
+		subkeys.each do |subkey|
+			subkey_path += %{["#{subkey}"]}
+		end
+
 		properties.each do |prop_key, prop_value|
-			next if !ALLOWED_TYPES.include?(prop_value["type"])
+			if PRIMITIVE_TYPES.include?(prop_value["type"])
+				if !endpoint.nil?
+					# Check if the property is given in the url params
+					next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+				end
 
-			if !endpoint.nil?
-				# Check if the property is given in the url params
-				next if !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+				if prop_value["type"].nil? || prop_value["type"] == "String"
+					condition = "(body_params#{subkey_path}[\"#{prop_key}\"].class != \"String\")"
+				elsif prop_value["type"] == "Boolean"
+					condition = "((body_params#{subkey_path}[\"#{prop_key}\"] != true) and (body_params[\"#{prop_key}\"] != false))"
+				elsif prop_value["type"] == "Integer"
+					condition = "(body_params#{subkey_path}[\"#{prop_key}\"].class != \"Integer\")"
+				elsif prop_value["type"] == "Float"
+					condition = "(body_params#{subkey_path}[\"#{prop_key}\"].class != \"Float\")"
+				elsif prop_value["relationship"] == "multiple"
+					condition = "(body_params#{subkey_path}[\"#{prop_key}\"].class != \"Array\")"
+				else
+					next
+				end
+
+				error_code = "#{prop_key}_wrong_type"
+
+				if subkeys.size > 0
+					error_code = subkeys.join('.') + ".#{prop_key}_wrong_type"
+				end
+
+				result += %{
+					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+						(if #{condition} (
+							(errors.push (hash
+								(error "#{error_code}")
+								(status 400)
+							))
+						))
+					))
+				}
+			else
+				next if prop_value["relationship"] == "multiple"
+
+				# Find the sub type
+				sub_type = schema[prop_value["type"]]
+				next if sub_type.nil? || sub_type["file"]
+
+				error_code = "#{prop_key}_wrong_type"
+
+				if subkeys.size > 0
+					error_code = subkeys.join('.') + ".#{prop_key}_wrong_type"
+				end
+
+				result += %{
+					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+						(if (body_params#{subkey_path}["#{prop_key}"].class != "Hash") (
+							(errors.push (hash
+								(error "#{error_code}")
+								(status 400)
+							))
+						))
+
+						#{generate_inner_field_type_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
+					))
+				}
 			end
+		end
 
+		result
+	end
+
+	def generate_field_length_validations_dx_code(schema, schema_properties, endpoint)
+		result = "(var errors (list))"
+
+		# Collect properties
+		properties = Hash.new
+
+		schema_properties.each do |prop_key, prop_value|
+			properties[prop_key] = prop_value
+		end
+
+		if !endpoint.nil? && !endpoint["bodyParams"].nil?
+			endpoint["bodyParams"].each do |prop_key, prop_value|
+				properties[prop_key] = prop_value
+			end
+		end
+
+		result += generate_inner_field_length_validations_dx_code(schema, properties, endpoint)
+
+		return (result + "(func render_validation_errors (errors))")
+	end
+
+	def generate_inner_field_length_validations_dx_code(schema, properties, endpoint, subkeys = Array.new)
+		result = ""
+		subkey_path = ""
+
+		subkeys.each do |subkey|
+			subkey_path += %{["#{subkey}"]}
+		end
+
+		properties.each do |prop_key, prop_value|
 			if prop_value["type"].nil? || prop_value["type"] == "String"
-				condition = "(body_params[\"#{prop_key}\"].class != \"String\")"
-			elsif prop_value["type"] == "Boolean"
-				condition = "((body_params[\"#{prop_key}\"] != true) and (body_params[\"#{prop_key}\"] != false))"
-			elsif prop_value["type"] == "Integer"
-				condition = "(body_params[\"#{prop_key}\"].class != \"Integer\")"
-			elsif prop_value["type"] == "Float"
-				condition = "(body_params[\"#{prop_key}\"].class != \"Float\")"
-			elsif prop_value["relationship"] == "multiple"
-				condition = "(body_params[\"#{prop_key}\"].class != \"Array\")"
-			else
-				next
-			end
+				next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
 
-			result += %{
-				(if (!(is_nil body_params["#{prop_key}"])) (
-					(if #{condition} (
-						(errors.push (hash
-							(error "#{prop_key}_wrong_type")
-							(status 400)
-						))
+				if !prop_value["minLength"].nil?
+					error_code = "#{prop_key}_too_short"
+
+					if subkeys.size > 0
+						error_code = subkeys.join('.') + ".#{prop_key}_too_short"
+					end
+
+					result += %{
+						(if (
+							(!(is_nil body_params#{subkey_path}["#{prop_key}"]))
+							and (body_params#{subkey_path}["#{prop_key}"].length < #{prop_value["minLength"]})
+						)
+							(errors.push (hash
+								(error "#{error_code}")
+								(status 400)
+							))
+						)
+					}
+				end
+	
+				if !prop_value["maxLength"].nil?
+					error_code = "#{prop_key}_too_long"
+
+					if subkeys.size > 0
+						error_code = subkeys.join('.') + ".#{prop_key}_too_long"
+					end
+
+					result += %{
+						(if (
+							(!(is_nil body_params#{subkey_path}["#{prop_key}"]))
+							and (body_params#{subkey_path}["#{prop_key}"].length > #{prop_value["maxLength"]})
+						)
+							(errors.push (hash
+								(error "#{error_code}")
+								(status 400)
+							))
+						)
+					}
+				end
+			else
+				next if prop_value["relationship"] == "multiple"
+
+				# Find the sub type
+				sub_type = schema[prop_value["type"]]
+				next if sub_type.nil? || sub_type["file"]
+
+				result += %{
+					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+						#{generate_inner_field_length_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
 					))
-				))
-			}
+				}
+			end
 		end
 
-		result += "(func render_validation_errors (errors))"
 		result
 	end
 
-	def generate_field_length_validations_dx_code(schema_properties, endpoint)
+	def generate_field_validity_validations_dx_code(schema, schema_properties, endpoint)
 		result = "(var errors (list))"
 
 		# Collect properties
@@ -1690,89 +1863,67 @@ class ApisController < ApplicationController
 			end
 		end
 
-		properties.each do |prop_key, prop_value|
-			next if prop_value["minLength"].nil? && prop_value["maxLength"].nil?
-			next if !prop_value["type"].nil? && prop_value["type"] != "String"
+		result += generate_inner_field_validity_validations_dx_code(schema, properties, endpoint)
 
-			if !prop_value["minLength"].nil?
-				result += %{
-					(if (
-						(!(is_nil body_params["#{prop_key}"]))
-						and (body_params["#{prop_key}"].length < #{prop_value["minLength"]})
-					)
-						(errors.push (hash
-							(error "#{prop_key}_too_short")
-							(status 400)
-						))
-					)
-				}
-			end
-
-			if !prop_value["maxLength"].nil?
-				result += %{
-					(if (
-						(!(is_nil body_params["#{prop_key}"]))
-						and (body_params["#{prop_key}"].length > #{prop_value["maxLength"]})
-					)
-						(errors.push (hash
-							(error "#{prop_key}_too_long")
-							(status 400)
-						))
-					)
-				}
-			end
-		end
-
-		result += "(func render_validation_errors (errors))"
-		result
+		return (result + "(func render_validation_errors (errors))")
 	end
 
-	def generate_field_validity_validations_dx_code(schema_properties, endpoint)
-		result = "(var errors (list))"
+	def generate_inner_field_validity_validations_dx_code(schema, properties, endpoint, subkeys = Array.new)
+		result = ""
+		subkey_path = ""
 
-		# Collect properties
-		properties = Hash.new
-
-		schema_properties.each do |prop_key, prop_value|
-			properties[prop_key] = prop_value
-		end
-
-		if !endpoint.nil? && !endpoint["bodyParams"].nil?
-			endpoint["bodyParams"].each do |prop_key, prop_value|
-				properties[prop_key] = prop_value
-			end
+		subkeys.each do |subkey|
+			subkey_path += %{["#{subkey}"]}
 		end
 
 		properties.each do |prop_key, prop_value|
-			next if !ALLOWED_TYPES.include?(prop_value["type"])
-			next unless prop_value["validator"]
-			use_url_param = false
+			if PRIMITIVE_TYPES.include?(prop_value["type"])
+				next unless prop_value["validator"]
+				use_url_param = false
 
-			if !endpoint.nil?
-				# Check if the property is given in the url params
-				use_url_param = !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
-			end
+				if !endpoint.nil?
+					# Check if the property is given in the url params
+					use_url_param = !endpoint["urlParams"].nil? && !endpoint["urlParams"][prop_key].nil?
+				end
 
-			if use_url_param
-				property_accessor = %{(get_param "#{prop_key}")}
-			else
-				property_accessor = %{body_params["#{prop_key}"]}
-			end
+				if use_url_param
+					property_accessor = %{(get_param "#{prop_key}")}
+				else
+					property_accessor = %{body_params#{subkey_path}["#{prop_key}"]}
+				end
 
-			result += %{
-				(if (
-					(!(is_nil #{property_accessor}))
-					and (!(func #{prop_value["validator"]} (#{property_accessor})))
-				) (
-					(errors.push (hash
-						(error "#{prop_key}_invalid")
-						(status 400)
+				error_code = "#{prop_key}_invalid"
+
+				if subkeys.size > 0
+					error_code = subkeys.join('.') + ".#{prop_key}_invalid"
+				end
+
+				result += %{
+					(if (
+						(!(is_nil #{property_accessor}))
+						and (!(func #{prop_value["validator"]} (#{property_accessor})))
+					) (
+						(errors.push (hash
+							(error "#{error_code}")
+							(status 400)
+						))
 					))
-				))
-			}
+				}
+			else
+				next if prop_value["relationship"] == "multiple"
+
+				# Find the sub type
+				sub_type = schema[prop_value["type"]]
+				next if sub_type.nil? || sub_type["file"]
+
+				result += %{
+					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+						#{generate_inner_field_validity_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
+					))
+				}
+			end
 		end
 
-		result += "(func render_validation_errors (errors))"
 		result
 	end
 
