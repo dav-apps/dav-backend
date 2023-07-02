@@ -361,6 +361,9 @@ class ApisController < ApplicationController
 							end
 						}
 
+						(# Create the sub objects)
+						#{generate_create_table_sub_objects_dx_code(schema, properties)}
+
 						(# Create the object)
 						(var props (hash))
 
@@ -1927,6 +1930,60 @@ class ApisController < ApplicationController
 		result
 	end
 
+	def generate_create_table_sub_objects_dx_code(schema, schema_properties)
+		result = ""
+
+		result += generate_inner_create_table_sub_objects_dx_code(schema, schema_properties)
+
+		result
+	end
+
+	def generate_inner_create_table_sub_objects_dx_code(schema, properties, subkeys = Array.new)
+		result = ""
+		subkey_path = ""
+
+		subkeys.each do |subkey|
+			subkey_path += %{["#{subkey}"]}
+		end
+
+		properties.each do |prop_key, prop_value|
+			next if PRIMITIVE_TYPES.include?(prop_value["type"]) || prop_value["relationship"] == "multiple"
+
+			# Find the sub type
+			sub_type = schema[prop_value["type"]]
+			next if sub_type.nil? || sub_type["file"]
+
+			props_name = "sub_props_#{subkey_path.size}"
+
+			result += %{
+				(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+					(var #{props_name} (hash))
+
+					(for key in body_params#{subkey_path}["#{prop_key}"].keys (
+						(var value body_params#{subkey_path}["#{prop_key}"][key])
+
+						(if (!(is_nil value)) (
+							#{generate_table_object_props_dx_code(sub_type, props_name)}
+						))
+					))
+
+					#{generate_inner_create_table_sub_objects_dx_code(schema, sub_type["properties"], subkeys + [prop_key])}
+
+					(# Create the sub object)
+					(var sub_obj (func create_table_object (
+						state.session.user_id
+						"#{prop_value["type"]}"
+						#{props_name}
+					)))
+
+					(var body_params#{subkey_path}["#{prop_key}"] sub_obj.uuid)
+				))
+			}
+		end
+
+		result
+	end
+
 	def generate_table_object_getter_dx_code(getter, class_name, obj_name = "obj", data_name = "(hash)")
 		if getter.is_a?(String)
 			return %{
@@ -1971,7 +2028,7 @@ class ApisController < ApplicationController
 		return ""
 	end
 
-	def generate_table_object_props_dx_code(class_data)
+	def generate_table_object_props_dx_code(class_data, props_name = "props")
 		properties = class_data["properties"]
 		result = ""
 
@@ -1987,7 +2044,7 @@ class ApisController < ApplicationController
 		end
 
 		result += %{
-			(var props[key] value)
+			(var #{props_name}[key] value)
 		}
 	end
 
