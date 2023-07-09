@@ -637,4 +637,97 @@ class TableObjectsController < ApplicationController
 	rescue RuntimeError => e
 		render_errors(e)
 	end
+
+	# v2
+	def list_table_objects
+		limit = params[:limit].to_i
+		collection_name = params[:collection_name]
+		table_name = params[:table_name]
+		user_id = params[:user_id].to_i
+		table = nil
+		user = nil
+
+		limit = 10 if limit <= 0
+
+		if !collection_name.nil?
+			collection = Collection.find_by(name: collection_name)
+		end
+
+		if !table_name.nil?
+			table = Table.find_by(name: table_name, app_id: 6)
+		end
+
+		if user_id != 0
+			user = User.find(user_id)
+		end
+
+		# Find the table objects
+		if !collection.nil?
+			table_objects = collection.table_objects.limit(limit)
+		elsif !table.nil? && user.nil?
+			table_objects = TableObject.where(table: table).limit(limit)
+		elsif table.nil? && !user.nil?
+			table_objects = TableObject.where(user: user).limit(limit)
+		elsif !table.nil? && !user.nil?
+			table_objects = TableObject.where(user: user, table: table).limit(limit)
+		else
+			table_objects = []
+		end
+
+		table_objects_array = Array.new
+
+		table_objects.each do |obj|
+			props_hash = Hash.new
+
+			obj.table_object_properties.each do |prop|
+				property_types = obj.table.table_property_types
+				props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+			end
+
+			table_objects_array.push({
+				uuid: obj.uuid,
+				user_id: obj.user_id,
+				table_id: obj.table_id,
+				properties: props_hash
+			})
+		end
+
+		# Return the data
+		result = {
+			table_objects: table_objects_array
+		}
+
+		render json: result, status: 200
+	end
+
+	def retrieve_table_object
+		uuid = params[:uuid]
+
+		# Get the table object
+		obj = TableObject.find_by(uuid: uuid)
+
+		if obj.nil?
+			status = 404
+			result = {
+				error: "obj_does_not_exist"
+			}
+		else
+			status = 200
+			props_hash = Hash.new
+
+			obj.table_object_properties.each do |prop|
+				property_types = obj.table.table_property_types
+				props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+			end
+
+			result = {
+				uuid: obj.uuid,
+				user_id: obj.user_id,
+				table_id: obj.table_id,
+				properties: props_hash
+			}
+		end
+
+		render json: result, status: status
+	end
 end
