@@ -649,6 +649,16 @@ class TableObjectsController < ApplicationController
 
 		limit = 10 if limit <= 0
 
+		# Try to get the response from redis
+		cache_key = "list_table_objects;limit:#{limit};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
+		cache_data = UtilsService.redis.get(cache_key)
+
+		if !cache_data.nil?
+			# Render the cache response
+			render json: cache_data, status: 200
+			return
+		end
+
 		if !collection_name.nil?
 			collection = Collection.find_by(name: collection_name)
 		end
@@ -692,10 +702,13 @@ class TableObjectsController < ApplicationController
 			})
 		end
 
-		# Return the data
 		result = {
 			table_objects: table_objects_array
 		}
+
+		# Save the response in redis
+		UtilsService.redis.set(cache_key, result.to_json)
+		UtilsService.redis.expire(cache_key, 1.day.to_i)
 
 		render json: result, status: 200
 	end
@@ -704,8 +717,8 @@ class TableObjectsController < ApplicationController
 		uuid = params[:uuid]
 
 		# Try to get the table object from redis
-		key = "table_object:#{uuid}"
-		obj_json = UtilsService.redis.get(key)
+		cache_key = "table_object:#{uuid}"
+		obj_json = UtilsService.redis.get(cache_key)
 
 		if obj_json.nil?
 			# Get the table object
@@ -735,7 +748,8 @@ class TableObjectsController < ApplicationController
 					'properties' => props_hash
 				}
 
-				UtilsService.redis.set(key, obj_data.to_json)
+				UtilsService.redis.set(cache_key, obj_data.to_json)
+				UtilsService.redis.expire(cache_key, 14.days.to_i)
 
 				result = {
 					uuid: obj.uuid,
