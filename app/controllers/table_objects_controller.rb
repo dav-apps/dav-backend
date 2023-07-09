@@ -703,28 +703,55 @@ class TableObjectsController < ApplicationController
 	def retrieve_table_object
 		uuid = params[:uuid]
 
-		# Get the table object
-		obj = TableObject.find_by(uuid: uuid)
+		# Try to get the table object from redis
+		key = "table_object:#{uuid}"
+		obj_json = UtilsService.redis.get(key)
 
-		if obj.nil?
-			status = 404
-			result = {
-				error: "obj_does_not_exist"
-			}
-		else
-			status = 200
-			props_hash = Hash.new
+		if obj_json.nil?
+			# Get the table object
+			obj = TableObject.find_by(uuid: uuid)
 
-			obj.table_object_properties.each do |prop|
-				property_types = obj.table.table_property_types
-				props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+			if obj.nil?
+				status = 404
+				result = {
+					error: "table_object_does_not_exist"
+				}
+			else
+				status = 200
+				props_hash = Hash.new
+
+				obj.table_object_properties.each do |prop|
+					property_types = obj.table.table_property_types
+					props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+				end
+
+				# Save the table object in redis
+				obj_data = {
+					'id' => obj.id,
+					'user_id' => obj.user_id,
+					'table_id' => obj.table_id,
+					'file' => obj.file,
+					'etag' => obj.etag,
+					'properties' => props_hash
+				}
+
+				UtilsService.redis.set(key, obj_data.to_json)
+
+				result = {
+					uuid: obj.uuid,
+					user_id: obj.user_id,
+					table_id: obj.table_id,
+					properties: props_hash
+				}
 			end
+		else
+			obj_data = JSON.parse(obj_json)
 
 			result = {
-				uuid: obj.uuid,
-				user_id: obj.user_id,
-				table_id: obj.table_id,
-				properties: props_hash
+				uuid: uuid,
+				user_id: obj_data["user_id"],
+				table_id: obj_data["table_id"],
+				properties: obj_data["properties"]
 			}
 		end
 
