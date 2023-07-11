@@ -60,6 +60,9 @@ Rails.application.routes.draw do
 	match '/v1/purchase/:uuid/complete', to: 'purchases#complete_purchase', via: :post
 	match '/v1/purchase/:uuid', to: 'purchases#delete_purchase', via: :delete
 
+	# PurchasesController v2
+	match '/v2/table_objects/:uuid/purchases', to: 'purchases#list_purchases_of_table_object', via: :get
+
 	# CollectionsController
 	match '/v1/collection/table_objects', to: 'collections#set_table_objects_of_collection', via: :put
 
