@@ -644,6 +644,9 @@ class TableObjectsController < ApplicationController
 		collection_name = params[:collection_name]
 		table_name = params[:table_name]
 		user_id = params[:user_id].to_i
+		property_name = params[:property_name]
+		property_value = params[:property_value]
+		exact = params[:exact] == "true"
 		table = nil
 		user = nil
 
@@ -671,17 +674,62 @@ class TableObjectsController < ApplicationController
 			user = User.find(user_id)
 		end
 
-		# Find the table objects
-		if !collection.nil?
-			table_objects = collection.table_objects.limit(limit)
-		elsif !table.nil? && user.nil?
-			table_objects = TableObject.where(table: table).limit(limit)
-		elsif table.nil? && !user.nil?
-			table_objects = TableObject.where(user: user).limit(limit)
-		elsif !table.nil? && !user.nil?
-			table_objects = TableObject.where(user: user, table: table).limit(limit)
+		if !property_name.nil? && !property_value.nil?
+			table_objects_hash = Hash.new
+			property_keys = get_table_object_properties(
+				user_id,
+				table.id,
+				property_name
+			)
+
+			if exact
+				property_keys.each do |key|
+					value = convert_value_to_data_type(UtilsService.redis.get(key), key.split(':').last.to_i)
+
+					if value == property_value
+						# Get the table object id from the key
+						table_object_uuid = key.split(':')[3]
+						next if table_objects_hash.include?(table_object_uuid)
+
+						# Add the table object to the list of objects
+						obj = TableObject.find_by(uuid: table_object_uuid)
+						next if obj.nil?
+
+						table_objects_hash[table_object_uuid] = obj
+					end
+				end
+			else
+				property_keys.each do |key|
+					value = convert_value_to_data_type(UtilsService.redis.get(key), key.split(':').last.to_i)
+
+					if value.include?(property_value)
+						# Get the table object id from the key
+						table_object_uuid = key.split(':')[3]
+						next if table_objects_hash.include?(table_object_uuid)
+
+						# Add the table object to the list of objects
+						obj = TableObject.find_by(uuid: table_object_uuid)
+						next if obj.nil?
+
+						table_objects_hash[table_object_uuid] = obj
+					end
+				end
+			end
+
+			table_objects = table_objects_hash.values.to_a
 		else
-			table_objects = []
+			# Find the table objects
+			if !collection.nil?
+				table_objects = collection.table_objects.limit(limit)
+			elsif !table.nil? && user.nil?
+				table_objects = TableObject.where(table: table).limit(limit)
+			elsif table.nil? && !user.nil?
+				table_objects = TableObject.where(user: user).limit(limit)
+			elsif !table.nil? && !user.nil?
+				table_objects = TableObject.where(user: user, table: table).limit(limit)
+			else
+				table_objects = []
+			end
 		end
 
 		table_objects_array = Array.new
@@ -770,5 +818,21 @@ class TableObjectsController < ApplicationController
 		end
 
 		render json: result, status: status
+	end
+
+	private
+	def get_table_object_properties(user_id, table_id, property_name)
+		user_id_str = user_id <= 0 ? "*" : user_id.to_s
+		table_id_str = table_id <= 0 ? "*" : table_id.to_s
+		property_name = "*" if property_name.nil?
+
+		return UtilsService.redis.keys("table_object_property:#{user_id_str}:#{table_id_str}:*:#{property_name}:*")
+	end
+
+	def convert_value_to_data_type(value, data_type)
+		return value == "true" if data_type == 1
+		return Integer value rescue value if data_type == 2
+		return Float value rescue value if data_type == 3
+		return value
 	end
 end
