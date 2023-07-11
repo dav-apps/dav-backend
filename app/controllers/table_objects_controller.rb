@@ -640,6 +640,7 @@ class TableObjectsController < ApplicationController
 
 	# v2
 	def list_table_objects
+		caching = params[:caching].nil? || params[:caching] == "true"
 		limit = params[:limit].to_i
 		collection_name = params[:collection_name]
 		table_name = params[:table_name]
@@ -652,14 +653,16 @@ class TableObjectsController < ApplicationController
 
 		limit = 10 if limit <= 0
 
-		# Try to get the response from redis
-		cache_key = "list_table_objects;limit:#{limit};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
-		cache_data = UtilsService.redis.get(cache_key)
+		if caching
+			# Try to get the response from redis
+			cache_key = "list_table_objects;limit:#{limit};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
+			cache_data = UtilsService.redis.get(cache_key)
 
-		if !cache_data.nil?
-			# Render the cache response
-			render json: cache_data, status: 200
-			return
+			if !cache_data.nil?
+				# Render the cache response
+				render json: cache_data, status: 200
+				return
+			end
 		end
 
 		if !collection_name.nil?
@@ -763,10 +766,11 @@ class TableObjectsController < ApplicationController
 
 	def retrieve_table_object
 		uuid = params[:uuid]
+		caching = params[:caching].nil? || params[:caching] == "true"
 
 		# Try to get the table object from redis
 		cache_key = "table_object:#{uuid}"
-		obj_json = UtilsService.redis.get(cache_key)
+		obj_json = caching ? UtilsService.redis.get(cache_key) : nil
 
 		if obj_json.nil?
 			# Get the table object
