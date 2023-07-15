@@ -642,6 +642,7 @@ class TableObjectsController < ApplicationController
 	def list_table_objects
 		caching = params[:caching].nil? || params[:caching] == "true"
 		limit = params[:limit].to_i
+		offset = params[:offset].to_i
 		collection_name = params[:collection_name]
 		table_name = params[:table_name]
 		user_id = params[:user_id].to_i
@@ -652,10 +653,11 @@ class TableObjectsController < ApplicationController
 		user = nil
 
 		limit = 10 if limit <= 0
+		offset = 0 if offset < 0
 
 		if caching
 			# Try to get the response from redis
-			cache_key = "list_table_objects;limit:#{limit};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
+			cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
 			cache_data = UtilsService.redis.get(cache_key)
 
 			if !cache_data.nil?
@@ -723,13 +725,13 @@ class TableObjectsController < ApplicationController
 		else
 			# Find the table objects
 			if !collection.nil?
-				table_objects = collection.table_objects.limit(limit)
+				table_objects = collection.table_objects.limit(limit).offset(offset)
 			elsif !table.nil? && user.nil?
-				table_objects = TableObject.where(table: table).limit(limit)
+				table_objects = TableObject.where(table: table).limit(limit).offset(offset)
 			elsif table.nil? && !user.nil?
-				table_objects = TableObject.where(user: user).limit(limit)
+				table_objects = TableObject.where(user: user).limit(limit).offset(offset)
 			elsif !table.nil? && !user.nil?
-				table_objects = TableObject.where(user: user, table: table).limit(limit)
+				table_objects = TableObject.where(user: user, table: table).limit(limit).offset(offset)
 			else
 				table_objects = []
 			end
