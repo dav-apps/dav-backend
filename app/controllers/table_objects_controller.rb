@@ -655,9 +655,11 @@ class TableObjectsController < ApplicationController
 		limit = 10 if limit <= 0
 		offset = 0 if offset < 0
 
+		total = 0
+		cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
+
 		if caching
 			# Try to get the response from redis
-			cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
 			cache_data = UtilsService.redis.get(cache_key)
 
 			if !cache_data.nil?
@@ -725,16 +727,19 @@ class TableObjectsController < ApplicationController
 		else
 			# Find the table objects
 			if !collection.nil?
-				table_objects = collection.table_objects.limit(limit).offset(offset)
+				table_objects = collection.table_objects
 			elsif !table.nil? && user.nil?
-				table_objects = TableObject.where(table: table).limit(limit).offset(offset)
+				table_objects = TableObject.where(table: table)
 			elsif table.nil? && !user.nil?
-				table_objects = TableObject.where(user: user).limit(limit).offset(offset)
+				table_objects = TableObject.where(user: user)
 			elsif !table.nil? && !user.nil?
-				table_objects = TableObject.where(user: user, table: table).limit(limit).offset(offset)
+				table_objects = TableObject.where(user: user, table: table)
 			else
 				table_objects = []
 			end
+
+			total = table_objects.count
+			table_objects = table_objects.limit(limit).offset(offset)
 		end
 
 		table_objects_array = Array.new
@@ -756,7 +761,8 @@ class TableObjectsController < ApplicationController
 		end
 
 		result = {
-			table_objects: table_objects_array
+			total: total,
+			items: table_objects_array
 		}
 
 		# Save the response in redis
