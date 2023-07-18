@@ -656,7 +656,7 @@ class TableObjectsController < ApplicationController
 		offset = 0 if offset < 0
 
 		total = 0
-		cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id}"
+		cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id};property_name:#{property_name};property_value:#{property_value};exact:#{exact}"
 
 		if caching
 			# Try to get the response from redis
