@@ -4,7 +4,7 @@ class TableObjectsController < ApplicationController
 
 		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
 		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
-		
+
 		# Get the session
 		session = ValidationService.get_session_from_token(access_token)
 
@@ -98,7 +98,7 @@ class TableObjectsController < ApplicationController
 					value: ext
 				)
 				ValidationService.raise_unexpected_error(!ext_prop.save)
-				
+
 				props[Constants::EXT_PROPERTY_NAME] = ext
 			end
 		end
@@ -645,6 +645,7 @@ class TableObjectsController < ApplicationController
 		offset = params[:offset].to_i
 		collection_name = params[:collection_name]
 		table_name = params[:table_name]
+		app_id = params[:app_id].to_i
 		user_id = params[:user_id].to_i
 		property_name = params[:property_name]
 		property_value = params[:property_value]
@@ -674,7 +675,7 @@ class TableObjectsController < ApplicationController
 		end
 
 		if !table_name.nil?
-			table = Table.find_by(name: table_name, app_id: 6)
+			table = Table.find_by(name: table_name, app_id: app_id)
 		end
 
 		if user_id != 0
@@ -830,6 +831,65 @@ class TableObjectsController < ApplicationController
 		end
 
 		render json: result, status: status
+	end
+
+	def set_table_object_price
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the body params
+		body = ValidationService.parse_json(request.body.string)
+		price = body["price"]
+		currency = body["currency"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_presence(price),
+			ValidationService.validate_currency_presence(currency)
+		])
+
+		# Validate field types
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_type(price),
+			ValidationService.validate_currency_type(currency)
+		])
+
+		# Validate fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_validity(price),
+			ValidationService.validate_currency_validity(currency)
+		])
+
+		# Get the table object
+		obj = TableObject.find_by(uuid: uuid)
+
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(obj))
+
+		# Try to get the price of the table object with the currency
+		currency.downcase!
+		obj_price = obj.table_object_prices.find_by(currency: currency)
+
+		if obj_price.nil?
+			# Create a new price
+			obj_price = TableObjectPrice.new(
+				table_object: obj,
+				price: price,
+				currency: currency
+			)
+		else
+			# Update the price
+			obj_price.price = price
+		end
+
+		# Return the data
+		result = {
+			table_object_uuid: obj.uuid,
+			price: obj_price.price,
+			currency: obj_price.currency
+		}
+
+		render json: result, status: 200
 	end
 
 	private
