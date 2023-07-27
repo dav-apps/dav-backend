@@ -76,4 +76,56 @@ class CollectionsController < ApplicationController
 	rescue RuntimeError => e
 		render_errors(e)
 	end
+
+	# v2
+	def add_table_object_to_collection
+		name = params[:name]
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the body params
+		body = ValidationService.parse_json(request.body.string)
+		table_id = body["table_id"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_table_id_presence(table_id)
+		])
+
+		# Validate field types
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_table_id_type(table_id)
+		])
+
+		# Get the table
+		table = Table.find_by(id: table_id)
+		ValidationService.raise_validation_errors(ValidationService.validate_table_existence(table))
+
+		# Get the collection
+		collection = Collection.find_by(table: table, name: name)
+		ValidationService.raise_validation_errors(ValidationService.validate_collection_existence(collection))
+
+		# Get the table object
+		table_object = TableObject.find_by(uuid: uuid)
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+
+		# Check if the table object already belongs to the collection
+		obj_col = TableObjectCollection.find_by(table_object: table_object, collection: collection)
+
+		if obj_col.nil?
+			# Add the table object to the collection
+			obj_col = TableObjectCollection.new(table_object: table_object, collection: collection)
+			ValidationService.raise_unexpected_error(!obj_col.save)
+		end
+
+		# Return the collection
+		result = {
+			id: collection.id,
+			table_id: collection.table_id,
+			name: collection.name
+		}
+
+		render json: result, status: 200
+	end
 end
