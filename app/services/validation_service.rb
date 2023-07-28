@@ -587,6 +587,11 @@ class ValidationService
 		!price.is_a?(Integer) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_table_alias_type(table_alias)
+		error_code = 2256
+		!table_alias.is_a?(Integer) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Too short & too long fields
 	def self.validate_first_name_length(first_name)
 		if first_name.length < Constants::FIRST_NAME_MIN_LENGTH
@@ -1458,6 +1463,8 @@ class ValidationService
 			"Field has wrong type: schema"
 		when 2255
 			"Field has wrong type: price"
+		when 2256
+			"Field has wrong type: table_alias"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"

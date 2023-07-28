@@ -602,6 +602,62 @@ class TableObjectsController < ApplicationController
 		render_errors(e)
 	end
 
+	def add_table_object
+		access_token = get_auth
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(access_token))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the session
+		session = ValidationService.get_session_from_token(access_token)
+
+		# Get the body params
+		body = ValidationService.parse_json(request.body.string)
+		table_alias = body["table_alias"]
+
+		# Validate field types
+		if !table_alias.nil?
+			ValidationService.raise_validation_errors(ValidationService.validate_table_alias_type(table_alias))
+		end
+
+		# Get the table object
+		table_object = TableObject.find_by(uuid: uuid)
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(table_object))
+
+		if !table_alias.nil?
+			# Get the table
+			table = Table.find_by(id: table_alias)
+			ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
+		else
+			table = table_object.table
+		end
+
+		# Check if the table object user access already exists
+		access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
+
+		if access.nil?
+			TableObjectUserAccess.new(
+				user: session.user,
+				table_object: table_object,
+				table_alias: table.id
+			)
+
+			ValidationService.raise_unexpected_error(!access.save)
+		end
+
+		result = {
+			id: access.id,
+			user_id: access.user_id,
+			table_object_id: table_object.id,
+			table_alias: table.id
+		}
+
+		render json: result, status: 201
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
 	def remove_table_object
 		access_token = get_auth
 		uuid = params[:uuid]
@@ -740,7 +796,7 @@ class TableObjectsController < ApplicationController
 			end
 
 			total = table_objects.count
-			table_objects = table_objects.limit(limit).offset(offset)
+			table_objects = table_objects.limit(limit).offset(offset) unless table_objects.count == 0
 		end
 
 		table_objects_array = Array.new
