@@ -52,7 +52,30 @@ class TableObjectsController < ApplicationController
 
 		# Get the properties
 		props = Hash.new
-		if !properties.nil? && !table_object.file
+
+		if !properties.nil?
+			if table_object.file
+				# Take the ext property
+				ext = properties["ext"]
+
+				if !ext.nil?
+					# Validate the type
+					ValidationService.raise_validation_errors(ValidationService.validate_ext_type(ext))
+
+					# Validate the length
+					ValidationService.raise_validation_errors(ValidationService.validate_ext_length(ext))
+
+					ext_prop = TableObjectProperty.new(
+						table_object: table_object,
+						name: Constants::EXT_PROPERTY_NAME,
+						value: ext
+					)
+					ValidationService.raise_unexpected_error(!ext_prop.save)
+
+					props[Constants::EXT_PROPERTY_NAME] = ext
+				end
+			end
+
 			# Validate the properties
 			properties.each do |key, value|
 				ValidationService.raise_validation_errors([
@@ -69,7 +92,7 @@ class TableObjectsController < ApplicationController
 			end
 
 			properties.each do |key, value|
-				next if value.nil?
+				next if value.nil? || key == Constants::EXT_PROPERTY_NAME
 				UtilsService.create_property_type(table, key, value)
 
 				prop = TableObjectProperty.new(
@@ -80,26 +103,6 @@ class TableObjectsController < ApplicationController
 				ValidationService.raise_unexpected_error(!prop.save)
 
 				props[key] = value
-			end
-		elsif !properties.nil? && table_object.file
-			# Take the ext property
-			ext = properties["ext"]
-
-			if !ext.nil?
-				# Validate the type
-				ValidationService.raise_validation_errors(ValidationService.validate_ext_type(ext))
-
-				# Validate the length
-				ValidationService.raise_validation_errors(ValidationService.validate_ext_length(ext))
-
-				ext_prop = TableObjectProperty.new(
-					table_object: table_object,
-					name: Constants::EXT_PROPERTY_NAME,
-					value: ext
-				)
-				ValidationService.raise_unexpected_error(!ext_prop.save)
-
-				props[Constants::EXT_PROPERTY_NAME] = ext
 			end
 		end
 

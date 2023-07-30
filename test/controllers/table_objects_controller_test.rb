@@ -570,10 +570,10 @@ describe TableObjectsController do
 		assert_not_nil(res["uuid"])
 		assert(res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
-		assert_equal(0, res["properties"].length)
+		assert_equal(2, res["properties"].length)
 
 		properties = TableObjectProperty.where(table_object: table_object)
-		assert_equal(0, properties.length)
+		assert_equal(2, properties.length)
 
 		# The TableEtag should have changed
 		table_etag = TableEtag.find_by(user: users(:matt), table: table)
@@ -620,10 +620,10 @@ describe TableObjectsController do
 		assert_equal(uuid, res["uuid"])
 		assert(res["file"])
 		assert_equal(generate_table_object_etag(table_object), res["etag"])
-		assert_equal(0, res["properties"].length)
+		assert_equal(2, res["properties"].length)
 
 		properties = TableObjectProperty.where(table_object: table_object)
-		assert_equal(0, properties.length)
+		assert_equal(2, properties.length)
 
 		# The TableEtag should have changed
 		table_etag = TableEtag.find_by(user: users(:matt), table: table)
