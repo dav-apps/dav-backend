@@ -280,45 +280,47 @@ class TableObjectsController < ApplicationController
 
 				ValidationService.raise_unexpected_error(!ext_prop.save)
 			end
-		else
-			# Validate the properties
-			properties.each do |key, value|
-				ValidationService.raise_validation_errors([
-					ValidationService.validate_property_name_type(key),
-					ValidationService.validate_property_value_type(value)
-				])
-			end
+		end
 
-			properties.each do |key, value|
-				ValidationService.raise_validation_errors([
-					ValidationService.validate_property_name_length(key),
-					ValidationService.validate_property_value_length(value)
-				])
-			end
+		# Validate the properties
+		properties.each do |key, value|
+			ValidationService.raise_validation_errors([
+				ValidationService.validate_property_name_type(key),
+				ValidationService.validate_property_value_type(value)
+			])
+		end
 
-			properties.each do |key, value|
-				# Try to find the property
-				prop = TableObjectProperty.find_by(table_object: table_object, name: key)
-				value = nil if value.to_s.length == 0
+		properties.each do |key, value|
+			ValidationService.raise_validation_errors([
+				ValidationService.validate_property_name_length(key),
+				ValidationService.validate_property_value_length(value)
+			])
+		end
 
-				if prop.nil? && !value.nil?
-					# Create a new property
-					UtilsService.create_property_type(table_object.table, key, value)
+		properties.each do |key, value|
+			next if key == Constants::EXT_PROPERTY_NAME
 
-					prop = TableObjectProperty.new(
-						table_object: table_object,
-						name: key,
-						value: value.to_s
-					)
-					ValidationService.raise_unexpected_error(!prop.save)
-				elsif !prop.nil? && value.nil?
-					# Delete the property
-					prop.destroy!
-				elsif !prop.nil? && !value.nil?
-					# Update the property
-					prop.value = value
-					ValidationService.raise_unexpected_error(!prop.save)
-				end
+			# Try to find the property
+			prop = TableObjectProperty.find_by(table_object: table_object, name: key)
+			value = nil if value.to_s.length == 0
+
+			if prop.nil? && !value.nil?
+				# Create a new property
+				UtilsService.create_property_type(table_object.table, key, value)
+
+				prop = TableObjectProperty.new(
+					table_object: table_object,
+					name: key,
+					value: value.to_s
+				)
+				ValidationService.raise_unexpected_error(!prop.save)
+			elsif !prop.nil? && value.nil?
+				# Delete the property
+				prop.destroy!
+			elsif !prop.nil? && !value.nil?
+				# Update the property
+				prop.value = value
+				ValidationService.raise_unexpected_error(!prop.save)
 			end
 		end
 
