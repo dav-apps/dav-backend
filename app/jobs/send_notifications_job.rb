@@ -29,7 +29,7 @@ class SendNotificationsJob < ApplicationJob
 								private_key: ENV["WEBPUSH_PRIVATE_KEY"]
 							}
 						)
-					rescue Webpush::InvalidSubscription, Webpush::ExpiredSubscription => e
+					rescue Webpush::InvalidSubscription, Webpush::ExpiredSubscription, Webpush::ResponseError => e
 						# Delete the web push subscription
 						web_push_subscription.destroy!
 					end
