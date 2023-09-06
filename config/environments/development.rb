@@ -65,7 +65,4 @@ Rails.application.configure do
   # config.action_cable.disable_request_forgery_protection = true
 
   config.action_mailer.delivery_method = :resend
-  config.action_mailer.resend_settings = {
-    api_key: ENV['RESEND_API_KEY'],
-  }
 end
