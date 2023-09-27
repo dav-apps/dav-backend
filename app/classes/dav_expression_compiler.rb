@@ -1743,7 +1743,7 @@ class DavExpressionCompiler
 			if index.nil?
 				return "#{compile_command(parts.join('.').to_sym, true)}[\"#{last_part}\"]"
 			else
-				return "#{compile_command(parts.join('.').to_sym, true)}[#{last_part}[#{index}]]"
+				return "#{compile_command((parts + [last_part]).join('.').to_sym, true)}[#{index}]"
 			end
 		elsif command.to_s.include?('#')
 			parts = command.to_s.split('#')

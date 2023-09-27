@@ -273,6 +273,7 @@ class ApisController < ApplicationController
 
 				if !parent_data.nil?
 					parent_type_name = parent_data["type"]
+					parent_type_name_snake = snake_case(parent_type_name)
 					parent_type = schema[parent_type_name]
 					parent_getter = parent_data["getter"]
 
@@ -339,9 +340,6 @@ class ApisController < ApplicationController
 						(# Get the session)
 						(var state.session (func get_session (access_token)))
 
-						#{generate_state_dx_code(endpoint, "json")}
-						#{generate_validators_dx_code(endpoint, "json")}
-
 						(# Validate missing fields)
 						#{generate_missing_field_validations_dx_code(schema, properties, endpoint)}
 
@@ -353,6 +351,9 @@ class ApisController < ApplicationController
 
 						(# Validate validity of fields)
 						#{generate_field_validity_validations_dx_code(schema, properties, endpoint)}
+
+						#{generate_state_dx_code(endpoint, "json")}
+						#{generate_validators_dx_code(endpoint, "json")}
 
 						(# Get the parent table object)
 						#{
@@ -385,6 +386,13 @@ class ApisController < ApplicationController
 						#{
 							if !parent_property_data.nil?
 								generate_add_object_to_parent_table_object_dx_code(parent_property_name, "obj.uuid")
+							end
+						}
+
+						(# Add the uuid of the parent to the table object)
+						#{
+							if !parent_property_data.nil? && parent_property_data["bidirectional"]
+								"(var obj.properties.#{parent_type_name_snake} parent_obj.uuid)"
 							end
 						}
 
@@ -1652,11 +1660,37 @@ class ApisController < ApplicationController
 				sub_type = schema[prop_value["type"]]
 				next if sub_type.nil? || sub_type["file"]
 
-				result += %{
-					(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
-						#{generate_inner_missing_field_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
-					))
-				}
+				if required
+					error_code_missing = "#{prop_key}_missing"
+					error_code_type = "#{prop_key}_wrong_type"
+
+					if subkeys.size > 0
+						error_code_missing = subkeys.join('.') + ".#{prop_key}_missing"
+						error_code_type = subkeys.join('.') + ".#{prop_key}_wrong_type"
+					end
+
+					result += %{
+						(if (is_nil body_params#{subkey_path}["#{prop_key}"]) (
+							(errors.push (hash
+								(error "#{error_code_missing}")
+								(status 400)
+							))
+						) elseif (body_params#{subkey_path}["#{prop_key}"].class != "Hash") (
+							(errors.push (hash
+								(error "#{error_code_type}")
+								(status 400)
+							))
+						) else (
+							#{generate_inner_missing_field_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
+						))
+					}
+				else
+					result += %{
+						(if (!(is_nil body_params#{subkey_path}["#{prop_key}"])) (
+							#{generate_inner_missing_field_validations_dx_code(schema, sub_type["properties"], endpoint, subkeys + [prop_key])}
+						))
+					}
+				end
 			end
 		end
 
