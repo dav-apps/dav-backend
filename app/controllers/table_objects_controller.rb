@@ -633,7 +633,7 @@ class TableObjectsController < ApplicationController
 		if !table_alias.nil?
 			# Get the table
 			table = Table.find_by(id: table_alias)
-			ValidationService.raise_validation_error(ValidationService.validate_table_existence(table))
+			ValidationService.raise_validation_errors(ValidationService.validate_table_existence(table))
 		else
 			table = table_object.table
 		end
@@ -642,7 +642,7 @@ class TableObjectsController < ApplicationController
 		access = TableObjectUserAccess.find_by(user: session.user, table_object: table_object)
 
 		if access.nil?
-			TableObjectUserAccess.new(
+			access = TableObjectUserAccess.new(
 				user: session.user,
 				table_object: table_object,
 				table_alias: table.id
