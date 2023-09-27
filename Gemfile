@@ -29,7 +29,7 @@ gem 'rack-cors'
 gem 'sidekiq'
 
 # Sending emails
-gem 'resend', '~> 0.2.0'
+gem 'resend', '~> 0.7.2'
 
 # Sending notifications
 gem 'webpush'
