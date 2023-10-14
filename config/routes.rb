@@ -53,6 +53,7 @@ Rails.application.routes.draw do
 	# TableObjectsController v2
 	match '/v2/table_objects', to: 'table_objects#list_table_objects', via: :get
 	match '/v2/table_objects/:uuid', to: 'table_objects#retrieve_table_object', via: :get
+	match '/v2/table_objects/:uuid/price', to: 'table_objects#set_table_object_price', via: :put
 
 	# PurchasesController
 	match '/v1/purchase/:uuid', to: 'purchases#get_purchase', via: :get

@@ -913,6 +913,78 @@ class TableObjectsController < ApplicationController
 		render_errors(e)
 	end
 
+	def set_table_object_price
+		auth = get_auth
+		uuid = params[:uuid]
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+		ValidationService.raise_validation_errors(ValidationService.validate_content_type_json(get_content_type))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the body params
+		body = ValidationService.parse_json(request.body.string)
+		price = body["price"]
+		currency = body["currency"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_presence(price),
+			ValidationService.validate_currency_presence(currency)
+		])
+
+		# Validate field types
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_type(price),
+			ValidationService.validate_currency_type(currency)
+		])
+
+		# Validate fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_price_validity(price),
+			ValidationService.validate_currency_validity(currency)
+		])
+
+		# Get the table object
+		obj = TableObject.find_by(uuid: uuid)
+		ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(obj))
+
+		# Try to get the price of the table object with the currency
+		currency.downcase!
+		obj_price = obj.table_object_prices.find_by(currency: currency)
+
+		if obj_price.nil?
+			# Create a new price
+			obj_price = TableObjectPrice.create(
+				table_object: obj,
+				price: price,
+				currency: currency
+			)
+		else
+			# Update the price
+			obj_price.price = price
+			ValidationService.raise_unexpected_error(!obj_price.save)
+		end
+
+		# Return the data
+		result = {
+			table_object_uuid: obj.uuid,
+			price: obj_price.price,
+			currency: obj_price.currency
+		}
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		render_errors(e)
+	end
 
 	private
 	def get_table_object_properties(user_id, table_id, property_name)
