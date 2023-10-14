@@ -58,6 +58,8 @@ Rails.application.routes.draw do
 
 	# CollectionsController
 	match '/v1/collection/table_objects', to: 'collections#set_table_objects_of_collection', via: :put
+	# CollectionsController v2
+	match '/v2/collection/:name/table_object/:uuid', to: 'collections#add_table_object_to_collection', via: :post
 
 	# WebPushSubscriptionsController
 	match '/v1/web_push_subscription', to: 'web_push_subscriptions#create_web_push_subscription', via: :post
