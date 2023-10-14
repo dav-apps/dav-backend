@@ -844,3 +844,89 @@ class TableObjectsController < ApplicationController
 		render_errors(e)
 	end
 
+	def retrieve_table_object
+		auth = get_auth
+		uuid = params[:uuid]
+		caching = params[:caching].nil? || params[:caching] == "true"
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Try to get the table object from redis
+		cache_key = "table_object:#{uuid}"
+		obj_json = caching ? UtilsService.redis.get(cache_key) : nil
+
+		if obj_json.nil?
+			# Get the table object
+			obj = TableObject.find_by(uuid: uuid)
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_existence(obj))
+
+			status = 200
+			props_hash = Hash.new
+
+			obj.table_object_properties.each do |prop|
+				property_types = obj.table.table_property_types
+				props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+			end
+
+			# Save the table object in redis
+			obj_data = {
+				'id' => obj.id,
+				'user_id' => obj.user_id,
+				'table_id' => obj.table_id,
+				'file' => obj.file,
+				'etag' => obj.etag,
+				'properties' => props_hash
+			}
+
+			UtilsService.redis.set(cache_key, obj_data.to_json)
+			UtilsService.redis.expire(cache_key, 14.days.to_i)
+
+			result = {
+				uuid: obj.uuid,
+				user_id: obj.user_id,
+				table_id: obj.table_id,
+				properties: props_hash
+			}
+		else
+			obj_data = JSON.parse(obj_json)
+
+			result = {
+				uuid: uuid,
+				user_id: obj_data["user_id"],
+				table_id: obj_data["table_id"],
+				properties: obj_data["properties"]
+			}
+		end
+
+		render json: result, status: status
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
+
+	private
+	def get_table_object_properties(user_id, table_id, property_name)
+		user_id_str = user_id <= 0 ? "*" : user_id.to_s
+		table_id_str = table_id <= 0 ? "*" : table_id.to_s
+		property_name = "*" if property_name.nil?
+
+		return UtilsService.redis.keys("table_object_property:#{user_id_str}:#{table_id_str}:*:#{property_name}:*")
+	end
+
+	def convert_value_to_data_type(value, data_type)
+		return value == "true" if data_type == 1
+		return Integer value rescue value if data_type == 2
+		return Float value rescue value if data_type == 3
+		return value
+	end
+end
