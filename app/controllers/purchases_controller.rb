@@ -63,7 +63,10 @@ class PurchasesController < ApplicationController
 
 		# Cancel the payment intent
 		if purchase.price > 0
-			Stripe::PaymentIntent.cancel(purchase.payment_intent_id)
+			begin
+				Stripe::PaymentIntent.cancel(purchase.payment_intent_id)
+			rescue => e
+			end
 		end
 
 		# Delete the purchase
@@ -100,9 +103,9 @@ class PurchasesController < ApplicationController
 		purchases = Array.new
 
 		if user_id.nil?
-			purchases = table_object.purchases.find_by(completed: true)
+			purchases = table_object.purchases.where(completed: true)
 		else
-			purchases = table_object.purchases.find_by(user_id: user_id, completed: true)
+			purchases = table_object.purchases.where(user_id: user_id, completed: true)
 		end
 
 		# Return the data

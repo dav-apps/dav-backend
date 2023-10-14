@@ -51,9 +51,7 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:uuid/access', to: 'table_objects#remove_table_object', via: :delete
 
 	# PurchasesController
-	match '/v1/purchase', to: 'purchases#create_purchase', via: :post
 	match '/v1/purchase/:uuid', to: 'purchases#get_purchase', via: :get
-	match '/v1/purchase/:uuid/complete', to: 'purchases#complete_purchase', via: :post
 	match '/v1/purchase/:uuid', to: 'purchases#delete_purchase', via: :delete
 
 	# PurchasesController v2

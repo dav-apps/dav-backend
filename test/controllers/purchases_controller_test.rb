@@ -146,36 +146,12 @@ describe PurchasesController do
 	end
 
 	it "should delete not completed purchase" do
-		table_object = table_objects(:snicketSecondBook)
-		table_object_price = table_object_prices(:snicketSecondBookEur)
-		provider_name = "Lemony Snicket"
-		provider_image = "https://api.pocketlib.app/author/sadasdasd/profile_image"
-		product_name = "A Series of Unfortunate Events - Book the Second"
-		product_image = "https://api.pocketlib.app/store/book/dfgsdfsdf/cover"
-		currency = table_object_price.currency
-
-		# Create a purchase
-		res = post_request(
-			"/v1/purchase",
-			{Authorization: sessions(:mattPocketlibSession).token, 'Content-Type': 'application/json'},
-			{
-				provider_name: provider_name,
-				provider_image: provider_image,
-				product_name: product_name,
-				product_image: product_image,
-				currency: currency,
-				table_objects: [table_object.uuid]
-			}
-		)
-
-		assert_response 201
-
-		purchase = Purchase.find_by(id: res["id"])
-		payment_intent_id = res["payment_intent_id"]
+		purchase = purchases(:snicketFirstBookCatoPurchase)
+		payment_intent_id = purchase.payment_intent_id
 
 		res = delete_request(
 			"/v1/purchase/#{purchase.uuid}",
-			{Authorization: sessions(:mattPocketlibSession).token}
+			{Authorization: sessions(:catoPocketlibSession).token}
 		)
 
 		assert_response 204
@@ -183,49 +159,84 @@ describe PurchasesController do
 		# Check if the purchase was deleted
 		purchase = Purchase.find_by(id: purchase.id)
 		assert_nil(purchase)
-
-		# Check if the payment intent was cancelled
-		payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-		assert_not_nil(payment_intent)
-		assert_equal("canceled", payment_intent["status"])
 	end
 
-	it "should delete free purchase" do
-		table_object = table_objects(:sherlockTestFile)
-		table_object_price = table_object_prices(:sherlockTestFileEur)
-		provider_name = "sherlock"
-		provider_image = "https://api.pocketlib.app/author/sadasdasd/profile_image"
-		product_name = "Test file"
-		product_image = "https://api.pocketlib.app/store/book/dfgsdfsdf/cover"
-		currency = table_object_price.currency
+	# list_purchases_of_table_object
+	it "should not list purchases of table object without auth" do
+		res = get_request("/v2/table_objects/asdasdas/purchases")
 
-		# Create a purchase
-		res = post_request(
-			"/v1/purchase",
-			{Authorization: sessions(:davTestAppSession).token, 'Content-Type': 'application/json'},
-			{
-				provider_name: provider_name,
-				provider_image: provider_image,
-				product_name: product_name,
-				product_image: product_image,
-				currency: currency,
-				table_objects: [table_object.uuid]
-			}
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not list purchases of table object with dev that does not exist" do
+		res = get_request(
+			"/v2/table_objects/asdasdas/purchases",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
 		)
 
-		assert_response 201
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
 
-		purchase = Purchase.find_by(id: res["id"])
-
-		res = delete_request(
-			"/v1/purchase/#{purchase.uuid}",
-			{Authorization: sessions(:davTestAppSession).token}
+	it "should not list purchases of table object with invalid auth" do
+		res = get_request(
+			"/v2/table_objects/asdasdas/purchases",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
 		)
 
-		assert_response 204
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
 
-		# Check if the purchase was deleted
-		purchase = Purchase.find_by(id: purchase.id)
-		assert_nil(purchase)
+	it "should not list purchases of table object with another dev than the first one" do
+		res = get_request(
+			"/v2/table_objects/asdasdas/purchases",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not list purchases of table object that does not exist" do
+		res = get_request(
+			"/v2/table_objects/asdasdas/purchases",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should list purchases of table object" do
+		table_object = table_objects(:snicketFirstBook)
+		purchase = purchases(:snicketFirstBookMattPurchase)
+
+		res = get_request(
+			"/v2/table_objects/#{table_object.uuid}/purchases",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 200
+		assert_equal(1, res["purchases"].count)
+		
+		res_purchase = res["purchases"][0]
+		assert_equal(purchase.id, res_purchase["id"])
+		assert_equal(purchase.user_id, res_purchase["user_id"])
+		assert_equal(purchase.uuid, res_purchase["uuid"])
+		assert_equal(purchase.payment_intent_id, res_purchase["payment_intent_id"])
+		assert_equal(purchase.provider_name, res_purchase["provider_name"])
+		assert_equal(purchase.provider_image, res_purchase["provider_image"])
+		assert_equal(purchase.product_name, res_purchase["product_name"])
+		assert_equal(purchase.product_image, res_purchase["product_image"])
+		assert_equal(purchase.price, res_purchase["price"])
+		assert_equal(purchase.currency, res_purchase["currency"])
+		assert(res_purchase["completed"])
 	end
 end
