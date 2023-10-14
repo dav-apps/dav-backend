@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '2.7.7'
-gem 'rails', '6.1.4.6'
+gem 'rails', '6.1.7.6'
 
 # Tests
 gem 'minitest-rails'
