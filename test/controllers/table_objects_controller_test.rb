@@ -2139,4 +2139,170 @@ describe TableObjectsController do
 		assert_equal(table_object.user_id, res["user_id"])
 		assert_equal(table_object.table_id, res["table_id"])
 	end
+
+	# set_table_object_price
+	it "should not set table object price without auth" do
+		res = put_request("/v2/table_objects/asddasdasd/price")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not set table object price without Content-Type json" do
+		res = put_request(
+			"/v2/table_objects/asddasdasd/price",
+			{Authorization: "kjsdhakjsd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object price with dev that does not exist" do
+		res = put_request(
+			"/v2/table_objects/asddasdasd/price",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe", "Content-Type": "application/json"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not set table object price with invalid auth" do
+		res = put_request(
+			"/v2/table_objects/asddasdasd/price",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", "Content-Type": "application/json"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object price with another dev than the first one" do
+		res = put_request(
+			"/v2/table_objects/asddasdasd/price",
+			{Authorization: generate_auth(devs(:dav)), "Content-Type": "application/json"}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not set table object price without required properties" do
+		table_object = table_objects(:snicketFirstBook)
+
+		res = put_request(
+			"/v2/table_objects/#{table_object.uuid}/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::PRICE_MISSING, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::CURRENCY_MISSING, res["errors"][1]["code"])
+	end
+
+	it "should not set table object price with properties with wrong types" do
+		table_object = table_objects(:snicketFirstBook)
+
+		res = put_request(
+			"/v2/table_objects/#{table_object.uuid}/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"},
+			{
+				price: "asdasd",
+				currency: 12
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::PRICE_WRONG_TYPE, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::CURRENCY_WRONG_TYPE, res["errors"][1]["code"])
+	end
+
+	it "should not set table object price with invalid properties" do
+		table_object = table_objects(:snicketFirstBook)
+
+		res = put_request(
+			"/v2/table_objects/#{table_object.uuid}/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"},
+			{
+				price: -123,
+				currency: "yen"
+			}
+		)
+
+		assert_response 400
+		assert_equal(2, res["errors"].length)
+		assert_equal(ErrorCodes::PRICE_INVALID, res["errors"][0]["code"])
+		assert_equal(ErrorCodes::CURRENCY_INVALID, res["errors"][1]["code"])
+	end
+
+	it "should not set table object price for table object that does not exist" do
+		res = put_request(
+			"/v2/table_objects/lhsdfhkasdads/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"},
+			{
+				price: 100,
+				currency: "eur"
+			}
+		)
+
+		assert_response 404
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should set table object price for table object with existing price" do
+		table_object = table_objects(:snicketFirstBook)
+		table_object_price = table_object_prices(:snicketFirstBookEur)
+		new_price = 100
+
+		res = put_request(
+			"/v2/table_objects/#{table_object.uuid}/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"},
+			{
+				price: new_price,
+				currency: "eur"
+			}
+		)
+
+		assert_response 200
+		assert_equal(table_object.uuid, res["table_object_uuid"])
+		assert_equal(new_price, res["price"])
+		assert_equal("eur", res["currency"])
+
+		table_object_price = TableObjectPrice.find(table_object_price.id)
+		assert_not_nil(table_object_price)
+		assert_equal(new_price, table_object_price.price)
+		assert_equal("eur", table_object_price.currency)
+	end
+
+	it "should set table object price" do
+		table_object = table_objects(:hindenburgFirstBook)
+		price = 1254
+
+		res = put_request(
+			"/v2/table_objects/#{table_object.uuid}/price",
+			{Authorization: generate_auth(devs(:sherlock)), "Content-Type": "application/json"},
+			{
+				price: price,
+				currency: "eur"
+			}
+		)
+
+		assert_response 200
+		assert_equal(table_object.uuid, res["table_object_uuid"])
+		assert_equal(price, res["price"])
+		assert_equal("eur", res["currency"])
+
+		table_object_price = TableObjectPrice.find_by(table_object: table_object)
+		assert_not_nil(table_object_price)
+		assert_equal(price, table_object_price.price)
+		assert_equal("eur", table_object_price.currency)
+	end
 end
