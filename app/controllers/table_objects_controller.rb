@@ -693,4 +693,154 @@ class TableObjectsController < ApplicationController
 	rescue RuntimeError => e
 		render_errors(e)
 	end
-end
+
+	# v2
+	def list_table_objects
+		auth = get_auth
+		caching = (params[:caching].nil? || params[:caching] == "true") && !Rails.env.test?
+		limit = params[:limit].to_i
+		offset = params[:offset].to_i
+		collection_name = params[:collection_name]
+		table_name = params[:table_name]
+		app_id = params[:app_id].to_i
+		user_id = params[:user_id].to_i
+		property_name = params[:property_name]
+		property_value = params[:property_value]
+		exact = params[:exact] == "true"
+		table = nil
+		user = nil
+
+		limit = 10 if limit <= 0
+		offset = 0 if offset < 0
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
+
+		total = 0
+		cache_key = "list_table_objects;limit:#{limit};offset:#{offset};collection_name:#{collection_name};table_name:#{table_name};user_id:#{user_id};property_name:#{property_name};property_value:#{property_value};exact:#{exact}"
+
+		if caching
+			# Try to get the response from redis
+			cache_data = UtilsService.redis.get(cache_key)
+
+			if !cache_data.nil?
+				# Render the cache response
+				render json: cache_data, status: 200
+				return
+			end
+		end
+
+		if !collection_name.nil?
+			collection = Collection.find_by(name: collection_name)
+		end
+
+		if !table_name.nil?
+			table = Table.find_by(name: table_name, app_id: app_id)
+		end
+
+		if user_id != 0
+			user = User.find(user_id)
+		end
+
+		if !property_name.nil? && !property_value.nil?
+			table_objects_hash = Hash.new
+			property_keys = get_table_object_properties(
+				user_id,
+				table.id,
+				property_name
+			)
+
+			if exact
+				property_keys.each do |key|
+					value = convert_value_to_data_type(UtilsService.redis.get(key), key.split(':').last.to_i)
+
+					if value == property_value
+						# Get the table object id from the key
+						table_object_uuid = key.split(':')[3]
+						next if table_objects_hash.include?(table_object_uuid)
+
+						# Add the table object to the list of objects
+						obj = TableObject.find_by(uuid: table_object_uuid)
+						next if obj.nil?
+
+						table_objects_hash[table_object_uuid] = obj
+					end
+				end
+			else
+				property_keys.each do |key|
+					value = convert_value_to_data_type(UtilsService.redis.get(key), key.split(':').last.to_i)
+
+					if value.include?(property_value)
+						# Get the table object id from the key
+						table_object_uuid = key.split(':')[3]
+						next if table_objects_hash.include?(table_object_uuid)
+
+						# Add the table object to the list of objects
+						obj = TableObject.find_by(uuid: table_object_uuid)
+						next if obj.nil?
+
+						table_objects_hash[table_object_uuid] = obj
+					end
+				end
+			end
+
+			table_objects = table_objects_hash.values.to_a
+		else
+			# Find the table objects
+			if !collection.nil?
+				table_objects = collection.table_objects
+			elsif !table.nil? && user.nil?
+				table_objects = TableObject.where(table: table)
+			elsif table.nil? && !user.nil?
+				table_objects = TableObject.where(user: user)
+			elsif !table.nil? && !user.nil?
+				table_objects = TableObject.where(user: user, table: table)
+			else
+				table_objects = []
+			end
+
+			total = table_objects.count
+			table_objects = table_objects.limit(limit).offset(offset) unless table_objects.count == 0
+		end
+
+		table_objects_array = Array.new
+
+		table_objects.each do |obj|
+			props_hash = Hash.new
+
+			obj.table_object_properties.each do |prop|
+				property_types = obj.table.table_property_types
+				props_hash[prop.name] = UtilsService.convert_value_to_data_type(prop.value, UtilsService.find_data_type(property_types, prop.name))
+			end
+
+			table_objects_array.push({
+				uuid: obj.uuid,
+				user_id: obj.user_id,
+				table_id: obj.table_id,
+				properties: props_hash
+			})
+		end
+
+		result = {
+			total: total,
+			items: table_objects_array
+		}
+
+		# Save the response in redis
+		UtilsService.redis.set(cache_key, result.to_json)
+		UtilsService.redis.expire(cache_key, 1.day.to_i)
+
+		render json: result, status: 200
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
