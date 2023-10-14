@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_10_14_233031) do
+ActiveRecord::Schema[6.1].define(version: 2023_10_14_233031) do
 
   create_table "api_endpoints", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "api_slot_id"
