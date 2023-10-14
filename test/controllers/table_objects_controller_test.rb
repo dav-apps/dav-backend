@@ -1791,6 +1791,123 @@ describe TableObjectsController do
 		BlobOperationsService.delete_blob(table_object)
 	end
 
+	# add_table_object
+	it "should not add table object without access token" do
+		res = post_request("/v1/table_object/asdasdads/access")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not add table object without Content-Type json" do
+		res = post_request(
+			"/v1/table_object/asdasdads/access",
+			{Authorization: "asdasdasd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with access token of session that does not exist" do
+		res = post_request(
+			"/v1/table_object/asdasdads/access",
+			{Authorization: "asdasdasd", "Content-Type": "application/json"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::SESSION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with properties with wrong types" do
+		res = post_request(
+			"/v1/table_object/asdasdads/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"},
+			{table_alias: "asdasd"}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_ALIAS_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with table object that does not exist" do
+		res = post_request(
+			"/v1/table_object/asdasdads/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object with table alias that does not exist" do
+		table_object = table_objects(:hindenburgFirstBook)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"},
+			{table_alias: -1}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object if the table object user access already exists" do
+		access = table_object_user_accesses(:mattAccessDavFirstCard)
+
+		res = post_request(
+			"/v1/table_object/#{access.table_object.uuid}/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"}
+		)
+
+		assert_response 201
+		assert_equal(access.id, res["id"])
+		assert_equal(access.user_id, res["user_id"])
+		assert_equal(access.table_object_id, res["table_object_id"])
+		assert_equal(access.table_alias, res["table_alias"])
+	end
+
+	it "should add table object" do
+		matt = users(:matt)
+		table_object = table_objects(:davSecondCard)
+
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"}
+		)
+
+		assert_response 201
+		assert_not_nil(res["id"])
+		assert_equal(matt.id, res["user_id"])
+		assert_equal(table_object.id, res["table_object_id"])
+		assert_equal(table_object.table_id, res["table_alias"])
+	end
+
+	it "should add table object with table alias" do
+		matt = users(:matt)
+		table_object = table_objects(:davSecondCard)
+		table_alias = tables(:imageCard).id
+
+		res = post_request(
+			"/v1/table_object/#{table_object.uuid}/access",
+			{Authorization: sessions(:mattCardsSession).token, "Content-Type": "application/json"},
+			{table_alias: table_alias}
+		)
+
+		assert_response 201
+		assert_not_nil(res["id"])
+		assert_equal(matt.id, res["user_id"])
+		assert_equal(table_object.id, res["table_object_id"])
+		assert_equal(table_alias, res["table_alias"])
+	end
+
 	# remove_table_object
 	it "should not remove table object without access token" do
 		res = delete_request("/v1/table_object/iosdhiosdfio/access")
