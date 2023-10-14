@@ -139,5 +139,7 @@ class CollectionsController < ApplicationController
 		}
 
 		render json: result, status: 200
+	rescue RuntimeError => e
+		render_errors(e)
 	end
 end

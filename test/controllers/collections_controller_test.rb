@@ -196,4 +196,142 @@ describe CollectionsController do
 		assert_equal(table_objects(:snicketSecondBook).uuid, collection.table_object_collections[1].table_object.uuid)
 		assert_equal(table_objects(:hindenburgFirstBook).uuid, collection.table_object_collections[2].table_object.uuid)
 	end
+
+	# add_table_object_to_collection
+	it "should not add table object to collection without auth" do
+		res = post_request("/v2/collections/asd/table_objects/asdasdasd")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection without Content-Type json" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: "kjsdhakjsd"}
+		)
+
+		assert_response 415
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::CONTENT_TYPE_NOT_SUPPORTED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with dev that does not exist" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with invalid auth" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe", 'Content-Type': 'application/json'}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection without required properties" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_ID_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with properties with wrong types" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: "soos"}
+		)
+
+		assert_response 400
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_ID_WRONG_TYPE, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with table that does not exist" do
+		res = post_request(
+			"/v2/collections/asd/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: -12}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with table that does not belong to the dev" do
+		collection = collections(:latest_books_collection)
+		table = tables(:note)
+
+		res = post_request(
+			"/v2/collections/#{collection.name}/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: table.id}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with collection that does not exist" do
+		table = tables(:storeBook)
+
+		res = post_request(
+			"/v2/collections/asdasdads/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: table.id}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::COLLECTION_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not add table object to collection with table object that does not exist" do
+		collection = collections(:latest_books_collection)
+		table = tables(:storeBook)
+
+		res = post_request(
+			"/v2/collections/#{collection.name}/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: table.id}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should add table object to collection" do
+		collection = collections(:latest_books_collection)
+		table = tables(:storeBook)
+		table_object = table_objects(:hindenburgFirstBook)
+
+		res = post_request(
+			"/v2/collections/#{collection.name}/table_objects/#{table_object.uuid}",
+			{Authorization: generate_auth(devs(:dav)), 'Content-Type': 'application/json'},
+			{table_id: table.id}
+		)
+
+		assert_response 200
+		assert_equal(collection.id, res["id"])
+		assert_equal(collection.table_id, table.id)
+		assert_equal(collection.name, res["name"])
+	end
 end
