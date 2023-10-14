@@ -7,9 +7,7 @@ class UtilsService
 		@redis ||= Redis.new(
 			url: ENV["REDIS_URL"],
 			db: db,
-			:reconnect_attempts => 10,
-			:reconnect_delay => 1,
-			:reconnect_delay_max => 5
+			:reconnect_attempts => 10
 		)
 	end
 
