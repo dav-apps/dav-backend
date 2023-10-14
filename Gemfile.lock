@@ -304,7 +304,7 @@ DEPENDENCIES
   webpush
 
 RUBY VERSION
-   ruby 2.7.7p221
+   ruby 3.2.2p53
 
 BUNDLED WITH
    2.1.4
