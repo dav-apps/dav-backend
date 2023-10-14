@@ -2003,4 +2003,73 @@ describe TableObjectsController do
 		assert_not_nil(table_etag)
 		assert_not_equal(old_table_etag, table_etag.etag)
 	end
+
+	# list_table_objects
+	it "should not list table objects without auth" do
+		res = get_request("/v2/table_objects")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not list table objects with dev that does not exist" do
+		res = get_request(
+			"/v2/table_objects",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not list table objects with invalid auth" do
+		res = get_request(
+			"/v2/table_objects",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not list table objects with another dev than the first one" do
+		res = get_request(
+			"/v2/table_objects",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should list table objects" do
+		pocketlib = apps(:pocketlib)
+		table_objects = [
+			table_objects(:snicketSecondBook),
+			table_objects(:hindenburgFirstBook),	
+			table_objects(:snicketFirstBook)
+		]
+
+		res = get_request(
+			"/v2/table_objects?table_name=StoreBook&app_id=#{pocketlib.id}",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 200
+		assert_equal(3, res["total"])
+		assert_equal(3, res["items"].count)
+
+		i = 0
+		table_objects.each do |obj|
+			assert_equal(obj.uuid, res["items"][i]["uuid"])
+			assert_equal(obj.user_id, res["items"][i]["user_id"])
+			assert_equal(obj.table_id, res["items"][i]["table_id"])
+
+			i += 1
+		end
+	end
 end
