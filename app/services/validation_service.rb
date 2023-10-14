@@ -299,6 +299,11 @@ class ValidationService
 		cancel_url.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_price_presence(price)
+		error_code = 2135
+		price.nil? ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Fields with wrong type
 	def self.validate_access_token_type(access_token)
 		error_code = 2200
@@ -570,6 +575,16 @@ class ValidationService
 	def self.validate_mode_type(mode)
 		error_code = 2253
 		!mode.is_a?(String) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_price_type(price)
+		error_code = 2254
+		!price.is_a?(Integer) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_table_alias_type(table_alias)
+		error_code = 2255
+		!table_alias.is_a?(Integer) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
 	# Too short & too long fields
@@ -904,6 +919,16 @@ class ValidationService
 		!validate_url(product_image) ? get_validation_hash(error_code, 400) : get_validation_hash
 	end
 
+	def self.validate_price_validity(price)
+		error_code = 2512
+		!validate_price(price) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
+	def self.validate_currency_validity(currency)
+		error_code = 2513
+		!validate_currency(currency) ? get_validation_hash(error_code, 400) : get_validation_hash
+	end
+
 	# Generic state errors
 	def self.validate_user_not_confirmed(user)
 		error_code = 3000
@@ -1184,6 +1209,14 @@ class ValidationService
 		/^\w+$/.match?(name)
 	end
 
+	def self.validate_price(price)
+		return price >= 0 && price <= 100000
+	end
+
+	def self.validate_currency(currency)
+		return ["eur"].include?(currency.downcase)
+	end
+
 	# Error methods
 	def self.raise_validation_errors(validations)
 		if validations.is_a?(Hash)
@@ -1316,6 +1349,8 @@ class ValidationService
 			"Missing field: success_url"
 		when 2134
 			"Missing field: cancel_url"
+		when 2135
+			"Missing field: price"
 		# Fields with wrong type
 		when 2200
 			"Field has wrong type: access_token"
@@ -1419,6 +1454,10 @@ class ValidationService
 			"Field has wrong type: cancel_url"
 		when 2253
 			"Field has wrong type: mode"
+		when 2254
+			"Field has wrong type: price"
+		when 2255
+			"Field has wrong type: table_alias"
 		# Too short fields
 		when 2300
 			"Field too short: first_name"
@@ -1550,6 +1589,10 @@ class ValidationService
 			"Field invalid: mode"
 		when 2511
 			"Field invalid: product_image"
+		when 2512
+			"Field invalid: price"
+		when 2513
+			"Field invalid: currency"
 		# Generic state errors
 		when 3000
 			"The user is already confirmed"
