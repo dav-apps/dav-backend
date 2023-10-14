@@ -2072,4 +2072,71 @@ describe TableObjectsController do
 			i += 1
 		end
 	end
+
+	# retrieve_table_object
+	it "should not retrieve table object without auth" do
+		res = get_request("/v2/table_objects/asdasdasd")
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTH_HEADER_MISSING, res["errors"][0]["code"])
+	end
+
+	it "should not retrieve table object with dev that does not exist" do
+		res = get_request(
+			"/v2/table_objects/asdasdasd",
+			{Authorization: "asdasdasd,13wdfio23r8hifwe"}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::DEV_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should not retrieve table object with invalid auth" do
+		res = get_request(
+			"/v2/table_objects/asdasdasd",
+			{Authorization: "v05Bmn5pJT_pZu6plPQQf8qs4ahnK3cv2tkEK5XJ,13wdfio23r8hifwe"}
+		)
+
+		assert_response 401
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::AUTHENTICATION_FAILED, res["errors"][0]["code"])
+	end
+
+	it "should not retrieve table object with another dev than the first one" do
+		res = get_request(
+			"/v2/table_objects/asdasdasd",
+			{Authorization: generate_auth(devs(:dav))}
+		)
+
+		assert_response 403
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::ACTION_NOT_ALLOWED, res["errors"][0]["code"])
+	end
+
+	it "should not retrieve table object that does not exist" do
+		res = get_request(
+			"/v2/table_objects/kjsdkjsdfksd",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 404
+		assert_equal(1, res["errors"].length)
+		assert_equal(ErrorCodes::TABLE_OBJECT_DOES_NOT_EXIST, res["errors"][0]["code"])
+	end
+
+	it "should retrieve table object" do
+		table_object = table_objects(:hindenburgFirstBook)
+
+		res = get_request(
+			"/v2/table_objects/#{table_object.uuid}",
+			{Authorization: generate_auth(devs(:sherlock))}
+		)
+
+		assert_response 200
+		assert_equal(table_object.uuid, res["uuid"])
+		assert_equal(table_object.user_id, res["user_id"])
+		assert_equal(table_object.table_id, res["table_id"])
+	end
 end
