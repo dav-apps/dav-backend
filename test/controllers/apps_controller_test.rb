@@ -385,9 +385,9 @@ describe AppsController do
 			{
 				name: "a" * 300,
 				description: "a" * 300,
-				web_link: "a" * 200,
-				google_play_link: "a" * 200,
-				microsoft_store_link: "a" * 200
+				web_link: "a" * 300,
+				google_play_link: "a" * 300,
+				microsoft_store_link: "a" * 300
 			}
 		)
 
