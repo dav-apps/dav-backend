@@ -1,6 +1,6 @@
 first_cards_user_snapshot:
   app: cards
-  time: <%= DateTime.parse("2019-06-10T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  time: <%= DateTime.parse("2019-06-10T00:00:00.000Z").beginning_of_day.to_fs(:db) %>
   daily_active: 4
   weekly_active: 2
   monthly_active: 7
@@ -11,7 +11,7 @@ first_cards_user_snapshot:
 
 second_cards_user_snapshot:
   app: cards
-  time: <%= DateTime.parse("2019-06-11T00:00:00.000Z").beginning_of_day.to_s(:db) %>
+  time: <%= DateTime.parse("2019-06-11T00:00:00.000Z").beginning_of_day.to_fs(:db) %>
   daily_active: 1
   weekly_active: 4
   monthly_active: 5

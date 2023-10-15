@@ -3,14 +3,14 @@ dav:
   email: dav@dav-apps.tech
   password_digest: "$2a$12$tCcaD13rUulWLo9iz/62beyZVF47LphGLiFB4aTZxRAH6BTXN4Xva"   # raspberry
   confirmed: true
-  last_active: <%= DateTime.parse("2021-01-10T12:05:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2021-01-10T12:05:00.000Z").beginning_of_day.to_fs(:db) %>
 
 sherlock:
   first_name: Sherlock
   email: sherlock@dav-apps.tech
   password_digest: "$2a$12$RV/d/6khxwa3cxO7QE2s9eGIdJOcyjyMgmQVKoOf5QZTpV.exmHlm"   # sherlocked
   confirmed: true
-  last_active: <%= DateTime.parse("2020-12-23T17:23:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2020-12-23T17:23:00.000Z").beginning_of_day.to_fs(:db) %>
 
 matt:
   first_name: Matt
@@ -18,7 +18,7 @@ matt:
   password_digest: "$2a$12$8tInIjFM.lT2HmxviVgsOO0rA1N7RYy7hR2TMBeaqv5wPfE/wpXPa"   # schachmatt
   confirmed: true
   stripe_customer_id: cus_Gzi9UDeVX0BkwH
-  last_active: <%= DateTime.parse("2020-12-30T09:54:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2020-12-30T09:54:00.000Z").beginning_of_day.to_fs(:db) %>
 
 cato:
   first_name: Cato
@@ -27,7 +27,7 @@ cato:
   password_digest: "$2a$12$Dxjaxv1vJj3h06MCGMPqs.Xpge.Bhp441OseROU/z7e5Ad1WfpyR2"   # 123456
   email_confirmation_token: "9baa58cb207b89a01347b6f841f1edad6dbe0633"
   password_confirmation_token: "e6d64f43fdb7a103ac98e716dbb7178ca4bee050"
-  last_active: <%= DateTime.parse("2020-11-26T12:42:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2020-11-26T12:42:00.000Z").beginning_of_day.to_fs(:db) %>
   old_email: oldcato@dav-apps.tech
   new_email: newcato@dav-apps.tech
   new_password: "$2a$12$DHEj3Iz9TmXBqnFeccLKfOQnhkq1gzuZv.zdl3NsPLNrHqf/VGjIC"      # 654321
@@ -38,21 +38,21 @@ torera:
   password_digest: "$2a$12$Bb9BMzwBjNMizAnYLcSMMOSrZCr1RbJ3h4PAawT1buCDMnm/HJQci"   # Geld
   email: torera@dav-apps.tech
   stripe_customer_id: cus_FGV94HqakLuIpc
-  last_active: <%= DateTime.parse("2021-02-05T10:28:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2021-02-05T10:28:00.000Z").beginning_of_day.to_fs(:db) %>
 
 snicket:
   first_name: Snicket
   confirmed: true
   email: snicket@dav-apps.tech
   password_digest: "$2a$12$fbggCn90jFaZgmO4eN9ZqOX.U5j3E1SRtDM9R4EK4P/3eDYgSowXy"   # vfd
-  last_active: <%= DateTime.parse("2021-01-17T05:39:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2021-01-17T05:39:00.000Z").beginning_of_day.to_fs(:db) %>
 
 hindenburg:
   first_name: Paul
   confirmed: true
   email: hindenburg@dav-apps.tech
   password_digest: "$2a$12$fIROQ1fdAZ7FFeJNAVwCWeAn8uqESU31W.DMxbZccbYlqX/TtmUk2"   # ludendorff
-  last_active: <%= DateTime.parse("2021-02-02T19:28:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2021-02-02T19:28:00.000Z").beginning_of_day.to_fs(:db) %>
 
 klaus:
   first_name: Klaus
@@ -60,11 +60,11 @@ klaus:
   email: klaus.baudelaire@dav-apps.tech
   password_digest: "$2a$12$g4r3bVR1LEUmfOrfS1C9m.4oqPigfgEmruFsu9Nmh4oBP5flYT1ri"   # isadora
   stripe_customer_id: cus_H2NhsO2V8Lp2vp
-  last_active: <%= DateTime.parse("2021-02-17T08:45:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2021-02-17T08:45:00.000Z").beginning_of_day.to_fs(:db) %>
 
 violet:
   first_name: Violet
   email: violet.baudelaire@dav-apps.tech
   password_digest: "$2a$12$UBxgQAbFLpOOCau5DEo9BeTmtTf/tpeLkCx5FBbJEjaWN0Ps77Dp." # sunny
   plan: 1
-  last_active: <%= DateTime.parse("2022-01-17T08:45:00.000Z").beginning_of_day.to_s(:db) %>
+  last_active: <%= DateTime.parse("2022-01-17T08:45:00.000Z").beginning_of_day.to_fs(:db) %>
