@@ -32,7 +32,7 @@ gem 'sidekiq'
 gem 'resend', '~> 0.7.2'
 
 # Sending notifications
-gem 'webpush'
+gem 'web-push'
 
 # Password encryption
 gem 'bcrypt'

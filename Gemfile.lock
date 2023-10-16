@@ -116,7 +116,7 @@ GEM
     ffi (1.16.3)
     globalid (1.2.1)
       activesupport (>= 6.1)
-    hkdf (0.3.0)
+    hkdf (1.0.0)
     htmlbeautifier (1.4.2)
     htmlentities (4.3.4)
     httparty (0.19.1)
@@ -166,6 +166,7 @@ GEM
     nokogiri (1.15.4)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
+    openssl (3.2.0)
     pg (1.5.4)
     pkg-config (1.5.5)
     premailer (1.21.0)
@@ -261,9 +262,10 @@ GEM
     timeout (0.4.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    webpush (1.1.0)
-      hkdf (~> 0.2)
+    web-push (3.0.0)
+      hkdf (~> 1.0)
       jwt (~> 2.0)
+      openssl (~> 3.0)
     websocket-driver (0.7.6)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
@@ -301,7 +303,7 @@ DEPENDENCIES
   stripe-ruby-mock
   stripe_event
   tzinfo-data
-  webpush
+  web-push
 
 RUBY VERSION
    ruby 3.2.2p53

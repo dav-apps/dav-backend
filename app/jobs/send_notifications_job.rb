@@ -18,7 +18,7 @@ class SendNotificationsJob < ApplicationJob
 			notification.user.sessions.each do |session|
 				session.web_push_subscriptions.each do |web_push_subscription|
 					begin
-						Webpush.payload_send(
+						WebPush.payload_send(
 							message: message,
 							endpoint: web_push_subscription.endpoint,
 							p256dh: web_push_subscription.p256dh,
@@ -29,7 +29,7 @@ class SendNotificationsJob < ApplicationJob
 								private_key: ENV["WEBPUSH_PRIVATE_KEY"]
 							}
 						)
-					rescue Webpush::InvalidSubscription, Webpush::ExpiredSubscription, Webpush::ResponseError => e
+					rescue WebPush::InvalidSubscription, WebPush::ExpiredSubscription, WebPush::ResponseError => e
 						# Delete the web push subscription
 						web_push_subscription.destroy!
 					end
