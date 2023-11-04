@@ -87,7 +87,7 @@ class TablesController < ApplicationController
 
 		# Get the table objects of the user
 		table_objects = Array.new
-		TableObject.where(user_id: session.user.id, table_id: table.id).each { |obj| table_objects.push(obj) }
+		TableObject.where(user_id: session.user.id, table_id: table.id).order(id: :ASC).each { |obj| table_objects.push(obj) }
 		session.user.table_object_user_access.each { |access| table_objects.push(access.table_object) if access.table_alias == table.id }
 
 		start = count * (page - 1)
