@@ -65,6 +65,9 @@ gem 'stripe-ruby-mock', :require => 'stripe_mock'
 # Monitoring
 gem "rorvswild"
 
+# Sending HTTP requests
+gem "httparty"
+
 group :development, :test do
 	gem 'dotenv-rails'
 end

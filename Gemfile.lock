@@ -282,6 +282,7 @@ DEPENDENCIES
   bootstrap-email (>= 1.1.2)
   cuid
   dotenv-rails
+  httparty
   listen (~> 3.2)
   mini_magick
   minitest-rails

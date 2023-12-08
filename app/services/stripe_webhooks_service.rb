@@ -136,6 +136,9 @@ class StripeWebhooksService
 		if !purchase.nil?
 			purchase.completed = true
 			purchase.save
+
+			# Notify client APIs of the completed purchase
+			WebhookSendJob.perform_later(purchase.id, "payment_intent_succeeded")
 		end
 
 		200
