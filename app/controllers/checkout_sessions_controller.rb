@@ -99,9 +99,9 @@ class CheckoutSessionsController < ApplicationController
 			price = table_object_price.price
 
 			# If the object belongs to the user, set the price to 0
-			price = 0 if table_objects.first.user == user
+			#price = 0 if table_objects.first.user == user
 
-			if price > 0 && obj_user != User.first
+			if price > 0 && obj_user != User.first && obj_user != user
 				# Check if the user of the table object has a provider
 				ValidationService.raise_validation_errors(ValidationService.validate_user_is_provider(obj_user))
 			end
@@ -170,7 +170,7 @@ class CheckoutSessionsController < ApplicationController
 					cancel_url: cancel_url
 				}
 
-				if obj_user != User.first
+				if obj_user != User.first && obj_user != user
 					create_session_options[:payment_intent_data] = {
 						application_fee_amount: (price * 0.2).round,
 						transfer_data: {
