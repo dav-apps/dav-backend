@@ -449,7 +449,7 @@ class TableObjectsController < ApplicationController
 		file_size = UtilsService.get_file_size(request.body)
 		free_storage = UtilsService.get_total_storage(session.user.plan, session.user.confirmed) - session.user.used_storage
 		file_size_diff = file_size - old_file_size
-		ValidationService.raise_validation_errors(ValidationService.validate_sufficient_storage(free_storage, file_size_diff))
+		ValidationService.raise_validation_errors(ValidationService.validate_sufficient_storage(free_storage, file_size_diff)) if !table_object.table.ignore_file_size
 
 		# Upload the file
 		begin
@@ -494,7 +494,7 @@ class TableObjectsController < ApplicationController
 		ValidationService.raise_unexpected_error(!etag_prop.save)
 
 		# Save the new used storage
-		UtilsService.update_used_storage(session.user, session.app, file_size_diff)
+		UtilsService.update_used_storage(session.user, session.app, file_size_diff) if !table_object.table.ignore_file_size
 
 		# Update the etag of the table object
 		table_object.etag = UtilsService.generate_table_object_etag(table_object)
