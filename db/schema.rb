@@ -11,7 +11,10 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
-  create_table "api_endpoints", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
+  create_table "api_endpoints", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "path"
     t.string "method"
@@ -21,20 +24,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "api_env_vars", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "api_env_vars", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "name"
     t.string "value"
     t.string "class_name"
   end
 
-  create_table "api_errors", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "api_errors", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.integer "code"
     t.string "message"
   end
 
-  create_table "api_functions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "api_functions", force: :cascade do |t|
     t.bigint "api_slot_id"
     t.string "name"
     t.string "params"
@@ -43,21 +46,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "api_slots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "api_slots", force: :cascade do |t|
     t.bigint "api_id"
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "documentation"
   end
 
-  create_table "apis", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "apis", force: :cascade do |t|
     t.bigint "app_id"
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "app_user_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "app_user_snapshots", force: :cascade do |t|
     t.bigint "app_id"
     t.datetime "time", precision: nil
     t.integer "daily_active", default: 0
@@ -71,7 +75,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.integer "email_unconfirmed", default: 0
   end
 
-  create_table "app_users", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "app_users", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.bigint "used_storage", default: 0
@@ -80,7 +84,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "apps", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "apps", force: :cascade do |t|
     t.bigint "dev_id"
     t.string "name"
     t.string "description"
@@ -93,21 +97,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.string "webhook_url"
   end
 
-  create_table "collections", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "collections", force: :cascade do |t|
     t.bigint "table_id"
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "compiled_api_endpoints", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "compiled_api_endpoints", force: :cascade do |t|
     t.bigint "api_endpoint_id"
     t.text "code"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "devs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "devs", force: :cascade do |t|
     t.bigint "user_id"
     t.string "api_key"
     t.string "secret_key"
@@ -116,7 +120,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "notifications", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "uuid"
@@ -129,14 +133,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.index ["uuid"], name: "index_notifications_on_uuid", unique: true
   end
 
-  create_table "providers", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "providers", force: :cascade do |t|
     t.bigint "user_id"
     t.string "stripe_account_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "purchases", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "purchases", force: :cascade do |t|
     t.bigint "user_id"
     t.string "payment_intent_id"
     t.string "provider_name"
@@ -152,14 +156,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.index ["uuid"], name: "index_purchases_on_uuid", unique: true
   end
 
-  create_table "redis_table_object_operations", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "redis_table_object_operations", force: :cascade do |t|
     t.string "table_object_uuid"
     t.string "operation"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "sessions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "sessions", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "token"
@@ -172,7 +176,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.index ["token"], name: "index_sessions_on_token", unique: true
   end
 
-  create_table "table_etags", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_etags", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.string "etag"
@@ -180,38 +184,38 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "table_object_collections", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_object_collections", force: :cascade do |t|
     t.bigint "table_object_id"
     t.bigint "collection_id"
     t.datetime "created_at", null: false
   end
 
-  create_table "table_object_prices", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_object_prices", force: :cascade do |t|
     t.bigint "table_object_id"
     t.integer "price", default: 0
     t.string "currency", default: "eur"
   end
 
-  create_table "table_object_properties", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_object_properties", force: :cascade do |t|
     t.bigint "table_object_id"
     t.string "name"
     t.text "value"
   end
 
-  create_table "table_object_purchases", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_object_purchases", force: :cascade do |t|
     t.bigint "table_object_id"
     t.bigint "purchase_id"
     t.datetime "created_at", null: false
   end
 
-  create_table "table_object_user_accesses", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_object_user_accesses", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_object_id"
     t.bigint "table_alias"
     t.datetime "created_at", null: false
   end
 
-  create_table "table_objects", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_objects", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "table_id"
     t.string "uuid"
@@ -222,13 +226,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.index ["uuid"], name: "index_table_objects_on_uuid", unique: true
   end
 
-  create_table "table_property_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "table_property_types", force: :cascade do |t|
     t.bigint "table_id"
     t.string "name"
     t.integer "data_type", default: 0
   end
 
-  create_table "tables", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "tables", force: :cascade do |t|
     t.bigint "app_id"
     t.string "name"
     t.datetime "created_at", null: false
@@ -237,7 +241,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.boolean "ignore_file_size", default: false
   end
 
-  create_table "user_profile_images", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "user_profile_images", force: :cascade do |t|
     t.bigint "user_id"
     t.string "ext"
     t.string "mime_type"
@@ -246,7 +250,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "user_snapshots", force: :cascade do |t|
     t.datetime "time", precision: nil
     t.integer "daily_active", default: 0
     t.integer "monthly_active", default: 0
@@ -259,7 +263,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.integer "email_unconfirmed", default: 0
   end
 
-  create_table "users", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "email"
     t.string "first_name"
     t.string "password_digest"
@@ -279,7 +283,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "web_push_subscriptions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "web_push_subscriptions", force: :cascade do |t|
     t.bigint "session_id"
     t.string "uuid"
     t.text "endpoint"
@@ -289,7 +293,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_11_213056) do
     t.index ["uuid"], name: "index_web_push_subscriptions_on_uuid", unique: true
   end
 
-  create_table "websocket_connections", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "websocket_connections", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "app_id"
     t.string "token", null: false
