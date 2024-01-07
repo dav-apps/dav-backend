@@ -51,6 +51,7 @@ Rails.application.routes.draw do
 	match '/v1/table_object/:uuid/access', to: 'table_objects#remove_table_object', via: :delete
 
 	# TableObjectsController v2
+	match '/v2/table_objects', to: 'table_objects#create_table_object_v2', via: :post
 	match '/v2/table_objects', to: 'table_objects#list_table_objects', via: :get
 	match '/v2/table_objects/:uuid', to: 'table_objects#retrieve_table_object', via: :get
 	match '/v2/table_objects/:uuid/price', to: 'table_objects#set_table_object_price', via: :put

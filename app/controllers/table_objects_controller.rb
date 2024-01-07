@@ -52,6 +52,7 @@ class TableObjectsController < ApplicationController
 
 		# Get the properties
 		props = Hash.new
+
 		if !properties.nil? && !table_object.file
 			# Validate the properties
 			properties.each do |key, value|
@@ -695,6 +696,77 @@ class TableObjectsController < ApplicationController
 	end
 
 	# v2
+	def create_table_object_v2
+		auth = get_auth
+
+		ValidationService.raise_validation_errors(ValidationService.validate_auth_header_presence(auth))
+
+		# Get the dev
+		dev = Dev.find_by(api_key: auth.split(',')[0])
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_existence(dev))
+
+		# Validate the auth
+		ValidationService.raise_validation_errors(ValidationService.validate_auth(auth))
+
+		# Validate the dev
+		ValidationService.raise_validation_errors(ValidationService.validate_dev_is_first_dev(dev))
+
+		# Get the params from the body
+		body = ValidationService.parse_json(request.body.string)
+		uuid = body["uuid"]
+		table_id = body["table_id"]
+
+		# Validate missing fields
+		ValidationService.raise_validation_errors([
+			ValidationService.validate_table_id_presence(table_id)
+		])
+
+		# Validate the types of the fields
+		validations = Array.new
+		validations.push(ValidationService.validate_uuid_type(uuid)) if !uuid.nil?
+		validations.push(ValidationService.validate_table_id_type(table_id))
+		ValidationService.raise_validation_errors(validations)
+
+		# Get the table
+		table = Table.find_by(id: table_id)
+		ValidationService.raise_validation_errors(ValidationService.validate_table_existence(table))
+
+		# Create the table object
+		table_object = TableObject.new(
+			user: User.first,
+			table: table
+		)
+
+		if uuid.nil?
+			table_object.uuid = SecureRandom.uuid
+		else
+			# Check if the uuid is already taken
+			ValidationService.raise_validation_errors(ValidationService.validate_table_object_uuid_availability(uuid))
+			table_object.uuid = uuid
+		end
+
+		# Calculate the etag of the table object
+		table_object.etag = UtilsService.generate_table_object_etag(table_object)
+
+		# Save the table object
+		ValidationService.raise_unexpected_error(!table_object.save)
+
+		# Save the table object in redis
+		UtilsService.save_table_object_in_redis(table_object)
+
+		# Return the data
+		result = {
+			id: table_object.id,
+			user_id: table_object.user_id,
+			table_id: table_object.table_id,
+			uuid: table_object.uuid
+		}
+
+		render json: result, status: 201
+	rescue RuntimeError => e
+		render_errors(e)
+	end
+
 	def list_table_objects
 		auth = get_auth
 		caching = (params[:caching].nil? || params[:caching] == "true") && !Rails.env.test?
