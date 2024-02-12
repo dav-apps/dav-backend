@@ -42,31 +42,37 @@ module DavBackend
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
+      "http://localhost:3003",
+      "http://localhost:3004",
       "https://dav-apps.tech",
-		"https://dav-website-fm4ae.ondigitalocean.app",
-		"https://dav-website-staging-o3oot.ondigitalocean.app",
+		  "https://dav-website-fm4ae.ondigitalocean.app",
+		  "https://dav-website-staging-o3oot.ondigitalocean.app",
       "https://calendo.dav-apps.tech",
-		"https://calendo-yp34u.ondigitalocean.app",
+		  "https://calendo-yp34u.ondigitalocean.app",
       "https://pocketlib.dav-apps.tech",
-		"https://pocketlib-nzgpy.ondigitalocean.app",
-		"https://pocketlib-staging-d9rk6.ondigitalocean.app",
-		"https://pocketlib.app"
+		  "https://pocketlib-nzgpy.ondigitalocean.app",
+		  "https://pocketlib-staging-d9rk6.ondigitalocean.app",
+		  "https://pocketlib.app",
+      "https://storyline-staging-a6ylk.ondigitalocean.app"
     ]
 
     Rails.application.config.middleware.insert_before 0, Rack::Cors do
       allow do
-          origins 'localhost:3000',
+        origins 'localhost:3000',
           'localhost:3001',
           'localhost:3002',
+          'localhost:3003',
+          'localhost:3004',
           'dav-apps.tech',
-			 'dav-website-fm4ae.ondigitalocean.app',
-			 'dav-website-staging-o3oot.ondigitalocean.app',
+			    'dav-website-fm4ae.ondigitalocean.app',
+			    'dav-website-staging-o3oot.ondigitalocean.app',
           'calendo.dav-apps.tech',
-			 'calendo-yp34u.ondigitalocean.app',
+			    'calendo-yp34u.ondigitalocean.app',
           'pocketlib.dav-apps.tech',
-			 'pocketlib-nzgpy.ondigitalocean.app',
-			 'pocketlib-staging-d9rk6.ondigitalocean.app',
-			 'pocketlib.app'
+			    'pocketlib-nzgpy.ondigitalocean.app',
+			    'pocketlib-staging-d9rk6.ondigitalocean.app',
+			    'pocketlib.app',
+          'storyline-staging-a6ylk.ondigitalocean.app'
         resource '*',
         headers: :any,
         methods: %i(get post put patch delete options head)
