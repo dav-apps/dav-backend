@@ -53,7 +53,9 @@ module DavBackend
 		  "https://pocketlib-nzgpy.ondigitalocean.app",
 		  "https://pocketlib-staging-d9rk6.ondigitalocean.app",
 		  "https://pocketlib.app",
-      "https://storyline-staging-a6ylk.ondigitalocean.app"
+      "https://storyline-staging-a6ylk.ondigitalocean.app",
+      "https://storyline-e36eu.ondigitalocean.app",
+      "https://storyline.press"
     ]
 
     Rails.application.config.middleware.insert_before 0, Rack::Cors do
@@ -72,7 +74,9 @@ module DavBackend
 			    'pocketlib-nzgpy.ondigitalocean.app',
 			    'pocketlib-staging-d9rk6.ondigitalocean.app',
 			    'pocketlib.app',
-          'storyline-staging-a6ylk.ondigitalocean.app'
+          'storyline-staging-a6ylk.ondigitalocean.app',
+          'storyline-e36eu.ondigitalocean.app',
+          'storyline.press'
         resource '*',
         headers: :any,
         methods: %i(get post put patch delete options head)
