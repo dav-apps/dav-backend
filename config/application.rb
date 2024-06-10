@@ -39,6 +39,7 @@ module DavBackend
 
     config.action_cable.allowed_request_origins = [
       nil,
+      "http://localhost:2001",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
@@ -60,7 +61,8 @@ module DavBackend
 
     Rails.application.config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins 'localhost:3000',
+        origins 'localhost:2001',
+          'localhost:3000',
           'localhost:3001',
           'localhost:3002',
           'localhost:3003',
